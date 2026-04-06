@@ -1,0 +1,127 @@
+@import "tailwindcss" source("../");
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+
+@theme {
+  --color-jawwib-bg: #06060F;
+  --color-jawwib-surface: #0E0E1A;
+  --color-jawwib-card: #151525;
+  --color-jawwib-border: #2A2A3E;
+  --color-jawwib-gold: #D4A017;
+  --color-jawwib-gold-light: #F5D060;
+  --color-jawwib-gold-dark: #A07B10;
+  --color-jawwib-text: #F0F0F5;
+  --color-jawwib-text-dim: #8888A0;
+  --color-jawwib-green: #22C55E;
+  --color-jawwib-red: #EF4444;
+  --color-jawwib-blue: #3B82F6;
+  --color-jawwib-purple: #8B5CF6;
+}
+
+body {
+  @apply m-0 bg-jawwib-bg text-jawwib-text;
+  font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  direction: rtl;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #06060F; }
+::-webkit-scrollbar-thumb { background: #2A2A3E; border-radius: 3px; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 160, 23, 0.4); }
+  50% { box-shadow: 0 0 20px 5px rgba(212, 160, 23, 0.2); }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+@keyframes bounce-in {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-fade-in { animation: fadeIn 0.4s ease-out; }
+.animate-slide-up { animation: slideUp 0.5s ease-out; }
+.animate-pulse-gold { animation: pulse-gold 2s infinite; }
+.animate-shake { animation: shake 0.5s ease-out; }
+.animate-bounce-in { animation: bounce-in 0.5s ease-out; }
+
+.text-gold-gradient {
+  background: linear-gradient(135deg, #D4A017, #F5D060, #D4A017);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.game-card {
+  background: #151525;
+  border: 1px solid #2A2A3E;
+  border-radius: 1rem;
+  transition: all 0.3s;
+}
+.game-card:hover {
+  border-color: #D4A017;
+  box-shadow: 0 0 20px rgba(212, 160, 23, 0.15);
+}
+
+.board-cell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  border: 1px solid #2A2A3E;
+  background: #151525;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.board-cell:hover:not(.answered) {
+  border-color: #D4A017;
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(212, 160, 23, 0.2);
+}
+.board-cell.answered {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.btn-gold {
+  background: linear-gradient(135deg, #D4A017, #F5D060);
+  color: #06060F;
+  font-weight: 700;
+  border-radius: 0.75rem;
+  padding: 0.75rem 2rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Tajawal', sans-serif;
+}
+.btn-gold:hover {
+  box-shadow: 0 0 25px rgba(212, 160, 23, 0.4);
+  transform: translateY(-2px);
+}
+.btn-gold:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+[dir="rtl"] input,
+[dir="rtl"] textarea {
+  text-align: right;
+}

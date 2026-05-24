@@ -11,3 +11,5 @@ export { GameStateMachine, gameFSM, ENGINE_TO_STORE_PHASE } from './stateMachine
 export type { EnginePhase, PhaseEvent }                                         from './stateMachine';
 export { QuestionEngine, engine }                from './questionEngine';
 export type { EngineSnapshot, BoardBuilderOptions }                             from './questionEngine';
+export { SabotageEngine, sabotageEngine }        from './sabotageEngine';
+export type { ActivationResult, EffectResolution }                              from './sabotageEngine';

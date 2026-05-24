@@ -10,6 +10,7 @@ import type {
   SabotageType,
 } from '@/lib/types';
 import { getQuestionById } from '@/lib/questions';
+import { useSabotageStore } from './sabotageStore';
 import {
   getWelcomeMessage,
   getWinnerRoast,
@@ -17,7 +18,11 @@ import {
   getStreakMessage,
   getSabotageMessage,
   getGameOverMessage,
+  getBombExplosionMessage,
+  getDoubleWinMessage,
+  getDoubleLossMessage,
 } from '@/lib/host';
+import { ATTACK_TYPES } from '@/lib/sabotages';
 import { engine }           from '@/engine/questionEngine';
 import { validateAnswer }   from '@/engine/answerValidator';
 import { globalPool }       from '@/engine/questionPool';
@@ -135,6 +140,9 @@ export const useGameStore = create<GameStoreState>()(
         categories,
       );
 
+      // Init sabotage store for FFA (per-player inventory)
+      useSabotageStore.getState().initGame('ffa', [playerId]);
+
       const game: GameState = {
         room,
         board,
@@ -164,7 +172,10 @@ export const useGameStore = create<GameStoreState>()(
         streak: 0,
         isHost: false,
       };
-      const updatedSabotages = { ...game.sabotages, [playerId]: ['steal', 'block', 'halve'] as SabotageType[] };
+      const allTypes: SabotageType[] = ['steal', 'block', 'halve', 'bomb', 'freeze', 'scramble', 'double', 'mystery'];
+      const updatedSabotages = { ...game.sabotages, [playerId]: allTypes };
+      // Register new player in sabotage engine
+      useSabotageStore.getState().earnSabotage(playerId, 'steal'); // will no-op if already inited
       set({
         game: {
           ...game,
@@ -190,10 +201,22 @@ export const useGameStore = create<GameStoreState>()(
       const question = getQuestionById(questionId);
       if (!question) return;
 
-      // Derive time limit from difficulty adapter (falls back to default)
       const localPlayerId = get().localPlayerId;
+      const sabStore = useSabotageStore.getState();
+
+      // Check freeze effect for the active player
+      const frozenDuration = game.activePlayer ? sabStore.getFreezeFor(game.activePlayer) : null;
       const diff = localPlayerId ? engine.difficulty(localPlayerId) : null;
-      const timeLimit = diff?.timeLimit ?? DEFAULT_TIMER;
+      const timeLimit = frozenDuration ?? diff?.timeLimit ?? DEFAULT_TIMER;
+
+      // Bind scramble to this specific question if one is pending
+      if (game.activePlayer) {
+        const scramble = sabStore.getScrambleFor(game.activePlayer);
+        if (scramble) {
+          // Attach the question ID so the hook can match options
+          // (options will be reordered by useQuestionFlow)
+        }
+      }
 
       set({
         game: {
@@ -240,21 +263,42 @@ export const useGameStore = create<GameStoreState>()(
       const player   = game.room.players.find((p) => p.id === playerId);
       if (!player) return;
 
-      // Delegate scoring to answerValidator (single source of truth)
+      const sabStore = useSabotageStore.getState();
+
+      // Apply double multiplier if active
+      const doubleMultiplier = sabStore.getDoubleMultiplierFor(playerId) ?? 1;
+
+      // Validate answer
       const result = validateAnswer({
         question,
         answerIndex,
         timeRemaining:   game.timer,
         timerDuration:   DEFAULT_TIMER,
         playerStreak:    player.streak,
-        pointMultiplier: 1,
+        pointMultiplier: doubleMultiplier,
       });
 
-      const updatedPlayers = game.room.players.map((p) =>
+      // Resolve pending effects (bomb, double penalty)
+      const resolution = sabStore.resolveAnswer(playerId, result.correct);
+      sabStore.clearScramble(playerId);
+
+      // Double bonus is already in result.totalPoints (via pointMultiplier)
+      // Double penalty is in resolution.additionalDelta
+      const doublelossMsg = !result.correct && doubleMultiplier > 1 ? getDoubleLossMessage() : null;
+      const doubleWinMsg  =  result.correct && doubleMultiplier > 1 ? getDoubleWinMessage()  : null;
+      const bombMsg       = resolution.hostMessage?.includes('قنبلة') ? getBombExplosionMessage() : null;
+
+      const finalPoints     = result.totalPoints + Math.max(resolution.additionalDelta, -player.score);
+      const finalScore      = Math.max(0, player.score + finalPoints);
+
+      let updatedPlayers = game.room.players.map((p) =>
         p.id === playerId
-          ? { ...p, score: p.score + result.totalPoints, streak: result.newStreak }
+          ? { ...p, score: finalScore, streak: result.newStreak }
           : p
       );
+
+      // Apply any score deltas from sabotage resolution (e.g. mystery steal)
+      // (resolution.additionalDelta already applied above via finalPoints)
 
       const updatedBoard = game.board.map((row) =>
         row.map((cell) =>
@@ -270,12 +314,26 @@ export const useGameStore = create<GameStoreState>()(
         ? answeredQuestions.length >= TRIAL_QUESTION_LIMIT
         : answeredCount >= game.board.reduce((a, r) => a + r.length, 0);
 
-      const nextIdx         = (game.room.players.findIndex((p) => p.id === playerId) + 1) % game.room.players.length;
+      const nextIdx          = (game.room.players.findIndex((p) => p.id === playerId) + 1) % game.room.players.length;
       const nextActivePlayer = game.room.players[nextIdx].id;
 
-      const hostMessage = result.correct
-        ? result.newStreak >= 3 ? getStreakMessage() : getWinnerRoast()
-        : getLoserRoast();
+      // Earn sabotage on streak
+      if (result.newStreak === 3) {
+        const earned = ATTACK_TYPES[Math.floor(Math.random() * 3)]; // bomb/freeze/scramble
+        sabStore.earnSabotage(playerId, earned);
+      }
+      // Earn block when trailing by 400+
+      const topScore = Math.max(...updatedPlayers.map((p) => p.score));
+      if (finalScore < topScore - 400) {
+        sabStore.earnSabotage(playerId, 'block');
+      }
+
+      sabStore.advanceTurn();
+
+      const hostMessage = doubleWinMsg ?? doublelossMsg ?? bombMsg
+        ?? (result.correct
+          ? result.newStreak >= 3 ? getStreakMessage() : getWinnerRoast()
+          : getLoserRoast());
 
       set({
         game: {
@@ -297,9 +355,9 @@ export const useGameStore = create<GameStoreState>()(
           lastAnswer: {
             playerId,
             correct:          result.correct,
-            points:           result.totalPoints,
+            points:           finalPoints,
             timeBonus:        result.timeBonus,
-            streakMultiplier: result.streakMultiplier,
+            streakMultiplier: result.streakMultiplier * doubleMultiplier,
           },
         },
         answeredCount,
@@ -310,39 +368,50 @@ export const useGameStore = create<GameStoreState>()(
       const { game } = get();
       if (!game) return;
 
-      const available = game.sabotages[playerId] ?? [];
-      if (!available.includes(type)) return;
+      const targetPlayer = game.room.players.find((p) => p.id === targetId);
+      const sabStore     = useSabotageStore.getState();
 
-      const updatedSabotages = {
-        ...game.sabotages,
-        [playerId]: available.filter((s) => s !== type),
-      };
+      const activation = sabStore.activate({
+        fromPlayerId:   playerId,
+        fromTeamId:     null,
+        type,
+        targetPlayerId: targetId,
+        targetTeamId:   null,
+        targetScore:    targetPlayer?.score ?? 0,
+        questionOptions: game.currentQuestion?.options,
+      });
 
+      if (!activation.success && activation.failReason !== 'blocked') return;
+
+      // Apply immediate score changes from the engine
       let updatedPlayers = game.room.players;
-      if (type === 'halve') {
-        updatedPlayers = game.room.players.map((p) =>
-          p.id === targetId ? { ...p, score: Math.floor(p.score / 2) } : p
+      for (const delta of activation.scoreDeltas) {
+        updatedPlayers = updatedPlayers.map((p) =>
+          p.id === delta.playerId
+            ? { ...p, score: Math.max(0, p.score + delta.delta) }
+            : p
         );
       }
-      if (type === 'steal') {
-        const target = game.room.players.find((p) => p.id === targetId);
-        const thief = game.room.players.find((p) => p.id === playerId);
-        if (target && thief) {
-          const stolen = Math.floor(target.score * 0.2);
-          updatedPlayers = game.room.players.map((p) => {
-            if (p.id === targetId) return { ...p, score: p.score - stolen };
-            if (p.id === playerId) return { ...p, score: p.score + stolen };
-            return p;
-          });
-        }
-      }
+
+      // Sync inventory back to game.sabotages (for legacy UI compatibility)
+      const inv = sabStore.inventories[playerId];
+      const updatedSabotages = {
+        ...game.sabotages,
+        [playerId]: inv ? (Object.keys(inv.available) as SabotageType[]).filter(
+          (t) => (inv.available[t] ?? 0) > 0
+        ) : [],
+      };
+
+      const msg = activation.blockConsumed
+        ? activation.hostMessage
+        : activation.hostMessage || getSabotageMessage(type as Parameters<typeof getSabotageMessage>[0]);
 
       set({
         game: {
           ...game,
           room: { ...game.room, players: updatedPlayers },
           sabotages: updatedSabotages,
-          hostMessage: getSabotageMessage(type),
+          hostMessage: msg,
           selectedSabotage: null,
           sabotageTarget: null,
         },
@@ -356,6 +425,7 @@ export const useGameStore = create<GameStoreState>()(
     },
 
     resetGame: () => {
+      useSabotageStore.getState().resetSabotagees();
       set({ game: null, localPlayerId: null, answeredCount: 0 });
     },
 

@@ -9,9 +9,14 @@ interface SabotagePanelProps {
 }
 
 const sabotageInfo: Record<SabotageType, { name: string; icon: string; description: string }> = {
-  steal: { name: 'سرقة', icon: '💰', description: 'اسرق 100 نقطة من لاعب' },
-  block: { name: 'حجب', icon: '🚫', description: 'امنع لاعب من الجواب التالي' },
-  halve: { name: 'تنصيف', icon: '✂️', description: 'قسّم نقاط لاعب على اثنين' },
+  steal:   { name: 'سرقة',   icon: '💰', description: 'اسرق 20% من نقاط الخصم' },
+  block:   { name: 'درع',    icon: '🛡️', description: 'يدفع التخريب القادم ضدك' },
+  halve:   { name: 'تنصيف', icon: '✂️', description: 'قسّم نقاط الخصم على اثنين' },
+  bomb:    { name: 'قنبلة',  icon: '💣', description: 'إذا الخصم جاوب غلط يخسر 150 إضافية' },
+  freeze:  { name: 'تجميد', icon: '🧊', description: 'وقت الخصم يصير 8 ثواني' },
+  scramble:{ name: 'خلط',   icon: '🔀', description: 'خيارات الإجابة تتخلط على الخصم' },
+  double:  { name: 'رهان',  icon: '⚡', description: 'إجابة صح = ضعف النقاط، خطأ = -75' },
+  mystery: { name: 'صندوق', icon: '🎁', description: 'مفاجأة عشوائية — زينة أو شينة!' },
 };
 
 export function SabotagePanel({

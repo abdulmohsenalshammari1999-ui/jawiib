@@ -47,6 +47,26 @@ const sabotageMessages = {
     'نص نقاطه راحت! يا قاسي يا قلبك حجر 💔',
     'قسمتها على اثنين! ألحين يبي يبكي 😭',
   ],
+  bomb: [
+    'زرع قنبلة! إذا جاوب غلط الدنيا تشتعل 💣💥',
+    'ترا القنبلة ما ترحم! اجاوب صح وإلا انفجرت 🔥',
+  ],
+  freeze: [
+    'جمّد وقته! 8 ثواني بس — يلا يسرع 🧊',
+    'ثلج على المؤقت! ويش تسوي بكذا وقت؟ ❄️',
+  ],
+  scramble: [
+    'خلط خياراته! الصح فين يا بطل؟ 🔀',
+    'بعد الخلط الله يعين — ركّز 😵‍💫',
+  ],
+  double: [
+    'راهن على نفسه! إذا صح يربح ضعف، إذا غلط يبكي 😬⚡',
+    'الرهان الكبير! يا فوز يا هوز 🎲',
+  ],
+  mystery: [
+    'فتح الصندوق الغامض! الله يستر ويعطيه الزين 🎁',
+    'مفاجأة! إيش فيها؟ يا ربح يا خسارة 🎲',
+  ],
 };
 
 const welcomeMessages = [
@@ -94,8 +114,32 @@ export function getStreakMessage(): string {
   return randomFrom(streakMessages);
 }
 
-export function getSabotageMessage(type: 'steal' | 'block' | 'halve'): string {
-  return randomFrom(sabotageMessages[type]);
+export function getSabotageMessage(type: keyof typeof sabotageMessages): string {
+  return randomFrom(sabotageMessages[type] ?? sabotageMessages.steal);
+}
+
+export function getBombExplosionMessage(): string {
+  return randomFrom(['القنبلة انفجرت! 💥 نقاط راحت!', 'بووووم! الخسارة مؤلمة 💣']);
+}
+
+export function getDoubleWinMessage(): string {
+  return randomFrom(['ضاعف نقاطه! ذكي واللي جاوب! ⚡🔥', 'رهان ربحه! المقامرة اشتغلت! 🎰']);
+}
+
+export function getDoubleLossMessage(): string {
+  return randomFrom(['خسر الرهان 😂 يا خسارة ما تعلّم!', 'الرهان انقلب عليه! 💸']);
+}
+
+export function getMysteryMessage(msg: string): string {
+  return msg;
+}
+
+export function getImmunityMessage(): string {
+  return randomFrom(['محصّن! ما يأثّر فيه التخريب الحين 🛡️', 'حصانة نشطة — ما تقدر تضره 🔰']);
+}
+
+export function getEarnedSabotageMessage(type: string): string {
+  return `كسبت تخريب جديد: ${type}! 🎁`;
 }
 
 export function getGameOverMessage(isWinner: boolean): string {

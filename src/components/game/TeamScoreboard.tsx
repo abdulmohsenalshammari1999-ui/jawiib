@@ -19,8 +19,10 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 export function TeamScoreboard({ players, teams, activePlayerId, mode }: TeamScoreboardProps) {
   if (mode === 'teams' && teams) {
     const alphaPlayers = players.filter((p) => teams.alpha.playerIds.includes(p.id));
-    const betaPlayers = players.filter((p) => teams.beta.playerIds.includes(p.id));
-    const alphaLeads = teams.alpha.score >= teams.beta.score;
+    const betaPlayers  = players.filter((p) => teams.beta.playerIds.includes(p.id));
+    const alphaScore   = alphaPlayers.reduce((s, p) => s + p.score, 0);
+    const betaScore    = betaPlayers.reduce((s, p) => s + p.score, 0);
+    const alphaLeads   = alphaScore >= betaScore;
 
     return (
       <div className="game-card p-4">
@@ -37,7 +39,7 @@ export function TeamScoreboard({ players, teams, activePlayerId, mode }: TeamSco
               <span className="text-blue-400 font-bold text-xs">{teams.alpha.name}</span>
               {alphaLeads && <span className="text-xs text-jawwib-gold">👑</span>}
             </div>
-            <p className="text-2xl font-black text-blue-400">{teams.alpha.score}</p>
+            <p className="text-2xl font-black text-blue-400">{alphaScore}</p>
           </div>
           {/* Beta team */}
           <div
@@ -50,7 +52,7 @@ export function TeamScoreboard({ players, teams, activePlayerId, mode }: TeamSco
               <span className="text-red-400 font-bold text-xs">{teams.beta.name}</span>
               {!alphaLeads && <span className="text-xs text-jawwib-gold">👑</span>}
             </div>
-            <p className="text-2xl font-black text-red-400">{teams.beta.score}</p>
+            <p className="text-2xl font-black text-red-400">{betaScore}</p>
           </div>
         </div>
 

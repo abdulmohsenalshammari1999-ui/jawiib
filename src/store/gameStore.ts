@@ -83,6 +83,8 @@ export interface GameSlice extends GameState {
   resetGame: () => void;
   setHostMessage: (msg: string) => void;
   tickTimer: () => void;
+  updateCategories: (cats: CategoryId[]) => void;
+  rematch: () => void;
 }
 
 export interface GameStoreState {
@@ -99,6 +101,8 @@ export interface GameStoreState {
   returnToBoard: () => void;
   resetGame: () => void;
   setHostMessage: (msg: string) => void;
+  updateCategories: (cats: CategoryId[]) => void;
+  rematch: () => void;
 }
 
 export const useGameStore = create<GameStoreState>()(
@@ -433,6 +437,66 @@ export const useGameStore = create<GameStoreState>()(
       const { game } = get();
       if (!game) return;
       set({ game: { ...game, hostMessage: msg } });
+    },
+
+    updateCategories: (cats) => {
+      const { game } = get();
+      if (!game) return;
+      globalPool.reset();
+      const board = buildBoard(cats);
+      const playerIds = game.room.players.map((p) => p.id);
+      engine.newGame(
+        playerIds.map((id) => ({ id, teamId: null, streak: 0, coldStreak: 0, score: 0 })),
+        'ffa',
+        cats,
+      );
+      useSabotageStore.getState().initGame('ffa', playerIds);
+      set({
+        game: {
+          ...game,
+          board,
+          room: { ...game.room, categories: cats },
+          sabotages: initSabotages(playerIds),
+        },
+      });
+    },
+
+    rematch: () => {
+      const { game } = get();
+      if (!game) return;
+      const players = game.room.players.map((p) => ({ ...p, score: 0, streak: 0 }));
+      const cats = game.room.categories;
+      const playerIds = players.map((p) => p.id);
+      globalPool.reset();
+      const board = buildBoard(cats);
+      engine.newGame(
+        playerIds.map((id) => ({ id, teamId: null, streak: 0, coldStreak: 0, score: 0 })),
+        'ffa',
+        cats,
+      );
+      useSabotageStore.getState().initGame('ffa', playerIds);
+      set({
+        game: {
+          ...game,
+          board,
+          room: {
+            ...game.room,
+            players,
+            answeredQuestions: [],
+            status: 'waiting',
+          },
+          currentQuestion: null,
+          activePlayer: playerIds[0],
+          timer: DEFAULT_TIMER,
+          phase: 'lobby',
+          hostMessage: getWelcomeMessage(),
+          sabotages: initSabotages(playerIds),
+          selectedSabotage: null,
+          sabotageTarget: null,
+          lastAnswer: null,
+        },
+        answeredCount: 0,
+      });
     },
   }))
 );

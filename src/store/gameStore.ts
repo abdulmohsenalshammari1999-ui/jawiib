@@ -9,7 +9,7 @@ import type {
   GameBoardCell,
   SabotageType,
 } from '@/lib/types';
-import { getQuestionsByCategoryAndTier, getQuestionById } from '@/lib/questions';
+import { getQuestionById } from '@/lib/questions';
 import {
   getWelcomeMessage,
   getWinnerRoast,
@@ -18,13 +18,13 @@ import {
   getSabotageMessage,
   getGameOverMessage,
 } from '@/lib/host';
+import { engine }           from '@/engine/questionEngine';
+import { validateAnswer }   from '@/engine/answerValidator';
+import { globalPool }       from '@/engine/questionPool';
 
-const TIMER_DURATION = 15;
-const SPEED_BONUS_THRESHOLD = 5;
-const STREAK_MULTIPLIER = 1.5;
-const STREAK_THRESHOLD = 3;
-const TRIAL_QUESTION_LIMIT = 9;
-const TRIAL_CATEGORY_COUNT = 2;
+const TRIAL_QUESTION_LIMIT  = 9;
+const TRIAL_CATEGORY_COUNT  = 2;
+const DEFAULT_TIMER         = 15;
 
 const AVATARS = ['🦁', '🦊', '🐺', '🦅', '🐉', '🦈', '🐅', '🦂'];
 
@@ -36,12 +36,13 @@ function generateRoomCode(): string {
 }
 
 function buildBoard(selectedCategories: CategoryId[]): GameBoardCell[][] {
+  // Use pool-based builder to guarantee no duplicate questions across the board
+  globalPool.reset();
   return selectedCategories.map((cat) => {
     const row: GameBoardCell[] = [];
     for (const tier of [1, 2, 3] as const) {
-      const pool = getQuestionsByCategoryAndTier(cat, tier);
-      const shuffled = [...pool].sort(() => Math.random() - 0.5);
-      for (const q of shuffled.slice(0, 2)) {
+      const questions = globalPool.drawN(cat, tier, 2);
+      for (const q of questions) {
         row.push({ questionId: q.id, category: cat, tier, points: q.points, answered: false });
       }
     }
@@ -126,12 +127,20 @@ export const useGameStore = create<GameStoreState>()(
         createdAt: Date.now(),
       };
       const board = buildBoard(categories);
+
+      // Bootstrap the engine for adaptive difficulty + round management
+      engine.newGame(
+        [{ id: playerId, teamId: null, streak: 0, coldStreak: 0, score: 0 }],
+        'ffa',
+        categories,
+      );
+
       const game: GameState = {
         room,
         board,
         currentQuestion: null,
         activePlayer: playerId,
-        timer: TIMER_DURATION,
+        timer: DEFAULT_TIMER,
         phase: 'lobby',
         hostMessage: getWelcomeMessage(),
         sabotages: initSabotages([playerId]),
@@ -180,15 +189,22 @@ export const useGameStore = create<GameStoreState>()(
       if (!game || game.phase !== 'board') return;
       const question = getQuestionById(questionId);
       if (!question) return;
+
+      // Derive time limit from difficulty adapter (falls back to default)
+      const localPlayerId = get().localPlayerId;
+      const diff = localPlayerId ? engine.difficulty(localPlayerId) : null;
+      const timeLimit = diff?.timeLimit ?? DEFAULT_TIMER;
+
       set({
         game: {
           ...game,
           phase: 'question',
           currentQuestion: question,
-          timer: TIMER_DURATION,
+          timer: timeLimit,
         },
       });
-      // Start timer
+
+      // Tick timer — stop if phase changes
       const tick = () => {
         const current = get().game;
         if (!current || current.phase !== 'question') return;
@@ -221,18 +237,22 @@ export const useGameStore = create<GameStoreState>()(
       if (!game || game.phase !== 'question' || !game.currentQuestion) return;
 
       const question = game.currentQuestion;
-      const correct = answerIndex === question.correctIndex;
-      const timeBonus = game.timer > SPEED_BONUS_THRESHOLD ? 25 : 0;
-      const player = game.room.players.find((p) => p.id === playerId);
+      const player   = game.room.players.find((p) => p.id === playerId);
       if (!player) return;
 
-      const newStreak = correct ? player.streak + 1 : 0;
-      const streakMultiplier = newStreak >= STREAK_THRESHOLD ? STREAK_MULTIPLIER : 1;
-      const earned = correct ? Math.round((question.points + timeBonus) * streakMultiplier) : 0;
+      // Delegate scoring to answerValidator (single source of truth)
+      const result = validateAnswer({
+        question,
+        answerIndex,
+        timeRemaining:   game.timer,
+        timerDuration:   DEFAULT_TIMER,
+        playerStreak:    player.streak,
+        pointMultiplier: 1,
+      });
 
       const updatedPlayers = game.room.players.map((p) =>
         p.id === playerId
-          ? { ...p, score: p.score + earned, streak: newStreak }
+          ? { ...p, score: p.score + result.totalPoints, streak: result.newStreak }
           : p
       );
 
@@ -245,19 +265,16 @@ export const useGameStore = create<GameStoreState>()(
       );
 
       const answeredQuestions = [...game.room.answeredQuestions, question.id];
-      const answeredCount = updatedBoard.reduce((a, r) => a + r.filter((c) => c.answered).length, 0);
-      const isTrial = game.room.isTrial;
-      const allAnswered = isTrial
+      const answeredCount     = updatedBoard.reduce((a, r) => a + r.filter((c) => c.answered).length, 0);
+      const allAnswered       = game.room.isTrial
         ? answeredQuestions.length >= TRIAL_QUESTION_LIMIT
         : answeredCount >= game.board.reduce((a, r) => a + r.length, 0);
 
-      const nextActivePlayer =
-        game.room.players[(game.room.players.findIndex((p) => p.id === playerId) + 1) % game.room.players.length].id;
+      const nextIdx         = (game.room.players.findIndex((p) => p.id === playerId) + 1) % game.room.players.length;
+      const nextActivePlayer = game.room.players[nextIdx].id;
 
-      const hostMessage = correct
-        ? newStreak >= STREAK_THRESHOLD
-          ? getStreakMessage()
-          : getWinnerRoast()
+      const hostMessage = result.correct
+        ? result.newStreak >= 3 ? getStreakMessage() : getWinnerRoast()
         : getLoserRoast();
 
       set({
@@ -273,9 +290,17 @@ export const useGameStore = create<GameStoreState>()(
           },
           activePlayer: nextActivePlayer,
           hostMessage: allAnswered
-            ? getGameOverMessage(updatedPlayers.sort((a, b) => b.score - a.score)[0].id === playerId)
+            ? getGameOverMessage(
+                [...updatedPlayers].sort((a, b) => b.score - a.score)[0].id === playerId
+              )
             : hostMessage,
-          lastAnswer: { playerId, correct, points: earned, timeBonus, streakMultiplier },
+          lastAnswer: {
+            playerId,
+            correct:          result.correct,
+            points:           result.totalPoints,
+            timeBonus:        result.timeBonus,
+            streakMultiplier: result.streakMultiplier,
+          },
         },
         answeredCount,
       });

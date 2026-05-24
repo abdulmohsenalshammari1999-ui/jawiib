@@ -399,3 +399,7 @@ export function getQuestionsByCategoryAndTier(
 ): Question[] {
   return questions.filter((q) => q.category === category && q.tier === tier);
 }
+
+export function getQuestionById(id: string): Question | undefined {
+  return questions.find((q) => q.id === id);
+}

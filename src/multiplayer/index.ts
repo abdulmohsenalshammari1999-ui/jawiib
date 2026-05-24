@@ -10,3 +10,14 @@ export {
   onInternalEvent,
   setAdapter,
 } from './realtimeManager';
+export { RoomSyncManager, roomSync } from './roomSync';
+export { TimerSyncManager, timerSync, useSyncedTimer, useLocalTimer } from './timerSync';
+export { AnswerSyncManager, answerSync } from './answerSync';
+export type { AnswerPhase, PendingAnswer } from './answerSync';
+export {
+  saveSession,
+  loadSession,
+  clearSession,
+  updateSessionTeam,
+  useReconnectSession,
+} from './reconnect';

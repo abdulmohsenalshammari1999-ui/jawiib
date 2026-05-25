@@ -64,7 +64,15 @@ export interface GameBoardCell {
   answeredBy?: string;
 }
 
-export type SabotageType = 'steal' | 'block' | 'halve';
+export type SabotageType =
+  | 'steal'    // immediate: take 20% of target's score
+  | 'block'    // defensive: deflect next incoming sabotage
+  | 'halve'    // immediate: halve target's score
+  | 'bomb'     // pending: target loses 150 extra if they answer wrong
+  | 'freeze'   // pending: target gets only 8s on their next question
+  | 'scramble' // pending: target's answer options are shuffled
+  | 'double'   // pending self: next correct = 2x points, wrong = -50
+  | 'mystery'; // random: one of 8 weighted outcomes
 
 export interface Sabotage {
   type: SabotageType;
@@ -91,4 +99,111 @@ export interface GameState {
     timeBonus: number;
     streakMultiplier: number;
   } | null;
+}
+
+// ─── Sabotage system ──────────────────────────────────────────────────────────
+
+export interface ActiveSabotageEffect {
+  id: string;
+  type: SabotageType;
+  fromPlayerId: string;
+  fromTeamId: TeamId | null;
+  /** The player the effect will fire on */
+  targetPlayerId: string;
+  plantedTurn: number;
+  /** If still pending after this many turns, auto-expire */
+  expiresAfterTurns: number;
+  resolved: boolean;
+  data: {
+    bombDamage: number;
+    frozenDuration: number;
+    doublePenalty: number;
+    doubleMultiplier: number;
+  };
+}
+
+export interface ScrambleMap {
+  targetPlayerId: string;
+  questionId: string;
+  /** scrambledOptions[i] = original option text; displayIdx → original text */
+  scrambledOptions: string[];
+  /** displayIndex → originalOptionIndex */
+  indexMap: number[];
+}
+
+export type MysteryOutcomeEffect =
+  | 'bonus_points'
+  | 'steal_random'
+  | 'easy_next'
+  | 'immunity'
+  | 'lose_points'
+  | 'random_bomb'
+  | 'double_next';
+
+export interface MysteryOutcome {
+  effect: MysteryOutcomeEffect;
+  value: number;
+  message: string;
+  emoji: string;
+  targetPlayerId?: string;
+}
+
+export interface SabotageInventory {
+  ownerId: string;
+  available: Partial<Record<SabotageType, number>>;
+  usedThisGame: SabotageType[];
+  consecutiveHitsReceived: number;
+  immunityExpiresTurn: number;
+  lastUsedAgainstId: string | null;
+  lastUsedAgainstTurn: number;
+}
+
+// ─── Multiplayer / Team types ─────────────────────────────────────────────────
+
+export type TeamId = 'alpha' | 'beta';
+export type GameMode = 'ffa' | 'teams';
+
+export interface Team {
+  id: TeamId;
+  name: string;
+  color: string;
+  accent: string;
+  emoji: string;
+  playerIds: string[];
+  score: number;
+}
+
+export interface RoomSnapshot {
+  version: number;
+  ts: number;
+  room: GameRoom;
+  board: GameBoardCell[][];
+  teams: Record<TeamId, Team>;
+  mode: GameMode;
+  phase: GameState['phase'];
+  activePlayer: string | null;
+  currentQuestion: Question | null;
+  timerRemaining: number;
+  timerServerTs: number;
+  sabotages: Record<string, SabotageType[]>;
+  lastAnswer: GameState['lastAnswer'];
+  hostMessage: string;
+}
+
+export type StatePatch =
+  | { version: number; ts: number; op: 'PLAYER_JOINED';      payload: { player: Player } }
+  | { version: number; ts: number; op: 'PLAYER_LEFT';        payload: { playerId: string } }
+  | { version: number; ts: number; op: 'TEAM_ASSIGNED';      payload: { playerId: string; teamId: TeamId } }
+  | { version: number; ts: number; op: 'GAME_STARTED';       payload: { board: GameBoardCell[][]; activePlayerId: string } }
+  | { version: number; ts: number; op: 'QUESTION_SELECTED';  payload: { question: Question; activePlayerId: string; timerServerTs: number } }
+  | { version: number; ts: number; op: 'ANSWER_RESULT';      payload: { playerId: string; correct: boolean; points: number; updatedPlayers: Player[]; updatedTeams: Record<TeamId, Team> } }
+  | { version: number; ts: number; op: 'SABOTAGE_APPLIED';   payload: { type: SabotageType; fromId: string; targetId: string; updatedPlayers: Player[]; updatedTeams: Record<TeamId, Team> } }
+  | { version: number; ts: number; op: 'GAME_OVER';          payload: { players: Player[]; teams: Record<TeamId, Team> } };
+
+export interface ReconnectSession {
+  roomId: string;
+  roomCode: string;
+  playerId: string;
+  teamId: TeamId | null;
+  savedAt: number;
 }

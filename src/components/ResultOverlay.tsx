@@ -5,6 +5,8 @@ interface ResultOverlayProps {
   currentQuestion: NonNullable<GameState['currentQuestion']>;
   hostMessage: string;
   onContinue: () => void;
+  playerName?: string;
+  teamColor?: string;
 }
 
 export function ResultOverlay({
@@ -12,65 +14,83 @@ export function ResultOverlay({
   currentQuestion,
   hostMessage,
   onContinue,
+  playerName,
+  teamColor,
 }: ResultOverlayProps) {
   const correctAnswer = currentQuestion.options[currentQuestion.correctIndex];
+  const isCorrect = lastAnswer.correct;
+  const isBig = Math.abs(lastAnswer.points) >= 200;
 
   return (
-    <div className="animate-fade-in fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="game-card p-8 max-w-md w-full text-center animate-bounce-in">
+    <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
+      <div className="game-card p-6 w-full max-w-sm animate-slide-up">
         {/* Result icon */}
-        <div className="text-6xl mb-4">
-          {lastAnswer.correct ? '🎉' : '😅'}
+        <div className={`text-center mb-4 ${isBig ? 'animate-bounce-in' : ''}`}>
+          <div className="text-6xl mb-2">{isCorrect ? (isBig ? '🔥' : '✅') : '❌'}</div>
+          {playerName && (
+            <p
+              className="text-sm font-bold"
+              style={teamColor ? { color: teamColor } : undefined}
+            >
+              {playerName}
+            </p>
+          )}
         </div>
 
-        {/* Result text */}
         <h2
-          className={`text-2xl font-bold mb-2 ${
-            lastAnswer.correct ? 'text-jawwib-green' : 'text-jawwib-red'
+          className={`text-xl font-black text-center mb-3 ${
+            isCorrect ? 'text-jawwib-green' : 'text-jawwib-red'
           }`}
         >
-          {lastAnswer.correct ? 'إجابة صحيحة!' : 'إجابة خاطئة!'}
+          {isCorrect ? 'إجابة صحيحة!' : 'إجابة خاطئة!'}
         </h2>
 
-        {!lastAnswer.correct && (
-          <p className="text-jawwib-text-dim mb-3">
-            الجواب الصحيح: <span className="text-jawwib-green font-bold">{correctAnswer}</span>
-          </p>
-        )}
-
-        {/* Points breakdown */}
-        {lastAnswer.correct && (
-          <div className="bg-jawwib-surface rounded-xl p-4 mb-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-jawwib-text-dim">النقاط الأساسية</span>
-              <span className="text-jawwib-gold font-bold">+{currentQuestion.points}</span>
-            </div>
-            {lastAnswer.timeBonus > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-jawwib-text-dim">مكافأة السرعة ⚡</span>
-                <span className="text-jawwib-blue font-bold">+{lastAnswer.timeBonus}</span>
-              </div>
-            )}
-            {lastAnswer.streakMultiplier > 1 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-jawwib-text-dim">مضاعف السلسلة 🔥</span>
-                <span className="text-jawwib-purple font-bold">×{lastAnswer.streakMultiplier}</span>
-              </div>
-            )}
-            <div className="border-t border-jawwib-border pt-2 flex justify-between">
-              <span className="font-bold">المجموع</span>
-              <span className="text-jawwib-gold font-bold text-lg">+{lastAnswer.points}</span>
-            </div>
+        {!isCorrect && (
+          <div className="bg-jawwib-surface rounded-xl p-3 mb-3 text-center">
+            <p className="text-jawwib-text-dim text-xs mb-1">الجواب الصحيح</p>
+            <p className="text-jawwib-green font-bold">{correctAnswer}</p>
           </div>
         )}
 
-        {/* Host message */}
-        <div className="bg-jawwib-surface rounded-xl p-3 mb-6 flex items-start gap-2">
-          <span className="text-xl">🎙️</span>
-          <p className="text-sm text-right leading-relaxed">{hostMessage}</p>
+        {/* Points breakdown */}
+        <div className="bg-jawwib-surface rounded-xl p-3 mb-3 space-y-1.5">
+          {isCorrect && (
+            <div className="flex justify-between text-sm">
+              <span className="text-jawwib-text-dim">نقاط السؤال</span>
+              <span className="text-jawwib-gold font-bold">+{currentQuestion.points}</span>
+            </div>
+          )}
+          {lastAnswer.timeBonus > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-jawwib-text-dim">⚡ بونص السرعة</span>
+              <span className="text-jawwib-blue font-bold">+{lastAnswer.timeBonus}</span>
+            </div>
+          )}
+          {lastAnswer.streakMultiplier > 1 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-jawwib-text-dim">🔥 مضاعف السلسلة</span>
+              <span className="text-jawwib-purple font-bold">×{lastAnswer.streakMultiplier.toFixed(1)}</span>
+            </div>
+          )}
+          <div className="border-t border-jawwib-border pt-1.5 flex justify-between">
+            <span className="font-bold text-sm">الإجمالي</span>
+            <span
+              className={`font-black text-lg ${
+                lastAnswer.points >= 0 ? 'text-jawwib-gold' : 'text-jawwib-red'
+              }`}
+            >
+              {lastAnswer.points >= 0 ? '+' : ''}{lastAnswer.points}
+            </span>
+          </div>
         </div>
 
-        <button onClick={onContinue} className="btn-gold w-full text-lg">
+        {/* Host message */}
+        <div className="flex items-start gap-2 bg-jawwib-surface rounded-xl p-3 mb-4">
+          <span className="text-lg shrink-0">🎙️</span>
+          <p className="text-xs leading-relaxed text-jawwib-text">{hostMessage}</p>
+        </div>
+
+        <button onClick={onContinue} className="btn-gold w-full">
           متابعة ←
         </button>
       </div>

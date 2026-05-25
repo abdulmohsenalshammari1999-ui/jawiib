@@ -1,5 +1,5 @@
-@import "tailwindcss" source("../");
 @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+@import "tailwindcss" source("../");
 
 @theme {
   --color-jawwib-bg: #06060F;
@@ -124,4 +124,133 @@ code {
 [dir="rtl"] input,
 [dir="rtl"] textarea {
   text-align: right;
+}
+
+/* ── BUILD_08: Game feel animations ───────────────────────────── */
+
+@keyframes score-fly {
+  0%   { transform: translateY(0)   scale(1);   opacity: 1; }
+  40%  { transform: translateY(-30px) scale(1.3); opacity: 1; }
+  100% { transform: translateY(-90px) scale(0.9); opacity: 0; }
+}
+
+@keyframes neon-ping {
+  0%   { transform: scale(1);    opacity: 0.9; }
+  60%  { transform: scale(1.6);  opacity: 0.3; }
+  100% { transform: scale(2);    opacity: 0; }
+}
+
+@keyframes team-pulse-blue {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.25); }
+}
+
+@keyframes team-pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.25); }
+}
+
+@keyframes correct-flash {
+  0%   { background: transparent; }
+  30%  { background: rgba(34, 197, 94, 0.2); }
+  100% { background: transparent; }
+}
+
+@keyframes wrong-flash {
+  0%   { background: transparent; }
+  30%  { background: rgba(239, 68, 68, 0.2); }
+  100% { background: transparent; }
+}
+
+@keyframes momentum-bar {
+  from { width: 0%; }
+  to   { width: var(--momentum-target); }
+}
+
+@keyframes sabotage-appear {
+  0%   { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+  60%  { transform: scale(1.1) rotate(3deg);  opacity: 1; }
+  100% { transform: scale(1)   rotate(0deg);  opacity: 1; }
+}
+
+@keyframes slide-in-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@keyframes ripple {
+  to { transform: scale(3); opacity: 0; }
+}
+
+.score-popup {
+  animation: score-fly 1.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.animate-team-pulse-blue { animation: team-pulse-blue 1.5s ease-in-out infinite; }
+.animate-team-pulse-red  { animation: team-pulse-red  1.5s ease-in-out infinite; }
+.animate-correct-flash   { animation: correct-flash 0.6s ease-out; }
+.animate-wrong-flash     { animation: wrong-flash   0.4s ease-out; }
+.animate-sabotage        { animation: sabotage-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.animate-slide-in-up     { animation: slide-in-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* Neon team glows */
+.team-glow-blue {
+  box-shadow: 0 0 20px rgba(59,130,246,0.3), inset 0 0 20px rgba(59,130,246,0.05);
+}
+.team-glow-red {
+  box-shadow: 0 0 20px rgba(239,68,68,0.3), inset 0 0 20px rgba(239,68,68,0.05);
+}
+
+/* Board cell hover with team color */
+.board-cell:hover:not(.answered) {
+  border-color: var(--cell-hover-color, #D4A017);
+  transform: scale(1.06);
+  box-shadow: 0 0 15px var(--cell-glow-color, rgba(212,160,23,0.25));
+}
+
+/* Premium answer option */
+.answer-option {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.answer-option::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(212,160,23,0.15), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.answer-option:hover:not(:disabled)::before { opacity: 1; }
+
+.answer-option:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Streak fire effect on score */
+.streak-score {
+  position: relative;
+}
+
+.streak-score::after {
+  content: '🔥';
+  position: absolute;
+  top: -8px;
+  right: -12px;
+  font-size: 12px;
+  animation: bounce-in 0.4s ease-out;
+}
+
+/* Phase transition wrapper */
+.phase-enter {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Mobile touch feedback */
+@media (hover: none) {
+  .btn-gold:active { transform: scale(0.96); opacity: 0.9; }
+  .board-cell:active:not(.answered) { transform: scale(0.97); opacity: 0.85; }
 }

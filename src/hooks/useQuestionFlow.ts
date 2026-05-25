@@ -27,7 +27,7 @@ export function useQuestionFlow(): QuestionFlowState {
   const mode        = useRoomStore((s) => s.mode);
   const teams       = useRoomStore((s) => s.teams);
   const answerPhase = useRoomStore((s) => s.answerPhase);
-  const pendingAnswer = useRoomStore((s) => s.pendingAnswer);
+  const pendingAnswer    = useRoomStore((s) => s.pendingAnswer);
   const submitAnswerRoom = useRoomStore((s) => s.submitAnswer);
   const resolveAnswer    = useRoomStore((s) => s.resolveAnswer);
 
@@ -48,8 +48,7 @@ export function useQuestionFlow(): QuestionFlowState {
 
   const canAnswer =
     game?.phase === 'question' &&
-    isMyTurn &&
-    answerPhase === 'idle';
+    isMyTurn;
 
   const submitAnswer = useCallback(
     (index: number) => {

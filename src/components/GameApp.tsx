@@ -32,6 +32,7 @@ export function GameApp() {
   const addPlayer       = useGameStore((s) => s.addPlayer);
   const startGame       = useGameStore((s) => s.startGame);
   const selectQuestion  = useGameStore((s) => s.selectQuestion);
+  const answerQuestion  = useGameStore((s) => s.answerQuestion);
   const returnToBoard   = useGameStore((s) => s.returnToBoard);
   const resetGame       = useGameStore((s) => s.resetGame);
   const updateCategories = useGameStore((s) => s.updateCategories);
@@ -102,7 +103,7 @@ export function GameApp() {
   );
 
   const handleJoinRoom = useCallback(
-    (name: string) => {
+    (name: string, _code?: string) => {
       const id = addPlayer(name);
       if (mode === 'teams') {
         const ct = { alpha: teams.alpha.playerIds.length, beta: teams.beta.playerIds.length };
@@ -158,7 +159,7 @@ export function GameApp() {
     return (
       <HomeScreen
         onCreateRoom={(name, isTrial, cats, gm) => handleCreateRoom(name, isTrial, cats, gm)}
-        onJoinRoom={(name) => handleJoinRoom(name)}
+        onJoinRoom={(name, code) => handleJoinRoom(name, code)}
       />
     );
   }
@@ -179,6 +180,7 @@ export function GameApp() {
         players={game.room.players}
         hostMessage={game.hostMessage}
         onPlayAgain={rematch}
+        onNewGame={resetGame}
         teams={winnerTeamData}
         mode={mode}
       />
@@ -375,8 +377,8 @@ export function GameApp() {
             timer={game.timer}
             maxTimer={15}
             onAnswer={(idx) => {
-              if (!qflow.canAnswer && qflow.isMyTurn) return; // guard during spectate
-              if (localPlayerId) useGameStore.getState().answerQuestion(localPlayerId, idx);
+              if (!qflow.canAnswer) return;
+              if (localPlayerId) answerQuestion(localPlayerId, idx);
             }}
             disabled={!qflow.canAnswer}
             hasBomb={hasBomb}

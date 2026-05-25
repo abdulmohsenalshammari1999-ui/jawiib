@@ -12,6 +12,7 @@ interface GameOverScreenProps {
   players: Player[];
   hostMessage: string;
   onPlayAgain: () => void;
+  onNewGame?: () => void;
   teams?: { alpha: TeamResult; beta: TeamResult } | null;
   mode?: 'ffa' | 'teams';
 }
@@ -20,6 +21,7 @@ export function GameOverScreen({
   players,
   hostMessage,
   onPlayAgain,
+  onNewGame,
   teams,
   mode = 'ffa',
 }: GameOverScreenProps) {
@@ -126,9 +128,19 @@ export function GameOverScreen({
           </div>
         </div>
 
-        <button onClick={onPlayAgain} className="btn-gold w-full text-lg py-4">
-          العب مرة ثانية 🎮
-        </button>
+        <div className="flex flex-col gap-3">
+          <button onClick={onPlayAgain} className="btn-gold w-full text-lg py-4">
+            العب مرة ثانية 🎮
+          </button>
+          {onNewGame && (
+            <button
+              onClick={onNewGame}
+              className="w-full text-sm py-3 rounded-xl border border-jawwib-border text-jawwib-text-dim hover:border-jawwib-gold hover:text-jawwib-gold transition-all"
+            >
+              لعبة جديدة 🏠
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

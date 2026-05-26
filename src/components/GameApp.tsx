@@ -120,6 +120,7 @@ export function GameApp() {
   const [showPayment, setShowPayment] = useState(false);
   const [showIntro, setShowIntro]     = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [picksPerTeam, setPicksPerTeam] = useState(3);
   const [scorePopup, setScorePopup]   = useState<{ points: number; color?: string } | null>(null);
   const prevLastAnswer = useRef(game?.lastAnswer);
   const prevPhase      = useRef(game?.phase);
@@ -129,6 +130,13 @@ export function GameApp() {
   useEffect(() => {
     if (game?.phase === 'board') setSubView('lobby');
   }, [game?.phase]);
+
+  // Auto-start draft when entering draft subView
+  useEffect(() => {
+    if (subView === 'draft' && mode === 'teams' && draft.draft === null) {
+      draft.startDraft(picksPerTeam);
+    }
+  }, [subView]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Score popup + audio on answer result
   useEffect(() => {
@@ -334,10 +342,11 @@ export function GameApp() {
         <TeamSetupScreen
           alphaName={teams.alpha.name}
           betaName={teams.beta.name}
-          onConfirm={(a, b) => {
+          onConfirm={(a, b, picks) => {
             renameTeam('alpha', a);
             renameTeam('beta', b);
-            setSubView('teams');
+            setPicksPerTeam(picks);
+            setSubView('draft');
           }}
         />
       );
@@ -428,46 +437,33 @@ export function GameApp() {
     }
 
     if (subView === 'draft' && !game.room.isTrial) {
-      return (
-        <div className="min-h-screen p-4">
-          <HostBubble message={game.hostMessage} compact />
-          <div className="max-w-xl mx-auto mt-4">
-            {draft.draft === null ? (
-              <div className="text-center py-12">
-                <p className="text-jawwib-text-dim mb-4 text-sm">
-                  {mode === 'teams' ? 'كل فريق يختار فئاته بالتناوب (snake draft)' : 'اختر الفئات التي تريدها'}
-                </p>
-                {isHost ? (
-                  <button onClick={() => draft.startDraft(mode === 'teams' ? 3 : 6)} className="btn-gold px-8 py-3">
-                    ابدأ الـ Draft 🎯
-                  </button>
-                ) : (
-                  <p className="text-jawwib-text-dim text-sm">بانتظار المضيف لبدء الـ Draft...</p>
-                )}
-                <button onClick={() => setSubView('lobby')} className="mt-4 block mx-auto text-jawwib-text-dim text-sm hover:text-jawwib-text transition-colors">
-                  ← رجوع
-                </button>
-              </div>
-            ) : (
-              <CategoryDraftScreen
-                draftState={{
-                  picks: draft.draft.picks.map((p) => ({ teamId: p.teamId, categoryId: p.categoryId })),
-                  currentTeam: draft.draft.currentTeam,
-                  round: draft.draft.round,
-                  complete: draft.draft.isComplete,
-                  alphaCategories: draft.alphaCategories,
-                  betaCategories: draft.betaCategories,
-                }}
-                localTeamId={localTeamId}
-                isHost={isHost}
-                availableCategories={ALL_CATS.map((c) => ({ id: c.id, name: c.name, icon: c.icon, color: c.color }))}
-                onPick={(catId) => draft.pick(catId as CategoryId)}
-                onSkipDraft={() => { draft.skipDraft(); handleDraftComplete(); }}
-                onStartGame={() => { handleDraftComplete(); handleStartGame(); }}
-              />
-            )}
+      if (draft.draft === null) {
+        return (
+          <div className="min-h-screen bg-diwaniya flex items-center justify-center">
+            <p className="text-jawwib-text-dim text-sm animate-pulse-gold">جاري التحميل...</p>
           </div>
-        </div>
+        );
+      }
+      return (
+        <CategoryDraftScreen
+          draftState={{
+            picks: draft.draft.picks.map((p) => ({ teamId: p.teamId, categoryId: p.categoryId })),
+            currentTeam: draft.draft.currentTeam,
+            round: draft.draft.round,
+            complete: draft.draft.isComplete,
+            alphaCategories: draft.alphaCategories,
+            betaCategories: draft.betaCategories,
+          }}
+          localTeamId={localTeamId}
+          isHost={isHost}
+          availableCategories={ALL_CATS.map((c) => ({ id: c.id, name: c.name, icon: c.icon, color: c.color }))}
+          requiredPerTeam={picksPerTeam}
+          alphaTeamName={teams.alpha.name}
+          betaTeamName={teams.beta.name}
+          onPick={(catId) => draft.pick(catId as CategoryId)}
+          onSkipDraft={() => { draft.skipDraft(); handleDraftComplete(); }}
+          onStartGame={() => { handleDraftComplete(); handleStartGame(); }}
+        />
       );
     }
 

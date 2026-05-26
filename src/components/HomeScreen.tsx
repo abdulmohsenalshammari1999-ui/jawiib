@@ -89,8 +89,8 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
         {/* Stats row */}
         <div className="flex items-center gap-4 text-center">
           {[
-            { n: '384', label: 'سؤال' },
-            { n: '16',  label: 'فئة' },
+            { n: '456', label: 'سؤال' },
+            { n: '22',  label: 'فئة' },
             { n: '6',   label: 'مستوى' },
             { n: '💣',  label: 'تخريب' },
           ].map((s) => (
@@ -220,46 +220,53 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
           </div>
         </div>
 
-        {/* Category selection */}
-        <div className="mb-5">
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-xs text-jawwib-text-dim">الفئات ({selectedCats.length}/{categories.length})</label>
-            <button
-              onClick={() =>
-                setSelectedCats(selectedCats.length === categories.length ? [] : categories.map((c) => c.id))
-              }
-              className="text-xs text-jawwib-gold hover:text-jawwib-gold-dark"
-            >
-              {selectedCats.length === categories.length ? 'إلغاء الكل' : 'اختر الكل'}
-            </button>
+        {/* Category selection — FFA only; teams mode uses draft */}
+        {gameMode === 'ffa' && (
+          <div className="mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs text-jawwib-text-dim">الفئات ({selectedCats.length}/{categories.length})</label>
+              <button
+                onClick={() =>
+                  setSelectedCats(selectedCats.length === categories.length ? [] : categories.map((c) => c.id))
+                }
+                className="text-xs text-jawwib-gold hover:text-jawwib-gold-dark"
+              >
+                {selectedCats.length === categories.length ? 'إلغاء الكل' : 'اختر الكل'}
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto">
+              {categories.map((cat) => {
+                const sel = selectedCats.includes(cat.id);
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => toggleCategory(cat.id)}
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all text-right text-sm ${
+                      sel
+                        ? 'border-jawwib-gold bg-jawwib-gold/8 text-jawwib-text'
+                        : 'border-jawwib-border bg-jawwib-surface text-jawwib-text-dim opacity-60'
+                    }`}
+                  >
+                    <span className="text-base">{cat.icon}</span>
+                    <span className="font-bold text-xs">{cat.name}</span>
+                    {sel && <span className="text-jawwib-gold text-[10px] mr-auto">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto">
-            {categories.map((cat) => {
-              const sel = selectedCats.includes(cat.id);
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => toggleCategory(cat.id)}
-                  className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all text-right text-sm ${
-                    sel
-                      ? 'border-jawwib-gold bg-jawwib-gold/8 text-jawwib-text'
-                      : 'border-jawwib-border bg-jawwib-surface text-jawwib-text-dim opacity-60'
-                  }`}
-                >
-                  <span className="text-base">{cat.icon}</span>
-                  <span className="font-bold text-xs">{cat.name}</span>
-                  {sel && <span className="text-jawwib-gold text-[10px] mr-auto">✓</span>}
-                </button>
-              );
-            })}
+        )}
+        {gameMode === 'teams' && (
+          <div className="mb-5 p-3 rounded-xl border border-jawwib-gold/30 bg-jawwib-gold/5 text-center">
+            <p className="text-jawwib-gold text-xs font-bold">🎯 كل فريق سيختار فئاته في الجولة التالية</p>
           </div>
-        </div>
+        )}
 
         {/* Start buttons */}
         <div className="space-y-2">
           <button
-            onClick={() => onCreateRoom(playerName, false, selectedCats, gameMode)}
-            disabled={!playerName.trim() || selectedCats.length < 2}
+            onClick={() => onCreateRoom(playerName, false, gameMode === 'teams' ? undefined : selectedCats, gameMode)}
+            disabled={!playerName.trim() || (gameMode === 'ffa' && selectedCats.length < 2)}
             className="btn-gold w-full text-lg py-4"
           >
             👑 لعبة كاملة — 4 د.ك

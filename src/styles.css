@@ -2,20 +2,21 @@
 @import "tailwindcss" source("../");
 
 @theme {
-  /* ── Warm ivory light palette ─────────────────────────────────── */
-  --color-jawwib-bg:         #FDFAF2;
-  --color-jawwib-surface:    #FFF8E4;
+  /* ── Kuwait Identity Palette ───────────────────────────────────────── */
+  /* Desert sand / pearl white / gahwa gold / gulf sea blue              */
+  --color-jawwib-bg:         #F4EED8;   /* desert sand */
+  --color-jawwib-surface:    #FBF8EE;   /* pearl white */
   --color-jawwib-card:       #FFFFFF;
-  --color-jawwib-border:     #E5CFA0;
-  --color-jawwib-gold:       #C8880A;
-  --color-jawwib-gold-light: #F5D060;
-  --color-jawwib-gold-dark:  #9B6B08;
-  --color-jawwib-text:       #1C1006;
-  --color-jawwib-text-dim:   #8B7349;
-  --color-jawwib-green:      #15803D;
-  --color-jawwib-red:        #B91C1C;
-  --color-jawwib-blue:       #1D4ED8;
-  --color-jawwib-purple:     #6D28D9;
+  --color-jawwib-border:     #C9A87A;   /* camel leather */
+  --color-jawwib-gold:       #B07D1A;   /* gahwa dark gold */
+  --color-jawwib-gold-light: #D4A94A;   /* light gahwa */
+  --color-jawwib-gold-dark:  #8A6010;
+  --color-jawwib-text:       #1A1208;   /* dark coffee */
+  --color-jawwib-text-dim:   #7A6040;   /* muted sand */
+  --color-jawwib-green:      #1A7A42;   /* sea green */
+  --color-jawwib-red:        #B82118;   /* warm coral */
+  --color-jawwib-blue:       #1A5FA8;   /* gulf sea */
+  --color-jawwib-purple:     #6B4CAA;   /* oud purple */
 }
 
 body {
@@ -31,8 +32,8 @@ code {
 }
 
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #FFF8E4; }
-::-webkit-scrollbar-thumb { background: #E5CFA0; border-radius: 3px; }
+::-webkit-scrollbar-track { background: #F4EED8; }
+::-webkit-scrollbar-thumb { background: #C9A87A; border-radius: 3px; }
 
 /* ── Keyframes ─────────────────────────────────────────────────────── */
 
@@ -47,8 +48,8 @@ code {
 }
 
 @keyframes pulse-gold {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(200, 136, 10, 0.35); }
-  50%       { box-shadow: 0 0 22px 6px rgba(200, 136, 10, 0.18); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(176, 125, 26, 0.35); }
+  50%       { box-shadow: 0 0 22px 6px rgba(176, 125, 26, 0.18); }
 }
 
 @keyframes shake {
@@ -71,24 +72,24 @@ code {
 }
 
 @keyframes team-pulse-blue {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(29, 78, 216, 0); }
-  50%       { box-shadow: 0 0 0 6px rgba(29, 78, 216, 0.22); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(26, 95, 168, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(26, 95, 168, 0.22); }
 }
 
 @keyframes team-pulse-red {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(185, 28, 28, 0); }
-  50%       { box-shadow: 0 0 0 6px rgba(185, 28, 28, 0.22); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(184, 33, 24, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(184, 33, 24, 0.22); }
 }
 
 @keyframes correct-flash {
   0%   { background: transparent; }
-  30%  { background: rgba(21, 128, 61, 0.18); }
+  30%  { background: rgba(26, 122, 66, 0.18); }
   100% { background: transparent; }
 }
 
 @keyframes wrong-flash {
   0%   { background: transparent; }
-  30%  { background: rgba(185, 28, 28, 0.18); }
+  30%  { background: rgba(184, 33, 24, 0.18); }
   100% { background: transparent; }
 }
 
@@ -105,8 +106,8 @@ code {
 
 @keyframes tick-pulse {
   0%   { transform: scale(1);    color: inherit; }
-  40%  { transform: scale(1.25); color: #B91C1C; }
-  100% { transform: scale(1);    color: #B91C1C; }
+  40%  { transform: scale(1.25); color: #B82118; }
+  100% { transform: scale(1);    color: #B82118; }
 }
 
 @keyframes countdown-pop {
@@ -137,6 +138,11 @@ code {
   100% { transform: translateY(120vh) rotate(720deg); opacity: 0; }
 }
 
+@keyframes sadu-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
 /* ── Utility classes ───────────────────────────────────────────────── */
 
 .animate-fade-in        { animation: fadeIn       0.4s ease-out; }
@@ -161,23 +167,39 @@ code {
 
 /* ── Gold gradient text ──────────────────────────────────────────── */
 .text-gold-gradient {
-  background: linear-gradient(135deg, #C8880A, #F5D060, #C8880A);
+  background: linear-gradient(135deg, #B07D1A, #D4A94A, #B07D1A);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
+/* ── Sadu pattern accent header ──────────────────────────────────── */
+.sadu-accent {
+  background: repeating-linear-gradient(
+    90deg,
+    #B07D1A 0px, #B07D1A 4px,
+    #C9A87A 4px, #C9A87A 8px,
+    #1A5FA8 8px, #1A5FA8 12px,
+    #C9A87A 12px, #C9A87A 16px,
+    #B82118 16px, #B82118 20px,
+    #C9A87A 20px, #C9A87A 24px
+  );
+  height: 3px;
+  border-radius: 2px;
+  opacity: 0.7;
+}
+
 /* ── Card ────────────────────────────────────────────────────────── */
 .game-card {
   background: #FFFFFF;
-  border: 1.5px solid #E5CFA0;
+  border: 1.5px solid #C9A87A;
   border-radius: 1rem;
-  box-shadow: 0 2px 12px rgba(200, 136, 10, 0.08), 0 1px 3px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 12px rgba(176, 125, 26, 0.08), 0 1px 3px rgba(0,0,0,0.05);
   transition: all 0.25s;
 }
 .game-card:hover {
-  border-color: #C8880A;
-  box-shadow: 0 4px 20px rgba(200, 136, 10, 0.18), 0 1px 3px rgba(0,0,0,0.06);
+  border-color: #B07D1A;
+  box-shadow: 0 4px 20px rgba(176, 125, 26, 0.16), 0 1px 3px rgba(0,0,0,0.05);
 }
 
 /* ── Board cell ──────────────────────────────────────────────────── */
@@ -185,26 +207,26 @@ code {
   position: relative;
   overflow: hidden;
   border-radius: 0.75rem;
-  border: 1.5px solid #E5CFA0;
+  border: 1.5px solid #C9A87A;
   background: #FFFFFF;
   cursor: pointer;
   transition: all 0.18s;
 }
 .board-cell:hover:not(.answered) {
-  border-color: var(--cell-hover-color, #C8880A);
+  border-color: var(--cell-hover-color, #B07D1A);
   transform: scale(1.06);
-  box-shadow: 0 0 14px var(--cell-glow-color, rgba(200, 136, 10, 0.25));
+  box-shadow: 0 0 14px var(--cell-glow-color, rgba(176, 125, 26, 0.25));
 }
 .board-cell.answered {
   opacity: 0.3;
   cursor: default;
-  background: #FFF8E4;
+  background: #F4EED8;
 }
 
 /* ── Gold button ─────────────────────────────────────────────────── */
 .btn-gold {
-  background: linear-gradient(135deg, #C8880A, #F5D060);
-  color: #1C1006;
+  background: linear-gradient(135deg, #B07D1A, #D4A94A);
+  color: #FFFFFF;
   font-weight: 800;
   border-radius: 0.85rem;
   padding: 0.75rem 2rem;
@@ -212,25 +234,27 @@ code {
   cursor: pointer;
   transition: all 0.2s;
   font-family: 'Tajawal', sans-serif;
+  letter-spacing: 0.02em;
 }
 .btn-gold:hover {
-  box-shadow: 0 0 24px rgba(200, 136, 10, 0.45);
+  box-shadow: 0 0 24px rgba(176, 125, 26, 0.45);
   transform: translateY(-2px);
 }
 .btn-gold:active { transform: scale(0.97); }
 .btn-gold:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+  background: #C9A87A;
 }
 
 /* ── Team glows ──────────────────────────────────────────────────── */
 .team-glow-blue {
-  box-shadow: 0 0 18px rgba(29,78,216,0.25), inset 0 0 18px rgba(29,78,216,0.05);
+  box-shadow: 0 0 18px rgba(26,95,168,0.25), inset 0 0 18px rgba(26,95,168,0.05);
 }
 .team-glow-red {
-  box-shadow: 0 0 18px rgba(185,28,28,0.25), inset 0 0 18px rgba(185,28,28,0.05);
+  box-shadow: 0 0 18px rgba(184,33,24,0.25), inset 0 0 18px rgba(184,33,24,0.05);
 }
 
 /* ── Answer option ────────────────────────────────────────────────── */
@@ -243,7 +267,7 @@ code {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(200,136,10,0.12), transparent);
+  background: radial-gradient(circle at center, rgba(176,125,26,0.12), transparent);
   opacity: 0;
   transition: opacity 0.25s;
 }
@@ -272,13 +296,15 @@ code {
 
 input, textarea {
   background: #FFFFFF;
-  border: 1.5px solid #E5CFA0;
-  color: #1C1006;
+  border: 1.5px solid #C9A87A;
+  color: #1A1208;
+  border-radius: 0.75rem;
+  padding: 0.65rem 1rem;
 }
 input:focus, textarea:focus {
-  border-color: #C8880A;
+  border-color: #B07D1A;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(200,136,10,0.12);
+  box-shadow: 0 0 0 3px rgba(176,125,26,0.12);
 }
 
 /* ── Mobile touch feedback ───────────────────────────────────────── */
@@ -295,4 +321,12 @@ input:focus, textarea:focus {
   animation: confetti-fall linear forwards;
   pointer-events: none;
   z-index: 100;
+}
+
+/* ── Diwaniya texture bg ─────────────────────────────────────────── */
+.bg-diwaniya {
+  background-color: #F4EED8;
+  background-image:
+    radial-gradient(circle at 20% 50%, rgba(176,125,26,0.04) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(26,95,168,0.04) 0%, transparent 40%);
 }

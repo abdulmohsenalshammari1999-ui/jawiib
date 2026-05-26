@@ -1,3 +1,11 @@
+/**
+ * Static question bank (456 questions across 22 categories, 6 tiers).
+ *
+ * CMS alignment (future): replace QUESTIONS array with fetchQuestions() from future-backend.ts.
+ * Admin import format: CSV columns = category, tier, text, opt0 (correct), opt1, opt2, opt3, active.
+ * AI generation: use AIGenerationRequest with existingIds to prevent duplicates.
+ * Difficulty mapping: tier 1 = easiest (100pt), tier 6 = hardest (600pt).
+ */
 import type { Question, CategoryId } from './types';
 
 function q(

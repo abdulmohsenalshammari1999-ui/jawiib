@@ -24,52 +24,10 @@ import { ScorePopup } from './game/ScorePopup';
 import { CategoryDraftScreen } from './screens/CategoryDraftScreen';
 import { TeamSetupScreen } from './TeamSetupScreen';
 import { FeedbackModal } from './FeedbackModal';
+import { EntryScreen } from './EntryScreen';
+import { GameLoadingScreen } from './GameLoadingScreen';
 
 type SubView = 'setup' | 'lobby' | 'teams' | 'draft';
-
-// Intro countdown: 3, 2, 1, ابدأ
-function IntroCountdown({ onDone }: { onDone: () => void }) {
-  const [step, setStep] = useState(0);
-  const steps = ['3', '2', '1', 'ابدأ! 🚀'];
-
-  useEffect(() => {
-    audio.playCountdown();
-    const interval = setInterval(() => {
-      setStep((s) => {
-        const next = s + 1;
-        if (next < steps.length - 1) audio.playCountdown();
-        if (next === steps.length - 1) audio.playCountdownGo();
-        if (next >= steps.length) {
-          clearInterval(interval);
-          onDone();
-        }
-        return next;
-      });
-    }, 900);
-    return () => clearInterval(interval);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const label = steps[Math.min(step, steps.length - 1)];
-  const isFinal = step >= steps.length - 1;
-
-  return (
-    <div className="fixed inset-0 bg-jawwib-bg flex items-center justify-center z-50">
-      <div className="text-center">
-        <p
-          key={step}
-          className={`font-black text-center leading-none animate-countdown-pop ${
-            isFinal
-              ? 'text-7xl text-gold-gradient'
-              : 'text-9xl'
-          }`}
-          style={!isFinal ? { color: step === 0 ? '#1D4ED8' : step === 1 ? '#C8880A' : '#B91C1C' } : undefined}
-        >
-          {label}
-        </p>
-      </div>
-    </div>
-  );
-}
 
 export function GameApp() {
   // ── Store slices ──────────────────────────────────────────────────────────────
@@ -116,11 +74,12 @@ export function GameApp() {
   const draft  = useCategoryDraft();
 
   // ── Local state ───────────────────────────────────────────────────────────────
-  const [subView, setSubView]         = useState<SubView>('lobby');
-  const [showPayment, setShowPayment] = useState(false);
-  const [showIntro, setShowIntro]     = useState(false);
+  const [subView, setSubView]           = useState<SubView>('lobby');
+  const [showPayment, setShowPayment]   = useState(false);
+  const [showIntro, setShowIntro]       = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [picksPerTeam, setPicksPerTeam] = useState(3);
+  const [showEntry, setShowEntry]       = useState(true);
   const [scorePopup, setScorePopup]   = useState<{ points: number; color?: string } | null>(null);
   const prevLastAnswer = useRef(game?.lastAnswer);
   const prevPhase      = useRef(game?.phase);
@@ -259,9 +218,31 @@ export function GameApp() {
     };
   })();
 
-  // ── Intro countdown overlay ───────────────────────────────────────────────────
+  // ── Entry screen ──────────────────────────────────────────────────────────────
+  if (showEntry) {
+    return (
+      <EntryScreen
+        onEnter={() => setShowEntry(false)}
+        soundEnabled={soundEnabled}
+        musicEnabled={musicEnabled}
+        onToggleSound={toggleSound}
+        onToggleMusic={toggleMusic}
+      />
+    );
+  }
+
+  // ── Game loading (countdown) overlay ─────────────────────────────────────────
   if (showIntro) {
-    return <IntroCountdown onDone={handleIntroDone} />;
+    return (
+      <GameLoadingScreen
+        onDone={handleIntroDone}
+        alphaTeam={mode === 'teams' ? { name: teams.alpha.name, color: '#1A5FA8', emoji: '🛡️' } : null}
+        betaTeam={mode === 'teams' ? { name: teams.beta.name,  color: '#B82118', emoji: '⚔️' } : null}
+        selectedCategories={(game?.room.categories ?? []) as CategoryId[]}
+        hostMessage={game?.hostMessage ?? ''}
+        mode={mode}
+      />
+    );
   }
 
   // ── Sound/Music toggle bar ────────────────────────────────────────────────────

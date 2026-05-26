@@ -1,3 +1,10 @@
+/**
+ * Static category definitions.
+ *
+ * CMS alignment (future): each entry maps to AdminCategory in future-backend.ts.
+ * Fields to add when migrating: active (bool), questionCount, nameEn, updatedAt.
+ * Admin import: CSV columns = id, nameAr, nameEn, icon, color, active.
+ */
 import type { Category, CategoryId } from './types';
 
 export const categories: Category[] = [

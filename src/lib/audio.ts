@@ -2,7 +2,6 @@ class AudioManager {
   private _ctx: AudioContext | null = null;
   soundEnabled = true;
   musicEnabled = true;
-  private _bgmGain: GainNode | null = null;
   private _bgmPlaying = false;
 
   private ctx(): AudioContext {

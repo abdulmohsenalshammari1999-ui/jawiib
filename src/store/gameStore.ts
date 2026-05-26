@@ -8,6 +8,8 @@ import type {
   CategoryId,
   GameBoardCell,
   SabotageType,
+  TeamId,
+  WeaponType,
 } from '@/lib/types';
 import { getQuestionById } from '@/lib/questions';
 import { useSabotageStore } from './sabotageStore';
@@ -21,7 +23,15 @@ import {
   getBombExplosionMessage,
   getDoubleWinMessage,
   getDoubleLossMessage,
+  getMysteryBoxMessage,
+  getWeaponEarnedMessage,
+  getWeaponUsedTimerBomb,
+  getWeaponUsedImmunity,
+  getWeaponUsedForcedCategory,
+  getWeaponUsedAskFriend,
+  getImmunityProtectedMessage,
 } from '@/lib/host';
+import { getCategoryById } from '@/lib/categories';
 import { ATTACK_TYPES } from '@/lib/sabotages';
 import { engine }           from '@/engine/questionEngine';
 import { validateAnswer }   from '@/engine/answerValidator';
@@ -105,6 +115,10 @@ export interface GameStoreState {
   setHostMessage: (msg: string) => void;
   updateCategories: (cats: CategoryId[]) => void;
   rematch: () => void;
+  // Weapon system
+  setTeamMembership: (alpha: string[], beta: string[]) => void;
+  dismissPendingWeapon: () => void;
+  useWeapon: (teamId: TeamId, weapon: WeaponType, opts?: { targetTeamId?: TeamId; categoryId?: CategoryId }) => void;
 }
 
 export const useGameStore = create<GameStoreState>()(
@@ -161,6 +175,14 @@ export const useGameStore = create<GameStoreState>()(
         selectedSabotage: null,
         sabotageTarget: null,
         lastAnswer: null,
+        teamMembership: null,
+        activeTeamId: null,
+        teamStreaks: {},
+        teamWeapons: {},
+        pendingWeapon: null,
+        activeBomb: null,
+        activeImmunity: {},
+        forcedCategory: null,
       };
       set({ game, localPlayerId: playerId, answeredCount: 0 });
       return { roomId, playerId };
@@ -207,12 +229,18 @@ export const useGameStore = create<GameStoreState>()(
       const question = getQuestionById(questionId);
       if (!question) return;
 
-      const localPlayerId = get().localPlayerId;
       const sabStore = useSabotageStore.getState();
 
       // Check freeze effect for the active player
       const frozenDuration = game.activePlayer ? sabStore.getFreezeFor(game.activePlayer) : null;
-      const timeLimit = frozenDuration ?? TIMER_BY_POINTS[question.points] ?? DEFAULT_TIMER;
+      let timeLimit = frozenDuration ?? TIMER_BY_POINTS[question.points] ?? DEFAULT_TIMER;
+
+      // Apply timer bomb: halve the time for the targeted team
+      let activeBomb = game.activeBomb;
+      if (activeBomb && activeBomb === game.activeTeamId) {
+        timeLimit = Math.max(5, Math.ceil(timeLimit / 2));
+        activeBomb = null;
+      }
 
       // Bind scramble to this specific question if one is pending
       if (game.activePlayer) {
@@ -229,6 +257,7 @@ export const useGameStore = create<GameStoreState>()(
           phase: 'question',
           currentQuestion: question,
           timer: timeLimit,
+          activeBomb,
         },
       });
 
@@ -335,7 +364,55 @@ export const useGameStore = create<GameStoreState>()(
 
       sabStore.advanceTurn();
 
-      const hostMessage = doubleWinMsg ?? doublelossMsg ?? bombMsg
+      // ── Team weapon system ──────────────────────────────────────────────────
+      const membership = game.teamMembership;
+      const answeringTeamId: TeamId | null = membership
+        ? membership.alpha.includes(playerId) ? 'alpha'
+        : membership.beta.includes(playerId)  ? 'beta'
+        : null
+        : null;
+
+      let teamStreaks   = { ...game.teamStreaks };
+      let teamWeapons  = { ...game.teamWeapons };
+      let pendingWeapon = game.pendingWeapon;
+      let activeImmunity = { ...game.activeImmunity };
+      let immunityMsg: string | null = null;
+
+      if (answeringTeamId) {
+        const currentStreak = teamStreaks[answeringTeamId] ?? 0;
+        if (result.correct) {
+          const newTeamStreak = currentStreak + 1;
+          teamStreaks[answeringTeamId] = newTeamStreak;
+          // Trigger mystery box every 3 consecutive correct answers
+          if (newTeamStreak >= 3 && !pendingWeapon) {
+            teamStreaks[answeringTeamId] = 0;
+            const weapons: WeaponType[] = ['timer_bomb', 'immunity', 'forced_category', 'ask_friend'];
+            const weapon = weapons[Math.floor(Math.random() * weapons.length)];
+            pendingWeapon = { teamId: answeringTeamId, weapon };
+          }
+        } else {
+          // Immunity check: if wrong and immunity active, pass without penalty
+          if (activeImmunity[answeringTeamId]) {
+            activeImmunity[answeringTeamId] = false;
+            immunityMsg = getImmunityProtectedMessage();
+          }
+          teamStreaks[answeringTeamId] = 0;
+        }
+      }
+
+      // Toggle which team picks next
+      const nextTeamId: TeamId | null = game.activeTeamId === 'alpha' ? 'beta'
+        : game.activeTeamId === 'beta' ? 'alpha'
+        : null;
+
+      // If immunity was active and wrong answer, override points to 0
+      let adjustedFinalPoints = finalPoints;
+      if (immunityMsg && !result.correct && answeringTeamId && game.activeImmunity[answeringTeamId]) {
+        adjustedFinalPoints = 0;
+      }
+
+      const hostMessage = immunityMsg ?? doubleWinMsg ?? doublelossMsg ?? bombMsg
+        ?? (pendingWeapon && !game.pendingWeapon ? getMysteryBoxMessage() : null)
         ?? (result.correct
           ? result.newStreak >= 3 ? getStreakMessage() : getWinnerRoast()
           : getLoserRoast());
@@ -352,6 +429,7 @@ export const useGameStore = create<GameStoreState>()(
             status: allAnswered ? 'finished' : 'playing',
           },
           activePlayer: nextActivePlayer,
+          activeTeamId: nextTeamId ?? game.activeTeamId,
           hostMessage: allAnswered
             ? getGameOverMessage(
                 [...updatedPlayers].sort((a, b) => b.score - a.score)[0].id === playerId
@@ -360,10 +438,14 @@ export const useGameStore = create<GameStoreState>()(
           lastAnswer: {
             playerId,
             correct:          result.correct,
-            points:           finalPoints,
+            points:           adjustedFinalPoints,
             timeBonus:        result.timeBonus,
             streakMultiplier: result.streakMultiplier * doubleMultiplier,
           },
+          teamStreaks,
+          teamWeapons,
+          pendingWeapon,
+          activeImmunity,
         },
         answeredCount,
       });
@@ -495,9 +577,117 @@ export const useGameStore = create<GameStoreState>()(
           selectedSabotage: null,
           sabotageTarget: null,
           lastAnswer: null,
+          teamStreaks: {},
+          teamWeapons: game.teamMembership ? { alpha: [], beta: [] } : {},
+          pendingWeapon: null,
+          activeBomb: null,
+          activeImmunity: {},
+          forcedCategory: null,
+          activeTeamId: game.teamMembership ? 'alpha' : null,
         },
         answeredCount: 0,
       });
+    },
+
+    setTeamMembership: (alpha, beta) => {
+      const { game } = get();
+      if (!game) return;
+      set({
+        game: {
+          ...game,
+          teamMembership: { alpha, beta },
+          activeTeamId: 'alpha',
+          teamStreaks: { alpha: 0, beta: 0 },
+          teamWeapons: { alpha: [], beta: [] },
+          pendingWeapon: null,
+          activeBomb: null,
+          activeImmunity: { alpha: false, beta: false },
+          forcedCategory: null,
+        },
+      });
+    },
+
+    dismissPendingWeapon: () => {
+      const { game } = get();
+      if (!game || !game.pendingWeapon) return;
+      const { teamId, weapon } = game.pendingWeapon;
+      const teamWeapons = { ...game.teamWeapons };
+      teamWeapons[teamId] = [...(teamWeapons[teamId] ?? []), weapon];
+      set({
+        game: {
+          ...game,
+          pendingWeapon: null,
+          teamWeapons,
+          hostMessage: getWeaponEarnedMessage(weapon),
+        },
+      });
+    },
+
+    useWeapon: (teamId, weapon, opts) => {
+      const { game } = get();
+      if (!game) return;
+
+      // Remove first instance of weapon from inventory
+      const teamWeapons = { ...game.teamWeapons };
+      const inv = [...(teamWeapons[teamId] ?? [])];
+      const idx = inv.indexOf(weapon);
+      if (idx === -1) return;
+      inv.splice(idx, 1);
+      teamWeapons[teamId] = inv;
+
+      switch (weapon) {
+        case 'timer_bomb': {
+          const targetTeam = opts?.targetTeamId ?? (teamId === 'alpha' ? 'beta' : 'alpha');
+          set({
+            game: {
+              ...game,
+              teamWeapons,
+              activeBomb: targetTeam,
+              hostMessage: getWeaponUsedTimerBomb(),
+            },
+          });
+          break;
+        }
+        case 'immunity': {
+          const activeImmunity = { ...game.activeImmunity, [teamId]: true };
+          set({
+            game: {
+              ...game,
+              teamWeapons,
+              activeImmunity,
+              hostMessage: getWeaponUsedImmunity(),
+            },
+          });
+          break;
+        }
+        case 'forced_category': {
+          const targetTeam  = opts?.targetTeamId ?? (teamId === 'alpha' ? 'beta' : 'alpha');
+          const categoryId  = opts?.categoryId;
+          const catName     = categoryId ? getCategoryById(categoryId)?.name ?? categoryId : '';
+          set({
+            game: {
+              ...game,
+              teamWeapons,
+              forcedCategory: categoryId ? { targetTeamId: targetTeam, categoryId } : null,
+              hostMessage: getWeaponUsedForcedCategory(catName),
+            },
+          });
+          break;
+        }
+        case 'ask_friend': {
+          // Add 25 seconds to current question timer if in question phase
+          const extraTimer = game.phase === 'question' ? 25 : 0;
+          set({
+            game: {
+              ...game,
+              teamWeapons,
+              timer: game.timer + extraTimer,
+              hostMessage: getWeaponUsedAskFriend(),
+            },
+          });
+          break;
+        }
+      }
     },
   }))
 );

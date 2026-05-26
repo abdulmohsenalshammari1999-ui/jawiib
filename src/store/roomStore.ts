@@ -156,6 +156,14 @@ export const useRoomStore = create<RoomStoreState>()(
             selectedSabotage: null,
             sabotageTarget: null,
             lastAnswer: snapshot.lastAnswer,
+            teamMembership: null,
+            activeTeamId: null,
+            teamStreaks: {},
+            teamWeapons: {},
+            pendingWeapon: null,
+            activeBomb: null,
+            activeImmunity: {},
+            forcedCategory: null,
           },
         });
       }

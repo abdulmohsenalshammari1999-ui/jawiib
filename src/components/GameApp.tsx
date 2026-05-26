@@ -26,6 +26,8 @@ import { TeamSetupScreen } from './TeamSetupScreen';
 import { FeedbackModal } from './FeedbackModal';
 import { EntryScreen } from './EntryScreen';
 import { GameLoadingScreen } from './GameLoadingScreen';
+import { MysteryBoxOverlay } from './game/MysteryBoxOverlay';
+import { TeamWeaponInventory } from './game/TeamWeaponInventory';
 
 type SubView = 'setup' | 'lobby' | 'teams' | 'draft';
 
@@ -43,6 +45,9 @@ export function GameApp() {
   const resetGame        = useGameStore((s) => s.resetGame);
   const updateCategories = useGameStore((s) => s.updateCategories);
   const rematch          = useGameStore((s) => s.rematch);
+
+  const setTeamMembership    = useGameStore((s) => s.setTeamMembership);
+  const dismissPendingWeapon = useGameStore((s) => s.dismissPendingWeapon);
 
   const mode        = useRoomStore((s) => s.mode);
   const teams       = useRoomStore((s) => s.teams);
@@ -182,8 +187,11 @@ export function GameApp() {
 
   const handleIntroDone = useCallback(() => {
     setShowIntro(false);
+    if (mode === 'teams') {
+      setTeamMembership(teams.alpha.playerIds, teams.beta.playerIds);
+    }
     startGame();
-  }, [startGame]);
+  }, [startGame, mode, teams, setTeamMembership]);
 
   const handleSelectQuestion = useCallback(
     (qid: string) => {
@@ -217,6 +225,17 @@ export function GameApp() {
       beta:  { ...teamData.beta,  score: betaScore  },
     };
   })();
+
+  // ── Mystery Box overlay (mounted over result / board phases) ─────────────────
+  const MysteryBox = game?.pendingWeapon && mode === 'teams' ? (
+    <MysteryBoxOverlay
+      teamId={game.pendingWeapon.teamId}
+      teamName={teams[game.pendingWeapon.teamId]?.name ?? ''}
+      teamColor={game.pendingWeapon.teamId === 'alpha' ? '#1D4ED8' : '#B91C1C'}
+      weapon={game.pendingWeapon.weapon}
+      onCollect={dismissPendingWeapon}
+    />
+  ) : null;
 
   // ── Entry screen ──────────────────────────────────────────────────────────────
   if (showEntry) {
@@ -537,6 +556,7 @@ export function GameApp() {
       : null;
     return (
       <>
+        {MysteryBox}
         {scorePopup && <ScorePopup points={scorePopup.points} color={scorePopup.color} />}
         <div className="min-h-screen p-4 bg-jawwib-bg" />
         <ResultOverlay
@@ -561,6 +581,7 @@ export function GameApp() {
 
   return (
     <div className="min-h-screen p-4">
+      {MysteryBox}
       {scorePopup && <ScorePopup points={scorePopup.points} color={scorePopup.color} />}
 
       <div className="flex items-center justify-between mb-3">
@@ -623,6 +644,18 @@ export function GameApp() {
           />
         )}
       </div>
+
+      {mode === 'teams' && localTeamId && (
+        <TeamWeaponInventory
+          localTeamId={localTeamId}
+          teamWeapons={game.teamWeapons}
+          activeTeamId={game.activeTeamId}
+          phase={game.phase}
+          forcedCategory={game.forcedCategory}
+          activeImmunity={game.activeImmunity}
+          activeBomb={game.activeBomb}
+        />
+      )}
 
       {game.room.isTrial && answeredCount >= 6 && (
         <div className="mt-4 p-4 rounded-xl bg-jawwib-gold/10 border border-jawwib-gold/30 text-center">

@@ -30,6 +30,7 @@ export interface Question {
   text: string;
   options: string[];
   correctIndex: number;
+  evidence?: Evidence;
 }
 
 export interface Category {
@@ -80,6 +81,16 @@ export type SabotageType =
   | 'double'
   | 'mystery';
 
+// ─── Weapon / Mystery-Box system ─────────────────────────────────────────────
+
+export type WeaponType = 'timer_bomb' | 'immunity' | 'forced_category' | 'ask_friend';
+
+export interface Evidence {
+  title: string;
+  description: string;
+  imageUrl?: string;
+}
+
 export interface Sabotage {
   type: SabotageType;
   name: string;
@@ -105,6 +116,15 @@ export interface GameState {
     timeBonus: number;
     streakMultiplier: number;
   } | null;
+  // ── Teams weapon system ──
+  teamMembership: { alpha: string[]; beta: string[] } | null;
+  activeTeamId: TeamId | null;
+  teamStreaks: Partial<Record<TeamId, number>>;
+  teamWeapons: Partial<Record<TeamId, WeaponType[]>>;
+  pendingWeapon: { teamId: TeamId; weapon: WeaponType } | null;
+  activeBomb: TeamId | null;
+  activeImmunity: Partial<Record<TeamId, boolean>>;
+  forcedCategory: { targetTeamId: TeamId; categoryId: CategoryId } | null;
 }
 
 // ─── Sabotage system ──────────────────────────────────────────────────────────

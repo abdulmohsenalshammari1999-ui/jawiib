@@ -85,10 +85,30 @@ export function ResultOverlay({
         </div>
 
         {/* Host */}
-        <div className="flex items-start gap-2 bg-jawwib-surface rounded-xl p-3 mb-4">
+        <div className="flex items-start gap-2 bg-jawwib-surface rounded-xl p-3 mb-3">
           <span className="text-base shrink-0">🎙️</span>
           <p className="text-xs leading-relaxed text-jawwib-text">{hostMessage}</p>
         </div>
+
+        {/* Evidence card — shown for select questions */}
+        {currentQuestion.evidence && (
+          <div className="bg-jawwib-blue/6 border border-jawwib-blue/20 rounded-xl p-3 mb-3 animate-fade-in">
+            <p className="text-[11px] font-bold text-jawwib-blue mb-1 flex items-center gap-1">
+              <span>📖</span>
+              <span>{currentQuestion.evidence.title}</span>
+            </p>
+            <p className="text-[11px] leading-relaxed text-jawwib-text">
+              {currentQuestion.evidence.description}
+            </p>
+            {currentQuestion.evidence.imageUrl && (
+              <img
+                src={currentQuestion.evidence.imageUrl}
+                alt={currentQuestion.evidence.title}
+                className="mt-2 rounded-lg w-full object-cover max-h-28"
+              />
+            )}
+          </div>
+        )}
 
         <button onClick={onContinue} className="btn-gold w-full">
           متابعة ←

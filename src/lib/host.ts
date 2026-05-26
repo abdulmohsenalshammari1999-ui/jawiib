@@ -149,3 +149,57 @@ export function getGameOverMessage(isWinner: boolean): string {
 export function getIdleMessage(): string {
   return randomFrom(idleMessages);
 }
+
+export function getMysteryBoxMessage(): string {
+  return randomFrom([
+    'ثلاثة صح ورا بعض! يستاهلون صندوق الغموض! 🎁',
+    'سلسلة ذهبية! الصندوق يفتح — الله يستر إيش فيه 🎲',
+    'ماشاء الله! سلسلة صح = صندوق أسلحة! 🏆',
+  ]);
+}
+
+export function getWeaponEarnedMessage(weapon: string): string {
+  const names: Record<string, string> = {
+    timer_bomb:      'قنبلة الوقت 💣',
+    immunity:        'درع الحصانة 🛡️',
+    forced_category: 'فرض الفئة 🎯',
+    ask_friend:      'اتصل بصديق 📞',
+  };
+  return `كسبتم سلاح: ${names[weapon] ?? weapon}! استخدموه بحكمة 😈`;
+}
+
+export function getWeaponUsedTimerBomb(): string {
+  return randomFrom([
+    'قنبلة الوقت انطلقت! وقت الخصم نص! ⏱️💣',
+    'تكتك... الخصم بيجاوب بنص الوقت! 💥',
+  ]);
+}
+
+export function getWeaponUsedImmunity(): string {
+  return randomFrom([
+    'الحصانة نشطة! إذا غلطتوا المرة الجاية ما راح تخسرون شي 🛡️',
+    'درع الحماية جاهز! سؤال مضمون بدون خسارة 🔰',
+  ]);
+}
+
+export function getWeaponUsedForcedCategory(catName: string): string {
+  return `فرضتوا على الخصم: ${catName}! لازم يجاوب منها 🎯`;
+}
+
+export function getWeaponUsedAskFriend(): string {
+  return randomFrom([
+    'اتصلوا بصديق! +25 ثانية على الوقت 📞⏱️',
+    'صديق المشوار! الوقت زاد — استخدموه صح 🤝',
+  ]);
+}
+
+export function getImmunityProtectedMessage(): string {
+  return randomFrom([
+    'الحصانة أنقذتكم! الغلطة راحت بدون عقوبة 🛡️✨',
+    'درع الحماية شتغل! ما خسرتوا شي 🔰',
+  ]);
+}
+
+export function getForcedCategoryActiveMessage(catName: string): string {
+  return `تحذير: الخصم فرض عليكم فئة "${catName}" — لازم تختارون منها! 🎯`;
+}

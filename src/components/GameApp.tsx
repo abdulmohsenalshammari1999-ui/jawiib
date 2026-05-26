@@ -22,8 +22,10 @@ import { SabotageControls } from './game/SabotageControls';
 import { EffectToast } from './game/EffectToast';
 import { ScorePopup } from './game/ScorePopup';
 import { CategoryDraftScreen } from './screens/CategoryDraftScreen';
+import { TeamSetupScreen } from './TeamSetupScreen';
+import { FeedbackModal } from './FeedbackModal';
 
-type SubView = 'lobby' | 'teams' | 'draft';
+type SubView = 'setup' | 'lobby' | 'teams' | 'draft';
 
 // Intro countdown: 3, 2, 1, ابدأ
 function IntroCountdown({ onDone }: { onDone: () => void }) {
@@ -84,12 +86,13 @@ export function GameApp() {
   const updateCategories = useGameStore((s) => s.updateCategories);
   const rematch          = useGameStore((s) => s.rematch);
 
-  const mode       = useRoomStore((s) => s.mode);
-  const teams      = useRoomStore((s) => s.teams);
-  const setMode    = useRoomStore((s) => s.setMode);
-  const initTeams  = useRoomStore((s) => s.initTeams);
-  const assignTeam = useRoomStore((s) => s.assignTeam);
-  const autoAssign = useRoomStore((s) => s.autoAssign);
+  const mode        = useRoomStore((s) => s.mode);
+  const teams       = useRoomStore((s) => s.teams);
+  const setMode     = useRoomStore((s) => s.setMode);
+  const initTeams   = useRoomStore((s) => s.initTeams);
+  const renameTeam  = useRoomStore((s) => s.renameTeam);
+  const assignTeam  = useRoomStore((s) => s.assignTeam);
+  const autoAssign  = useRoomStore((s) => s.autoAssign);
 
   const activeEffects = useSabotageStore((s) => s.activeEffects);
   const lastResult    = useSabotageStore((s) => s.lastResult);
@@ -116,6 +119,7 @@ export function GameApp() {
   const [subView, setSubView]         = useState<SubView>('lobby');
   const [showPayment, setShowPayment] = useState(false);
   const [showIntro, setShowIntro]     = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [scorePopup, setScorePopup]   = useState<{ points: number; color?: string } | null>(null);
   const prevLastAnswer = useRef(game?.lastAnswer);
   const prevPhase      = useRef(game?.phase);
@@ -173,6 +177,7 @@ export function GameApp() {
       if (m === 'teams') {
         initTeams();
         assignTeam(result.playerId, 'alpha');
+        setSubView('setup');
       }
       return result;
     },
@@ -301,14 +306,18 @@ export function GameApp() {
   // ── Phase: finished ───────────────────────────────────────────────────────────
   if (game.phase === 'finished') {
     return (
-      <GameOverScreen
-        players={game.room.players}
-        hostMessage={game.hostMessage}
-        onPlayAgain={rematch}
-        onNewGame={resetGame}
-        teams={winnerTeamData}
-        mode={mode}
-      />
+      <>
+        <GameOverScreen
+          players={game.room.players}
+          hostMessage={game.hostMessage}
+          onPlayAgain={rematch}
+          onNewGame={resetGame}
+          teams={winnerTeamData}
+          mode={mode}
+          onRateMatch={() => setShowFeedback(true)}
+        />
+        {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+      </>
     );
   }
 
@@ -318,6 +327,21 @@ export function GameApp() {
       ? `${window.location.origin}/join/${game.room.code}`
       : `https://jawwib.netlify.app/join/${game.room.code}`;
     const isHost = game.room.hostId === localPlayerId;
+
+    // Team naming step (teams mode only)
+    if (subView === 'setup' && mode === 'teams') {
+      return (
+        <TeamSetupScreen
+          alphaName={teams.alpha.name}
+          betaName={teams.beta.name}
+          onConfirm={(a, b) => {
+            renameTeam('alpha', a);
+            renameTeam('beta', b);
+            setSubView('teams');
+          }}
+        />
+      );
+    }
 
     if (subView === 'teams' && mode === 'teams') {
       return (

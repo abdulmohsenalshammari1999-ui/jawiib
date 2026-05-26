@@ -17,6 +17,13 @@ export const categories: Category[] = [
   { id: 'ramadan', name: 'رمضانيات', icon: '🌙', color: '#7C3AED' },
   { id: 'travel', name: 'سفر وسياحة', icon: '✈️', color: '#0EA5E9' },
   { id: 'family', name: 'عائلة وأطفال', icon: '👨‍👩‍👧‍👦', color: '#F472B6' },
+  // Kuwait/GCC
+  { id: 'kuwait_history', name: 'تاريخ الكويت', icon: '🇰🇼', color: '#007A3D' },
+  { id: 'kuwait_dialect', name: 'لهجة كويتية', icon: '💬', color: '#CA8A04' },
+  { id: 'gcc_football',   name: 'كرة خليجية', icon: '⚽', color: '#1D4ED8' },
+  { id: 'diwaniya',       name: 'ديوانية وعادات', icon: '🏕️', color: '#92400E' },
+  { id: 'kuwait_food',    name: 'مطبخ كويتي', icon: '🍲', color: '#DC2626' },
+  { id: 'kuwait_celebs',  name: 'مشاهير الخليج', icon: '⭐', color: '#7C3AED' },
 ];
 
 export function getCategoryById(id: CategoryId): Category {

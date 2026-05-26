@@ -14,7 +14,13 @@ export type CategoryId =
   | 'social'
   | 'ramadan'
   | 'travel'
-  | 'family';
+  | 'family'
+  | 'kuwait_history'
+  | 'kuwait_dialect'
+  | 'gcc_football'
+  | 'diwaniya'
+  | 'kuwait_food'
+  | 'kuwait_celebs';
 
 export interface Question {
   id: string;

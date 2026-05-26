@@ -45,12 +45,17 @@ export function useCategoryDraft(): CategoryDraftHook {
 
   const pick = useCallback((categoryId: CategoryId) => {
     if (!manager || !draft || draft.isComplete) return;
-    if (draft.currentTeam !== localTeamId) return; // not your turn
+    // Host can pick for any team in local/same-device play
+    const storeState = useGameStore.getState();
+    const isHost = storeState.localPlayerId
+      ? storeState.game?.room.hostId === storeState.localPlayerId
+      : false;
+    if (!isHost && draft.currentTeam !== localTeamId) return;
     try {
       const next = manager.pick(draft.currentTeam, categoryId);
       setDraft({ ...next });
     } catch {
-      // invalid pick — ignore
+      // invalid pick
     }
   }, [manager, draft, localTeamId]);
 

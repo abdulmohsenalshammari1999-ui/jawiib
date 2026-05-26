@@ -14,6 +14,7 @@ interface GameOverScreenProps {
   hostMessage: string;
   onPlayAgain: () => void;
   onNewGame?: () => void;
+  onRateMatch?: () => void;
   teams?: { alpha: TeamResult; beta: TeamResult } | null;
   mode?: 'ffa' | 'teams';
 }
@@ -48,6 +49,7 @@ export function GameOverScreen({
   hostMessage,
   onPlayAgain,
   onNewGame,
+  onRateMatch,
   teams,
   mode = 'ffa',
 }: GameOverScreenProps) {
@@ -211,6 +213,14 @@ export function GameOverScreen({
           <button onClick={onPlayAgain} className="btn-gold w-full text-lg py-4">
             🔄 العب مرة ثانية
           </button>
+          {onRateMatch && (
+            <button
+              onClick={onRateMatch}
+              className="w-full text-sm py-3 rounded-xl border-2 border-jawwib-gold/40 text-jawwib-gold hover:bg-jawwib-gold/10 transition-all"
+            >
+              ⭐ قيّم المباراة
+            </button>
+          )}
           {onNewGame && (
             <button
               onClick={onNewGame}

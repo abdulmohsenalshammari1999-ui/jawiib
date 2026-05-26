@@ -461,7 +461,11 @@ export function GameApp() {
           alphaTeamName={teams.alpha.name}
           betaTeamName={teams.beta.name}
           onPick={(catId) => draft.pick(catId as CategoryId)}
-          onSkipDraft={() => { draft.skipDraft(); handleDraftComplete(); }}
+          onSkipDraft={() => {
+            const cats = draft.skipDraft();
+            if (cats.length >= 2) updateCategories(cats as CategoryId[]);
+            setSubView('lobby');
+          }}
           onStartGame={() => { handleDraftComplete(); handleStartGame(); }}
         />
       );

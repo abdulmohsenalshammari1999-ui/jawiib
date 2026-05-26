@@ -12,7 +12,7 @@ export interface CategoryDraftHook {
   isMyTeamsTurn: boolean;
   startDraft: (picksPerTeam?: number) => void;
   pick: (categoryId: CategoryId) => void;
-  skipDraft: () => void;
+  skipDraft: () => CategoryId[];
   selectedCategories: CategoryId[];
   alphaCategories: CategoryId[];
   betaCategories: CategoryId[];
@@ -59,10 +59,11 @@ export function useCategoryDraft(): CategoryDraftHook {
     }
   }, [manager, draft, localTeamId]);
 
-  const skipDraft = useCallback(() => {
-    if (!manager) return;
+  const skipDraft = useCallback((): CategoryId[] => {
+    if (!manager) return [];
     const completed = manager.autoComplete(localTeamId ?? 'alpha');
     setDraft({ ...completed });
+    return completed.picks.map((p) => p.categoryId);
   }, [manager, localTeamId]);
 
   return {

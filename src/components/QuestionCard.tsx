@@ -16,6 +16,15 @@ interface QuestionCardProps {
 
 const OPTION_LABELS = ['أ', 'ب', 'ج', 'د'];
 
+const POINT_COLORS: Record<number, string> = {
+  100: '#15803D',
+  200: '#0369A1',
+  300: '#C8880A',
+  400: '#B45309',
+  500: '#B91C1C',
+  600: '#6D28D9',
+};
+
 export function QuestionCard({
   question,
   timer,
@@ -27,13 +36,17 @@ export function QuestionCard({
   scrambledOptions,
   teamColor,
 }: QuestionCardProps) {
-  const [selected, setSelected] = useState<number | null>(null);
-  const [revealed, setRevealed]  = useState(false);
+  const [selected, setSelected]   = useState<number | null>(null);
+  const [revealed, setRevealed]   = useState(false);
+  const [lockPhase, setLockPhase] = useState(true);
 
-  // Reset when question changes
+  // Reset + brief lock moment when question changes
   useEffect(() => {
     setSelected(null);
     setRevealed(false);
+    setLockPhase(true);
+    const t = setTimeout(() => setLockPhase(false), 600);
+    return () => clearTimeout(t);
   }, [question.id]);
 
   const displayOptions = useMemo(
@@ -41,82 +54,93 @@ export function QuestionCard({
     [scrambledOptions, question.options]
   );
 
+  const isActuallyDisabled = disabled || lockPhase;
+
   const handleAnswer = (displayIdx: number) => {
-    if (selected !== null || disabled) return;
+    if (selected !== null || isActuallyDisabled) return;
     setSelected(displayIdx);
 
-    // Map back to true index when scrambled
     let trueIdx = displayIdx;
     if (scrambledOptions) {
       const opt = scrambledOptions[displayIdx];
       trueIdx = question.options.indexOf(opt);
     }
 
-    // Brief visual moment then reveal
     setTimeout(() => {
       setRevealed(true);
       setTimeout(() => onAnswer(trueIdx), 350);
     }, 220);
   };
 
-  const tierStars = '⭐'.repeat(question.tier);
+  const ptColor = POINT_COLORS[question.points] ?? '#C8880A';
 
   const optionStyle = (idx: number): string => {
     if (selected === null) {
-      return disabled
-        ? 'border-jawwib-border bg-jawwib-surface opacity-50 cursor-not-allowed'
-        : 'answer-option border-jawwib-border bg-jawwib-surface hover:border-jawwib-gold/60 hover:bg-jawwib-card cursor-pointer';
+      return isActuallyDisabled
+        ? 'border-jawwib-border bg-jawwib-surface opacity-40 cursor-not-allowed'
+        : 'answer-option border-jawwib-border bg-jawwib-card hover:border-jawwib-gold/60 hover:bg-jawwib-surface cursor-pointer';
     }
     const isSelected = selected === idx;
     if (!revealed) {
       return isSelected
-        ? 'border-jawwib-gold bg-jawwib-gold/20 scale-[0.97] opacity-90'
-        : 'border-jawwib-border bg-jawwib-surface opacity-30';
+        ? 'border-jawwib-gold bg-jawwib-gold/15 scale-[0.97] opacity-90'
+        : 'border-jawwib-border bg-jawwib-surface opacity-25';
     }
-    // Revealed state: show correct/wrong
     const isCorrect = idx === question.correctIndex;
-    if (isSelected && isCorrect)   return 'border-green-500 bg-green-500/20 scale-[0.97]';
-    if (isSelected && !isCorrect)  return 'border-red-500   bg-red-500/20   scale-[0.97] animate-shake';
-    if (!isSelected && isCorrect)  return 'border-green-500 bg-green-500/10';
+    if (isSelected && isCorrect)  return 'border-jawwib-green bg-jawwib-green/12 scale-[0.97]';
+    if (isSelected && !isCorrect) return 'border-jawwib-red bg-jawwib-red/12 scale-[0.97] animate-shake';
+    if (!isSelected && isCorrect) return 'border-jawwib-green bg-jawwib-green/8';
     return 'border-jawwib-border bg-jawwib-surface opacity-20';
   };
 
   return (
-    <div className="phase-enter animate-slide-up max-w-2xl mx-auto w-full">
+    <div className={`max-w-2xl mx-auto w-full ${lockPhase ? 'animate-countdown-pop' : 'phase-enter'}`}>
       {/* Effect banners */}
       {hasBomb && (
-        <div className="mb-3 px-4 py-2.5 rounded-xl bg-orange-500/15 border border-orange-500/35 flex items-center gap-2 animate-sabotage">
-          <span className="text-orange-400 text-xl">💣</span>
-          <span className="text-orange-400 text-sm font-bold">قنبلة! إجابة خاطئة = -150 إضافية</span>
+        <div className="mb-3 px-4 py-2.5 rounded-xl bg-orange-50 border border-orange-300 flex items-center gap-2 animate-sabotage">
+          <span className="text-orange-500 text-xl">💣</span>
+          <span className="text-orange-600 text-sm font-bold">قنبلة! إجابة خاطئة = −150 إضافية</span>
         </div>
       )}
       {hasDouble && (
-        <div className="mb-3 px-4 py-2.5 rounded-xl bg-yellow-500/15 border border-yellow-500/35 flex items-center gap-2 animate-sabotage">
-          <span className="text-yellow-400 text-xl">⚡</span>
-          <span className="text-yellow-400 text-sm font-bold">رهان! صح = ضعف • خطأ = -75</span>
+        <div className="mb-3 px-4 py-2.5 rounded-xl bg-yellow-50 border border-yellow-300 flex items-center gap-2 animate-sabotage">
+          <span className="text-yellow-600 text-xl">⚡</span>
+          <span className="text-yellow-700 text-sm font-bold">رهان! صح = ضعف • خطأ = −75</span>
         </div>
       )}
       {scrambledOptions && (
-        <div className="mb-3 px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center gap-2">
-          <span className="text-purple-400">🔀</span>
-          <span className="text-purple-400 text-xs font-bold">الخيارات مخلوطة</span>
+        <div className="mb-3 px-4 py-2 rounded-xl bg-jawwib-purple/8 border border-jawwib-purple/25 flex items-center gap-2">
+          <span className="text-jawwib-purple">🔀</span>
+          <span className="text-jawwib-purple text-xs font-bold">الخيارات مخلوطة</span>
         </div>
       )}
 
       <div
         className="game-card p-5 transition-all"
-        style={teamColor ? { borderColor: `${teamColor}30` } : undefined}
+        style={teamColor ? { borderColor: `${teamColor}25` } : undefined}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            <span className="text-xs opacity-60">{tierStars}</span>
-            <span className="font-bold text-lg" style={{ color: teamColor ?? '#D4A017' }}>
-              {question.points} نقطة
+            <span
+              className="font-black text-lg tabular-nums"
+              style={{ color: ptColor }}
+            >
+              {question.points}
+            </span>
+            <span className="text-jawwib-text-dim text-xs">نقطة</span>
+          </div>
+          <TimerBar time={timer} maxTime={maxTimer} compact />
+        </div>
+
+        {/* Lock phase overlay */}
+        {lockPhase && !disabled && (
+          <div className="text-center mb-3">
+            <span className="text-jawwib-gold text-xs font-bold animate-pulse">
+              استعد...
             </span>
           </div>
-          <TimerBar time={timer} maxTime={maxTimer} />
-        </div>
+        )}
 
         {/* Question */}
         <h2 className="text-lg sm:text-xl font-bold text-center mb-6 leading-relaxed px-2">
@@ -129,23 +153,22 @@ export function QuestionCard({
             <button
               key={idx}
               onClick={() => handleAnswer(idx)}
-              disabled={selected !== null || disabled}
+              disabled={selected !== null || isActuallyDisabled}
               className={`p-4 rounded-xl border-2 text-right font-bold text-sm transition-all ${optionStyle(idx)}`}
             >
               <span className="text-jawwib-text-dim ml-2 text-xs font-normal">
                 {OPTION_LABELS[idx]}
               </span>
               {option}
-              {/* Correct indicator */}
               {revealed && idx === question.correctIndex && (
-                <span className="mr-2 text-green-400 text-base">✓</span>
+                <span className="mr-2 text-jawwib-green text-base">✓</span>
               )}
             </button>
           ))}
         </div>
 
         {/* Spectator label */}
-        {disabled && selected === null && (
+        {disabled && selected === null && !lockPhase && (
           <p className="text-center text-jawwib-text-dim text-xs mt-4">
             👁️ أنت تشاهد فقط — دور الفريق الآخر
           </p>

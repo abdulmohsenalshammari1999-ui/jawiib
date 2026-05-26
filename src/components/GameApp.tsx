@@ -2,9 +2,11 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useRoomStore } from '@/store/roomStore';
 import { useSabotageStore } from '@/store/sabotageStore';
+import { useUIStore } from '@/store/uiStore';
 import { useHostMessage } from '@/hooks/useHostMessage';
 import { useCategoryDraft } from '@/hooks/useCategoryDraft';
 import { useQuestionFlow } from '@/hooks/useQuestionFlow';
+import { audio } from '@/lib/audio';
 import type { CategoryId } from '@/lib/types';
 import { categories as ALL_CATS } from '@/lib/categories';
 import { HomeScreen } from './HomeScreen';
@@ -23,20 +25,64 @@ import { CategoryDraftScreen } from './screens/CategoryDraftScreen';
 
 type SubView = 'lobby' | 'teams' | 'draft';
 
+// Intro countdown: 3, 2, 1, ابدأ
+function IntroCountdown({ onDone }: { onDone: () => void }) {
+  const [step, setStep] = useState(0);
+  const steps = ['3', '2', '1', 'ابدأ! 🚀'];
+
+  useEffect(() => {
+    audio.playCountdown();
+    const interval = setInterval(() => {
+      setStep((s) => {
+        const next = s + 1;
+        if (next < steps.length - 1) audio.playCountdown();
+        if (next === steps.length - 1) audio.playCountdownGo();
+        if (next >= steps.length) {
+          clearInterval(interval);
+          onDone();
+        }
+        return next;
+      });
+    }, 900);
+    return () => clearInterval(interval);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const label = steps[Math.min(step, steps.length - 1)];
+  const isFinal = step >= steps.length - 1;
+
+  return (
+    <div className="fixed inset-0 bg-jawwib-bg flex items-center justify-center z-50">
+      <div className="text-center">
+        <p
+          key={step}
+          className={`font-black text-center leading-none animate-countdown-pop ${
+            isFinal
+              ? 'text-7xl text-gold-gradient'
+              : 'text-9xl'
+          }`}
+          style={!isFinal ? { color: step === 0 ? '#1D4ED8' : step === 1 ? '#C8880A' : '#B91C1C' } : undefined}
+        >
+          {label}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function GameApp() {
-  // ── Store slices ─────────────────────────────────────────────────────────────
-  const game            = useGameStore((s) => s.game);
-  const localPlayerId   = useGameStore((s) => s.localPlayerId);
-  const answeredCount   = useGameStore((s) => s.answeredCount);
-  const createRoom      = useGameStore((s) => s.createRoom);
-  const addPlayer       = useGameStore((s) => s.addPlayer);
-  const startGame       = useGameStore((s) => s.startGame);
-  const selectQuestion  = useGameStore((s) => s.selectQuestion);
-  const answerQuestion  = useGameStore((s) => s.answerQuestion);
-  const returnToBoard   = useGameStore((s) => s.returnToBoard);
-  const resetGame       = useGameStore((s) => s.resetGame);
+  // ── Store slices ──────────────────────────────────────────────────────────────
+  const game             = useGameStore((s) => s.game);
+  const localPlayerId    = useGameStore((s) => s.localPlayerId);
+  const answeredCount    = useGameStore((s) => s.answeredCount);
+  const createRoom       = useGameStore((s) => s.createRoom);
+  const addPlayer        = useGameStore((s) => s.addPlayer);
+  const startGame        = useGameStore((s) => s.startGame);
+  const selectQuestion   = useGameStore((s) => s.selectQuestion);
+  const answerQuestion   = useGameStore((s) => s.answerQuestion);
+  const returnToBoard    = useGameStore((s) => s.returnToBoard);
+  const resetGame        = useGameStore((s) => s.resetGame);
   const updateCategories = useGameStore((s) => s.updateCategories);
-  const rematch         = useGameStore((s) => s.rematch);
+  const rematch          = useGameStore((s) => s.rematch);
 
   const mode       = useRoomStore((s) => s.mode);
   const teams      = useRoomStore((s) => s.teams);
@@ -45,10 +91,14 @@ export function GameApp() {
   const assignTeam = useRoomStore((s) => s.assignTeam);
   const autoAssign = useRoomStore((s) => s.autoAssign);
 
-  // Sabotage effects for question screen
   const activeEffects = useSabotageStore((s) => s.activeEffects);
   const lastResult    = useSabotageStore((s) => s.lastResult);
   const scrambles     = useSabotageStore((s) => s.scrambles);
+
+  const soundEnabled = useUIStore((s) => s.soundEnabled);
+  const musicEnabled = useUIStore((s) => s.musicEnabled);
+  const toggleSound  = useUIStore((s) => s.toggleSound);
+  const toggleMusic  = useUIStore((s) => s.toggleMusic);
 
   const hasBomb   = localPlayerId ? activeEffects.some((e) => e.type === 'bomb'   && e.targetPlayerId === localPlayerId) : false;
   const hasDouble = localPlayerId ? activeEffects.some((e) => e.type === 'double' && e.fromPlayerId   === localPlayerId) : false;
@@ -57,7 +107,7 @@ export function GameApp() {
     ? Object.values(scrambled).map((idx) => game.currentQuestion!.options[idx as number])
     : null;
 
-  // ── Hooks ────────────────────────────────────────────────────────────────────
+  // ── Hooks ─────────────────────────────────────────────────────────────────────
   useHostMessage();
   const qflow = useQuestionFlow();
   const draft  = useCategoryDraft();
@@ -65,16 +115,18 @@ export function GameApp() {
   // ── Local state ───────────────────────────────────────────────────────────────
   const [subView, setSubView]         = useState<SubView>('lobby');
   const [showPayment, setShowPayment] = useState(false);
-  // Score popup state
+  const [showIntro, setShowIntro]     = useState(false);
   const [scorePopup, setScorePopup]   = useState<{ points: number; color?: string } | null>(null);
   const prevLastAnswer = useRef(game?.lastAnswer);
+  const prevPhase      = useRef(game?.phase);
+  const prevTimer      = useRef(game?.timer ?? 0);
 
   // Reset sub-view when game starts
   useEffect(() => {
     if (game?.phase === 'board') setSubView('lobby');
   }, [game?.phase]);
 
-  // Show score popup on answer result
+  // Score popup + audio on answer result
   useEffect(() => {
     if (game?.lastAnswer && game.lastAnswer !== prevLastAnswer.current) {
       prevLastAnswer.current = game.lastAnswer;
@@ -84,13 +136,38 @@ export function GameApp() {
         setScorePopup({ points: pts, color });
         setTimeout(() => setScorePopup(null), 1800);
       }
+      if (game.lastAnswer.correct) {
+        audio.playCorrect();
+        if (Math.abs(pts) >= 400) setTimeout(() => audio.playScore(true), 300);
+        else audio.playScore(false);
+      } else {
+        audio.playWrong();
+      }
     }
   }, [game?.lastAnswer]);
+
+  // Timer ticking audio
+  useEffect(() => {
+    const t = game?.timer ?? 0;
+    if (game?.phase === 'question' && t < prevTimer.current && t > 0) {
+      if (t <= 5) audio.playFinalTick();
+      else if (t <= 9) audio.playTick();
+    }
+    prevTimer.current = t;
+  }, [game?.timer, game?.phase]);
+
+  // Winner fanfare
+  useEffect(() => {
+    if (game?.phase === 'finished' && prevPhase.current !== 'finished') {
+      setTimeout(() => audio.playWinner(), 400);
+    }
+    prevPhase.current = game?.phase;
+  }, [game?.phase]);
 
   // ── Callbacks ─────────────────────────────────────────────────────────────────
   const handleCreateRoom = useCallback(
     (name: string, isTrial: boolean, cats?: CategoryId[], gameMode?: 'ffa' | 'teams') => {
-      const m = gameMode ?? 'ffa';
+      const m = gameMode ?? 'teams';
       setMode(m);
       const result = createRoom(name, isTrial, cats);
       if (m === 'teams') {
@@ -121,12 +198,28 @@ export function GameApp() {
     }
   }, [game, localPlayerId, resetGame, createRoom]);
 
-  // Draft → update categories → back to lobby
   const handleDraftComplete = useCallback(() => {
     const cats = draft.selectedCategories as CategoryId[];
     if (cats.length >= 2) updateCategories(cats);
     setSubView('lobby');
   }, [draft.selectedCategories, updateCategories]);
+
+  const handleStartGame = useCallback(() => {
+    setShowIntro(true);
+  }, []);
+
+  const handleIntroDone = useCallback(() => {
+    setShowIntro(false);
+    startGame();
+  }, [startGame]);
+
+  const handleSelectQuestion = useCallback(
+    (qid: string) => {
+      audio.playTick();
+      selectQuestion(qid);
+    },
+    [selectQuestion]
+  );
 
   // ── Derived ───────────────────────────────────────────────────────────────────
   const teamData = mode === 'teams' ? {
@@ -141,9 +234,8 @@ export function GameApp() {
     return null;
   })();
 
-  const activeTeamColor = localTeamId === 'alpha' ? '#3B82F6' : localTeamId === 'beta' ? '#EF4444' : null;
+  const activeTeamColor = localTeamId === 'alpha' ? '#1D4ED8' : localTeamId === 'beta' ? '#B91C1C' : null;
 
-  // ── Winner team (for finished phase) ──────────────────────────────────────────
   const winnerTeamData = (() => {
     if (!game || mode !== 'teams' || !teamData) return null;
     const alphaScore = game.room.players.filter((p) => teamData.alpha.playerIds.includes(p.id)).reduce((s, p) => s + p.score, 0);
@@ -154,7 +246,40 @@ export function GameApp() {
     };
   })();
 
-  // ── Guard ─────────────────────────────────────────────────────────────────────
+  // ── Intro countdown overlay ───────────────────────────────────────────────────
+  if (showIntro) {
+    return <IntroCountdown onDone={handleIntroDone} />;
+  }
+
+  // ── Sound/Music toggle bar ────────────────────────────────────────────────────
+  const AudioControls = () => (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={toggleSound}
+        className={`text-sm px-2 py-1 rounded-lg border transition-all ${
+          soundEnabled
+            ? 'border-jawwib-gold/40 text-jawwib-gold bg-jawwib-gold/8'
+            : 'border-jawwib-border text-jawwib-text-dim opacity-50'
+        }`}
+        title={soundEnabled ? 'كتم الصوت' : 'تشغيل الصوت'}
+      >
+        {soundEnabled ? '🔊' : '🔇'}
+      </button>
+      <button
+        onClick={toggleMusic}
+        className={`text-sm px-2 py-1 rounded-lg border transition-all ${
+          musicEnabled
+            ? 'border-jawwib-gold/40 text-jawwib-gold bg-jawwib-gold/8'
+            : 'border-jawwib-border text-jawwib-text-dim opacity-50'
+        }`}
+        title={musicEnabled ? 'إيقاف الموسيقى' : 'تشغيل الموسيقى'}
+      >
+        {musicEnabled ? '🎵' : '🎵'}
+      </button>
+    </div>
+  );
+
+  // ── Guard: no game ────────────────────────────────────────────────────────────
   if (!game) {
     return (
       <HomeScreen
@@ -194,7 +319,6 @@ export function GameApp() {
       : `https://jawwib.netlify.app/join/${game.room.code}`;
     const isHost = game.room.hostId === localPlayerId;
 
-    // Sub-view: team assignment
     if (subView === 'teams' && mode === 'teams') {
       return (
         <div className="min-h-screen p-4">
@@ -203,22 +327,24 @@ export function GameApp() {
             <div className="flex items-center justify-between mb-4">
               <button onClick={() => setSubView('lobby')} className="text-jawwib-text-dim text-sm hover:text-jawwib-text transition-colors">← رجوع</button>
               <h2 className="text-lg font-bold text-gold-gradient">توزيع الفرق</h2>
-              <div />
+              <AudioControls />
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-4">
               {(['alpha', 'beta'] as const).map((tid) => {
                 const t = teams[tid];
-                const tc = tid === 'alpha';
+                const isBlue = tid === 'alpha';
                 return (
-                  <div key={tid} className={`game-card p-3 border ${tc ? 'border-blue-500/40 bg-blue-500/5' : 'border-red-500/40 bg-red-500/5'}`}>
-                    <p className={`font-bold text-sm mb-2 ${tc ? 'text-blue-400' : 'text-red-400'}`}>{tc ? '🛡️' : '⚔️'} {t.name}</p>
+                  <div key={tid} className={`game-card p-3 border-2 ${isBlue ? 'border-jawwib-blue/30 bg-blue-50/50' : 'border-jawwib-red/30 bg-red-50/50'}`}>
+                    <p className={`font-bold text-sm mb-2 ${isBlue ? 'text-jawwib-blue' : 'text-jawwib-red'}`}>
+                      {isBlue ? '🛡️' : '⚔️'} {t.name}
+                    </p>
                     <div className="space-y-1.5 min-h-[40px]">
                       {t.playerIds.map((pid) => {
                         const p = game.room.players.find((pl) => pl.id === pid);
                         if (!p) return null;
                         return (
-                          <div key={pid} className="flex items-center gap-2 bg-jawwib-surface/50 rounded-lg px-2 py-1">
+                          <div key={pid} className="flex items-center gap-2 bg-white/60 rounded-lg px-2 py-1">
                             <span>{p.avatar}</span>
                             <span className="text-xs font-bold truncate flex-1">{p.name}</span>
                             {pid === localPlayerId && <span className="text-[10px] text-jawwib-gold">أنت</span>}
@@ -227,7 +353,12 @@ export function GameApp() {
                       })}
                     </div>
                     {localPlayerId && !t.playerIds.includes(localPlayerId) && (
-                      <button onClick={() => assignTeam(localPlayerId, tid)} className={`mt-2 w-full text-xs py-1.5 rounded-lg border ${tc ? 'border-blue-500/40 text-blue-400 hover:bg-blue-500/20' : 'border-red-500/40 text-red-400 hover:bg-red-500/20'} transition-all`}>
+                      <button
+                        onClick={() => assignTeam(localPlayerId, tid)}
+                        className={`mt-2 w-full text-xs py-1.5 rounded-lg border transition-all ${
+                          isBlue ? 'border-jawwib-blue/40 text-jawwib-blue hover:bg-blue-100' : 'border-jawwib-red/40 text-jawwib-red hover:bg-red-100'
+                        }`}
+                      >
                         انضم لهذا الفريق
                       </button>
                     )}
@@ -236,7 +367,6 @@ export function GameApp() {
               })}
             </div>
 
-            {/* Unassigned */}
             {game.room.players.filter((p) => !teams.alpha.playerIds.includes(p.id) && !teams.beta.playerIds.includes(p.id)).length > 0 && (
               <div className="game-card p-3 mb-4">
                 <p className="text-jawwib-text-dim text-xs mb-2">بدون فريق بعد</p>
@@ -273,14 +403,12 @@ export function GameApp() {
       );
     }
 
-    // Sub-view: category draft
     if (subView === 'draft' && !game.room.isTrial) {
       return (
         <div className="min-h-screen p-4">
           <HostBubble message={game.hostMessage} compact />
           <div className="max-w-xl mx-auto mt-4">
             {draft.draft === null ? (
-              // Not started yet
               <div className="text-center py-12">
                 <p className="text-jawwib-text-dim mb-4 text-sm">
                   {mode === 'teams' ? 'كل فريق يختار فئاته بالتناوب (snake draft)' : 'اختر الفئات التي تريدها'}
@@ -311,7 +439,7 @@ export function GameApp() {
                 availableCategories={ALL_CATS.map((c) => ({ id: c.id, name: c.name, icon: c.icon, color: c.color }))}
                 onPick={(catId) => draft.pick(catId as CategoryId)}
                 onSkipDraft={() => { draft.skipDraft(); handleDraftComplete(); }}
-                onStartGame={() => { handleDraftComplete(); startGame(); }}
+                onStartGame={() => { handleDraftComplete(); handleStartGame(); }}
               />
             )}
           </div>
@@ -319,11 +447,11 @@ export function GameApp() {
       );
     }
 
-    // Main lobby
     return (
       <div className="min-h-screen p-4">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-2xl font-black text-gold-gradient">جاوب</h1>
+          <AudioControls />
         </div>
         <HostBubble message={game.hostMessage} />
         <Lobby
@@ -331,7 +459,7 @@ export function GameApp() {
           players={game.room.players}
           isTrial={game.room.isTrial}
           selectedCategories={game.room.categories}
-          onStartGame={startGame}
+          onStartGame={handleStartGame}
           onShowPayment={() => setShowPayment(true)}
           onShowTeams={mode === 'teams' ? () => setSubView('teams') : undefined}
           onShowDraft={() => setSubView('draft')}
@@ -347,20 +475,23 @@ export function GameApp() {
   if (game.phase === 'question' && game.currentQuestion) {
     const ap = game.activePlayer ? game.room.players.find((p) => p.id === game.activePlayer) : null;
     const apTeamColor = ap && teamData
-      ? teamData.alpha.playerIds.includes(ap.id) ? '#3B82F6' : '#EF4444'
+      ? teamData.alpha.playerIds.includes(ap.id) ? '#1D4ED8' : '#B91C1C'
       : null;
 
     return (
       <div className="min-h-screen p-4 flex flex-col gap-3">
-        <HostBubble message={game.hostMessage} compact />
+        <div className="flex items-center justify-between">
+          <HostBubble message={game.hostMessage} compact />
+          <AudioControls />
+        </div>
 
         {ap && (
           <div
             className="flex items-center justify-center gap-2 py-2 rounded-xl border text-sm font-bold"
             style={{
-              borderColor: apTeamColor ? `${apTeamColor}50` : '#D4A01740',
-              background:  apTeamColor ? `${apTeamColor}0D` : 'transparent',
-              color:       apTeamColor ?? '#D4A017',
+              borderColor: apTeamColor ? `${apTeamColor}40` : '#C8880A30',
+              background:  apTeamColor ? `${apTeamColor}0A` : 'transparent',
+              color:       apTeamColor ?? '#C8880A',
             }}
           >
             <span>{ap.avatar}</span>
@@ -375,7 +506,7 @@ export function GameApp() {
           <QuestionCard
             question={game.currentQuestion}
             timer={game.timer}
-            maxTimer={15}
+            maxTimer={game.currentQuestion.points === 100 ? 16 : game.currentQuestion.points === 600 ? 7 : 15}
             onAnswer={(idx) => {
               if (!qflow.canAnswer) return;
               if (localPlayerId) answerQuestion(localPlayerId, idx);
@@ -384,6 +515,7 @@ export function GameApp() {
             hasBomb={hasBomb}
             hasDouble={hasDouble}
             scrambledOptions={scrambledOptions}
+            teamColor={apTeamColor ?? undefined}
           />
         </div>
 
@@ -396,7 +528,7 @@ export function GameApp() {
   if (game.phase === 'result' && game.lastAnswer && game.currentQuestion) {
     const respPlayer = game.room.players.find((p) => p.id === game.lastAnswer?.playerId);
     const tColor = respPlayer && teamData
-      ? teamData.alpha.playerIds.includes(respPlayer.id) ? '#3B82F6' : '#EF4444'
+      ? teamData.alpha.playerIds.includes(respPlayer.id) ? '#1D4ED8' : '#B91C1C'
       : null;
     return (
       <>
@@ -418,8 +550,9 @@ export function GameApp() {
   const opponents = game.room.players.filter((p) => p.id !== localPlayerId);
   const ap = game.activePlayer ? game.room.players.find((p) => p.id === game.activePlayer) : null;
   const apTeamColor = ap && teamData
-    ? teamData.alpha.playerIds.includes(ap.id) ? '#3B82F6' : '#EF4444'
+    ? teamData.alpha.playerIds.includes(ap.id) ? '#1D4ED8' : '#B91C1C'
     : null;
+  const isMyTurn = ap?.id === localPlayerId;
 
   return (
     <div className="min-h-screen p-4">
@@ -427,9 +560,12 @@ export function GameApp() {
 
       <div className="flex items-center justify-between mb-3">
         <h1 className="text-xl font-black text-gold-gradient">جاوب</h1>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-jawwib-text-dim">كود:</span>
-          <span className="text-sm font-bold text-jawwib-gold tracking-wider">{game.room.code}</span>
+        <div className="flex items-center gap-3">
+          <AudioControls />
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-jawwib-text-dim">كود:</span>
+            <span className="text-sm font-bold text-jawwib-gold tracking-wider">{game.room.code}</span>
+          </div>
         </div>
       </div>
 
@@ -437,16 +573,21 @@ export function GameApp() {
 
       {ap && (
         <div
-          className="mb-3 px-4 py-2 rounded-xl text-center text-sm border transition-all"
+          className="mb-3 px-4 py-2.5 rounded-xl text-center text-sm border-2 transition-all"
           style={{
-            borderColor: apTeamColor ? `${apTeamColor}40` : '#D4A01730',
-            background:  apTeamColor ? `${apTeamColor}0D` : '#D4A01708',
+            borderColor: apTeamColor ? `${apTeamColor}35` : '#C8880A25',
+            background:  apTeamColor ? `${apTeamColor}08` : '#C8880A05',
           }}
         >
           <span className="text-jawwib-text-dim">دور: </span>
-          <span className="font-bold" style={{ color: apTeamColor ?? '#D4A017' }}>
+          <span className="font-bold" style={{ color: apTeamColor ?? '#C8880A' }}>
             {ap.avatar} {ap.name}
           </span>
+          {isMyTurn && (
+            <span className="mr-2 text-xs" style={{ color: apTeamColor ?? '#C8880A' }}>
+              (اختر سؤالًا)
+            </span>
+          )}
         </div>
       )}
 
@@ -454,10 +595,11 @@ export function GameApp() {
         <GameBoard
           board={game.board}
           categories={game.room.categories}
-          onSelectQuestion={selectQuestion}
+          onSelectQuestion={handleSelectQuestion}
           isTrial={game.room.isTrial}
           answeredCount={answeredCount}
           activeTeamColor={activeTeamColor}
+          isMyTurn={isMyTurn}
         />
       </div>
 

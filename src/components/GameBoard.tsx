@@ -8,10 +8,19 @@ interface GameBoardProps {
   isTrial: boolean;
   answeredCount: number;
   activeTeamColor?: string | null;
+  isMyTurn?: boolean;
 }
 
-const TIER_COLORS = ['text-emerald-400', 'text-yellow-400', 'text-orange-400'];
-const TIER_LABELS = ['⭐', '⭐⭐', '⭐⭐⭐'];
+const TIER_POINTS = [100, 200, 300, 400, 500, 600] as const;
+
+const TIER_STYLES: Record<number, { text: string; glow: string }> = {
+  100: { text: '#15803D', glow: 'rgba(21,128,61,0.25)' },
+  200: { text: '#0369A1', glow: 'rgba(3,105,161,0.25)' },
+  300: { text: '#C8880A', glow: 'rgba(200,136,10,0.25)' },
+  400: { text: '#B45309', glow: 'rgba(180,83,9,0.25)' },
+  500: { text: '#B91C1C', glow: 'rgba(185,28,28,0.25)' },
+  600: { text: '#6D28D9', glow: 'rgba(109,40,217,0.3)' },
+};
 
 export function GameBoard({
   board,
@@ -20,23 +29,25 @@ export function GameBoard({
   isTrial,
   answeredCount,
   activeTeamColor,
+  isMyTurn = true,
 }: GameBoardProps) {
   const trialLimit = 9;
 
   return (
     <div className="animate-fade-in w-full">
-      {/* Tier point headers */}
+      {/* Point column headers */}
       <div
         className="grid gap-1.5 mb-2 px-1"
-        style={{ gridTemplateColumns: '120px repeat(6, 1fr)' }}
+        style={{ gridTemplateColumns: '100px repeat(6, 1fr)' }}
       >
         <div />
-        {[100, 100, 200, 200, 300, 300].map((pts, i) => (
+        {TIER_POINTS.map((pts) => (
           <div
-            key={i}
-            className={`text-center text-xs font-bold py-1 ${TIER_COLORS[Math.floor(i / 2)]}`}
+            key={pts}
+            className="text-center text-xs font-black py-1 tracking-tight"
+            style={{ color: TIER_STYLES[pts].text }}
           >
-            {i % 2 === 0 ? pts : ''}
+            {pts}
           </div>
         ))}
       </div>
@@ -49,43 +60,53 @@ export function GameBoard({
             <div
               key={cat.id}
               className="grid gap-1.5 items-center"
-              style={{ gridTemplateColumns: '120px repeat(6, 1fr)' }}
+              style={{ gridTemplateColumns: '100px repeat(6, 1fr)' }}
             >
-              {/* Category */}
-              <div className="flex items-center gap-1.5 px-1 min-w-0">
-                <span className="text-base shrink-0">{cat.icon}</span>
-                <span className="text-xs font-bold text-jawwib-text-dim truncate">{cat.name}</span>
+              {/* Category label */}
+              <div className="flex items-center gap-1 px-1 min-w-0">
+                <span className="text-sm shrink-0">{cat.icon}</span>
+                <span className="text-[11px] font-bold text-jawwib-text-dim truncate leading-tight">{cat.name}</span>
               </div>
 
               {/* Cells */}
               {row.map((cell, colIndex) => {
+                const pts = TIER_POINTS[colIndex];
+                const style = TIER_STYLES[pts];
                 const isLocked = isTrial && answeredCount >= trialLimit && !cell.answered;
-                const tierIdx = Math.floor(colIndex / 2);
+                const canClick = !cell.answered && !isLocked && isMyTurn;
+
                 return (
                   <button
                     key={`${rowIndex}-${colIndex}`}
-                    onClick={() => !cell.answered && !isLocked && onSelectQuestion(cell.questionId)}
-                    disabled={cell.answered || isLocked}
-                    className={`board-cell flex items-center justify-center py-3 min-h-[48px] text-center relative ${
+                    onClick={() => canClick && onSelectQuestion(cell.questionId)}
+                    disabled={cell.answered || isLocked || !isMyTurn}
+                    className={`board-cell flex items-center justify-center py-2.5 min-h-[44px] text-center relative ${
                       cell.answered ? 'answered' : ''
-                    } ${isLocked ? '!opacity-20 cursor-not-allowed' : ''}`}
+                    } ${isLocked ? '!opacity-20 cursor-not-allowed' : ''} ${
+                      !isMyTurn && !cell.answered ? 'cursor-default opacity-60' : ''
+                    }`}
+                    style={
+                      canClick
+                        ? ({
+                            '--cell-hover-color': style.text,
+                            '--cell-glow-color': style.glow,
+                          } as React.CSSProperties)
+                        : undefined
+                    }
                   >
                     {cell.answered ? (
-                      <span className="text-jawwib-text-dim text-sm">✓</span>
+                      <span className="text-jawwib-text-dim text-xs">✓</span>
                     ) : isLocked ? (
-                      <span className="text-jawwib-text-dim text-sm">🔒</span>
+                      <span className="text-jawwib-text-dim text-xs">🔒</span>
                     ) : (
                       <span
-                        className={`font-bold text-sm ${TIER_COLORS[tierIdx]}`}
-                        style={activeTeamColor ? { textShadow: `0 0 8px ${activeTeamColor}40` } : undefined}
+                        className="font-black text-sm tabular-nums"
+                        style={{
+                          color: style.text,
+                          textShadow: activeTeamColor ? `0 0 8px ${activeTeamColor}30` : undefined,
+                        }}
                       >
-                        {cell.points}
-                      </span>
-                    )}
-                    {/* Tier pip */}
-                    {!cell.answered && !isLocked && (
-                      <span className="absolute top-0.5 right-1 text-[8px] opacity-40">
-                        {TIER_LABELS[tierIdx]}
+                        {pts}
                       </span>
                     )}
                   </button>
@@ -99,7 +120,7 @@ export function GameBoard({
       {isTrial && (
         <div className="mt-3 p-2 rounded-xl bg-jawwib-gold/10 border border-jawwib-gold/20 text-center">
           <span className="text-jawwib-gold text-xs font-bold">
-            🔒 تجريبي: {answeredCount}/{trialLimit} أسئلة
+            🔒 تجريبي: {answeredCount}/{trialLimit} سؤال
           </span>
         </div>
       )}

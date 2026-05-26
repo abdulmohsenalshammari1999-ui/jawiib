@@ -31,6 +31,11 @@ const TRIAL_QUESTION_LIMIT  = 9;
 const TRIAL_CATEGORY_COUNT  = 2;
 const DEFAULT_TIMER         = 15;
 
+// Timer seconds by question point value
+const TIMER_BY_POINTS: Record<number, number> = {
+  100: 16, 200: 15, 300: 13, 400: 11, 500: 9, 600: 7,
+};
+
 const AVATARS = ['🦁', '🦊', '🐺', '🦅', '🐉', '🦈', '🐅', '🦂'];
 
 function generateRoomCode(): string {
@@ -41,15 +46,12 @@ function generateRoomCode(): string {
 }
 
 function buildBoard(selectedCategories: CategoryId[]): GameBoardCell[][] {
-  // Use pool-based builder to guarantee no duplicate questions across the board
   globalPool.reset();
   return selectedCategories.map((cat) => {
     const row: GameBoardCell[] = [];
-    for (const tier of [1, 2, 3] as const) {
-      const questions = globalPool.drawN(cat, tier, 2);
-      for (const q of questions) {
-        row.push({ questionId: q.id, category: cat, tier, points: q.points, answered: false });
-      }
+    for (const tier of [1, 2, 3, 4, 5, 6] as const) {
+      const q = globalPool.draw(cat, tier);
+      if (q) row.push({ questionId: q.id, category: cat, tier, points: q.points as 100|200|300|400|500|600, answered: false });
     }
     return row;
   });
@@ -210,8 +212,7 @@ export const useGameStore = create<GameStoreState>()(
 
       // Check freeze effect for the active player
       const frozenDuration = game.activePlayer ? sabStore.getFreezeFor(game.activePlayer) : null;
-      const diff = localPlayerId ? engine.difficulty(localPlayerId) : null;
-      const timeLimit = frozenDuration ?? diff?.timeLimit ?? DEFAULT_TIMER;
+      const timeLimit = frozenDuration ?? TIMER_BY_POINTS[question.points] ?? DEFAULT_TIMER;
 
       // Bind scramble to this specific question if one is pending
       if (game.activePlayer) {

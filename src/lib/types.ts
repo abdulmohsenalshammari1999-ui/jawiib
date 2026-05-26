@@ -19,8 +19,8 @@ export type CategoryId =
 export interface Question {
   id: string;
   category: CategoryId;
-  tier: 1 | 2 | 3;
-  points: 100 | 200 | 300;
+  tier: 1 | 2 | 3 | 4 | 5 | 6;
+  points: 100 | 200 | 300 | 400 | 500 | 600;
   text: string;
   options: string[];
   correctIndex: number;
@@ -58,21 +58,21 @@ export interface GameRoom {
 export interface GameBoardCell {
   questionId: string;
   category: CategoryId;
-  tier: 1 | 2 | 3;
-  points: 100 | 200 | 300;
+  tier: 1 | 2 | 3 | 4 | 5 | 6;
+  points: 100 | 200 | 300 | 400 | 500 | 600;
   answered: boolean;
   answeredBy?: string;
 }
 
 export type SabotageType =
-  | 'steal'    // immediate: take 20% of target's score
-  | 'block'    // defensive: deflect next incoming sabotage
-  | 'halve'    // immediate: halve target's score
-  | 'bomb'     // pending: target loses 150 extra if they answer wrong
-  | 'freeze'   // pending: target gets only 8s on their next question
-  | 'scramble' // pending: target's answer options are shuffled
-  | 'double'   // pending self: next correct = 2x points, wrong = -50
-  | 'mystery'; // random: one of 8 weighted outcomes
+  | 'steal'
+  | 'block'
+  | 'halve'
+  | 'bomb'
+  | 'freeze'
+  | 'scramble'
+  | 'double'
+  | 'mystery';
 
 export interface Sabotage {
   type: SabotageType;
@@ -108,10 +108,8 @@ export interface ActiveSabotageEffect {
   type: SabotageType;
   fromPlayerId: string;
   fromTeamId: TeamId | null;
-  /** The player the effect will fire on */
   targetPlayerId: string;
   plantedTurn: number;
-  /** If still pending after this many turns, auto-expire */
   expiresAfterTurns: number;
   resolved: boolean;
   data: {
@@ -125,9 +123,7 @@ export interface ActiveSabotageEffect {
 export interface ScrambleMap {
   targetPlayerId: string;
   questionId: string;
-  /** scrambledOptions[i] = original option text; displayIdx → original text */
   scrambledOptions: string[];
-  /** displayIndex → originalOptionIndex */
   indexMap: number[];
 }
 

@@ -10,53 +10,47 @@ interface HomeScreenProps {
 type View = 'main' | 'create' | 'join';
 type GameMode = 'ffa' | 'teams';
 
-const FEATURES = [
-  { icon: '🧠', label: '288 سؤال' },
-  { icon: '📂', label: '16 فئة' },
-  { icon: '💣', label: 'تخريب' },
-  { icon: '👥', label: 'فريق مقابل فريق' },
-];
-
 export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
   const [view, setView]               = useState<View>('main');
   const [playerName, setPlayerName]   = useState('');
   const [roomCode, setRoomCode]       = useState('');
-  const [gameMode, setGameMode]       = useState<GameMode>('ffa');
+  const [gameMode, setGameMode]       = useState<GameMode>('teams');
   const [selectedCats, setSelectedCats] = useState<CategoryId[]>(categories.map((c) => c.id));
 
   const toggleCategory = (id: CategoryId) =>
     setSelectedCats((prev) => prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]);
 
-  // ── Main screen ─────────────────────────────────────────────────────────────
+  // ── Main ──────────────────────────────────────────────────────────────────────
   if (view === 'main') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 gap-6">
+      <div className="min-h-screen flex flex-col items-center justify-center p-5 gap-7">
         {/* Logo */}
         <div className="text-center animate-bounce-in">
-          <h1 className="text-8xl font-black text-gold-gradient leading-none mb-2">جاوب</h1>
-          <p className="text-jawwib-text-dim text-base">لعبة المعلومات العامة</p>
-          <div className="flex items-center justify-center gap-1.5 mt-1.5">
-            <span className="text-sm text-jawwib-text-dim">مع</span>
-            <span className="text-gold-gradient font-black">مرحبا</span>
+          <h1 className="text-8xl font-black text-gold-gradient leading-none">جاوب</h1>
+          <p className="text-jawwib-text-dim text-sm mt-1">لعبة الثقافة العامة</p>
+          <div className="flex items-center justify-center gap-1 mt-1">
+            <span className="text-xs text-jawwib-text-dim">مع مقدم اللعبة</span>
+            <span className="text-gold-gradient font-bold text-xs">مرحبا</span>
             <span>🎙️</span>
           </div>
         </div>
 
-        {/* Mode selector */}
+        {/* Rivalry CTA */}
         <div className="w-full max-w-xs">
-          <p className="text-center text-xs text-jawwib-text-dim mb-2">وضع اللعب</p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => setGameMode('ffa')}
-              className={`flex flex-col items-center gap-1 py-3 rounded-xl border-2 font-bold text-sm transition-all ${
-                gameMode === 'ffa'
-                  ? 'border-jawwib-gold bg-jawwib-gold/10 text-jawwib-gold'
-                  : 'border-jawwib-border text-jawwib-text-dim hover:border-jawwib-gold/40'
-              }`}
-            >
-              <span className="text-xl">⚔️</span>
-              <span>الكل ضد الكل</span>
-            </button>
+          <div className="flex items-center gap-3 p-4 rounded-2xl border-2 border-jawwib-gold/40 bg-jawwib-gold/5 mb-4">
+            <div className="flex-1 text-center">
+              <p className="text-jawwib-blue font-black text-lg">الفريق الأزرق</p>
+              <p className="text-jawwib-text-dim text-xs">🛡️</p>
+            </div>
+            <div className="text-2xl font-black text-jawwib-gold">VS</div>
+            <div className="flex-1 text-center">
+              <p className="text-jawwib-red font-black text-lg">الفريق الأحمر</p>
+              <p className="text-jawwib-text-dim text-xs">⚔️</p>
+            </div>
+          </div>
+
+          {/* Mode selector */}
+          <div className="grid grid-cols-2 gap-2 mb-4">
             <button
               onClick={() => setGameMode('teams')}
               className={`flex flex-col items-center gap-1 py-3 rounded-xl border-2 font-bold text-sm transition-all ${
@@ -68,46 +62,61 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
               <span className="text-xl">🛡️</span>
               <span>فريق ضد فريق</span>
             </button>
+            <button
+              onClick={() => setGameMode('ffa')}
+              className={`flex flex-col items-center gap-1 py-3 rounded-xl border-2 font-bold text-sm transition-all ${
+                gameMode === 'ffa'
+                  ? 'border-jawwib-gold bg-jawwib-gold/10 text-jawwib-gold'
+                  : 'border-jawwib-border text-jawwib-text-dim hover:border-jawwib-gold/40'
+              }`}
+            >
+              <span className="text-xl">⚔️</span>
+              <span>الكل ضد الكل</span>
+            </button>
           </div>
-        </div>
 
-        {/* Main buttons */}
-        <div className="w-full max-w-xs space-y-2">
-          <button onClick={() => setView('create')} className="btn-gold w-full text-xl py-4">
-            🎮 أنشئ لعبة جديدة
+          <button onClick={() => setView('create')} className="btn-gold w-full text-xl py-4 mb-2">
+            🎮 أنشئ لعبة
           </button>
           <button
             onClick={() => setView('join')}
-            className="w-full py-4 text-xl font-bold rounded-xl border-2 border-jawwib-gold text-jawwib-gold hover:bg-jawwib-gold/10 transition-all"
+            className="w-full py-3.5 text-base font-bold rounded-xl border-2 border-jawwib-border text-jawwib-text-dim hover:border-jawwib-gold hover:text-jawwib-gold transition-all"
           >
-            🔗 انضم للعبة
+            🔗 انضم بكود
           </button>
         </div>
 
-        {/* Features grid */}
-        <div className="grid grid-cols-4 gap-2 w-full max-w-xs">
-          {FEATURES.map((f) => (
-            <div key={f.label} className="game-card p-2 text-center">
-              <span className="text-xl block mb-1">{f.icon}</span>
-              <span className="text-xs text-jawwib-text-dim leading-tight">{f.label}</span>
+        {/* Stats row */}
+        <div className="flex items-center gap-4 text-center">
+          {[
+            { n: '384', label: 'سؤال' },
+            { n: '16',  label: 'فئة' },
+            { n: '6',   label: 'مستوى' },
+            { n: '💣',  label: 'تخريب' },
+          ].map((s) => (
+            <div key={s.label}>
+              <p className="text-jawwib-gold font-black text-lg leading-none">{s.n}</p>
+              <p className="text-jawwib-text-dim text-[10px]">{s.label}</p>
             </div>
           ))}
         </div>
 
-        {/* Trial badge */}
-        <div className="w-full max-w-xs p-3 rounded-xl bg-jawwib-gold/5 border border-jawwib-gold/20 text-center">
-          <p className="text-jawwib-gold text-xs font-bold">✨ 9 أسئلة تجريبية مجانية</p>
-        </div>
+        <p className="text-jawwib-text-dim text-xs opacity-60">
+          ✨ 9 أسئلة تجريبية مجانية
+        </p>
       </div>
     );
   }
 
-  // ── Join screen ──────────────────────────────────────────────────────────────
+  // ── Join ──────────────────────────────────────────────────────────────────────
   if (view === 'join') {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="max-w-sm w-full animate-slide-up">
-          <button onClick={() => setView('main')} className="text-jawwib-text-dim text-sm mb-6 flex items-center gap-1 hover:text-jawwib-text transition-colors">
+          <button
+            onClick={() => setView('main')}
+            className="text-jawwib-text-dim text-sm mb-6 flex items-center gap-1 hover:text-jawwib-text transition-colors"
+          >
             ← رجوع
           </button>
           <h2 className="text-2xl font-black text-gold-gradient mb-6 text-center">انضم للعبة</h2>
@@ -120,8 +129,9 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
                 placeholder="ادخل اسمك..."
-                className="w-full px-4 py-3 rounded-xl bg-jawwib-surface border border-jawwib-border text-jawwib-text placeholder:text-jawwib-text-dim/50 focus:border-jawwib-gold focus:outline-none transition-colors"
+                className="w-full px-4 py-3 rounded-xl"
                 maxLength={20}
+                autoFocus
               />
             </div>
             <div>
@@ -131,7 +141,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                 placeholder="مثال: ABC12"
-                className="w-full px-4 py-3 rounded-xl bg-jawwib-surface border border-jawwib-border text-jawwib-text placeholder:text-jawwib-text-dim/50 focus:border-jawwib-gold focus:outline-none transition-colors text-center text-2xl tracking-[0.3em] font-bold"
+                className="w-full px-4 py-3 rounded-xl text-center text-2xl tracking-[0.3em] font-bold"
                 dir="ltr"
                 maxLength={5}
               />
@@ -139,7 +149,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
             <button
               onClick={() => onJoinRoom(playerName, roomCode)}
               disabled={!playerName.trim() || roomCode.length < 5}
-              className="btn-gold w-full text-lg py-3"
+              className="btn-gold w-full text-lg py-3.5"
             >
               انضم! 🚀
             </button>
@@ -149,57 +159,81 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
     );
   }
 
-  // ── Create room screen ───────────────────────────────────────────────────────
+  // ── Create ────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen p-4">
       <div className="max-w-lg mx-auto animate-slide-up">
-        <button onClick={() => setView('main')} className="text-jawwib-text-dim text-sm mb-4 flex items-center gap-1 hover:text-jawwib-text transition-colors">
+        <button
+          onClick={() => setView('main')}
+          className="text-jawwib-text-dim text-sm mb-4 flex items-center gap-1 hover:text-jawwib-text transition-colors"
+        >
           ← رجوع
         </button>
         <h2 className="text-2xl font-black text-gold-gradient mb-5 text-center">أنشئ لعبة جديدة</h2>
 
         {/* Name */}
-        <div className="mb-5">
+        <div className="mb-4">
           <label className="block text-xs text-jawwib-text-dim mb-1">اسمك</label>
           <input
             type="text"
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
             placeholder="ادخل اسمك..."
-            className="w-full px-4 py-3 rounded-xl bg-jawwib-surface border border-jawwib-border text-jawwib-text placeholder:text-jawwib-text-dim/50 focus:border-jawwib-gold focus:outline-none transition-colors"
+            className="w-full px-4 py-3 rounded-xl"
             maxLength={20}
+            autoFocus
           />
         </div>
 
-        {/* Mode (inherited from main screen, show label) */}
-        <div className="mb-5 flex items-center gap-3 p-3 rounded-xl bg-jawwib-surface border border-jawwib-border">
-          <span className="text-xl">{gameMode === 'teams' ? '🛡️' : '⚔️'}</span>
-          <div>
-            <p className="text-sm font-bold">{gameMode === 'teams' ? 'فريق ضد فريق' : 'الكل ضد الكل'}</p>
-            <p className="text-xs text-jawwib-text-dim">
-              {gameMode === 'teams' ? 'فريقين — أزرق وأحمر' : 'كل لاعب يلعب لحساسبه'}
-            </p>
+        {/* Mode */}
+        <div className="mb-4">
+          <p className="text-xs text-jawwib-text-dim mb-2">وضع اللعب</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setGameMode('teams')}
+              className={`flex items-center gap-2 px-3 py-3 rounded-xl border-2 font-bold text-sm transition-all ${
+                gameMode === 'teams'
+                  ? 'border-jawwib-gold bg-jawwib-gold/10 text-jawwib-gold'
+                  : 'border-jawwib-border text-jawwib-text-dim'
+              }`}
+            >
+              <span>🛡️</span>
+              <div className="text-right">
+                <p className="text-sm leading-none">فريق ضد فريق</p>
+                <p className="text-[10px] opacity-60 mt-0.5">أزرق vs أحمر</p>
+              </div>
+            </button>
+            <button
+              onClick={() => setGameMode('ffa')}
+              className={`flex items-center gap-2 px-3 py-3 rounded-xl border-2 font-bold text-sm transition-all ${
+                gameMode === 'ffa'
+                  ? 'border-jawwib-gold bg-jawwib-gold/10 text-jawwib-gold'
+                  : 'border-jawwib-border text-jawwib-text-dim'
+              }`}
+            >
+              <span>⚔️</span>
+              <div className="text-right">
+                <p className="text-sm leading-none">الكل ضد الكل</p>
+                <p className="text-[10px] opacity-60 mt-0.5">كل لاعب لحساسبه</p>
+              </div>
+            </button>
           </div>
-          <button
-            onClick={() => setGameMode((m) => m === 'ffa' ? 'teams' : 'ffa')}
-            className="mr-auto text-xs text-jawwib-gold hover:underline"
-          >
-            تغيير
-          </button>
         </div>
 
         {/* Category selection */}
         <div className="mb-5">
           <div className="flex items-center justify-between mb-2">
-            <label className="text-xs text-jawwib-text-dim">الفئات ({selectedCats.length})</label>
+            <label className="text-xs text-jawwib-text-dim">الفئات ({selectedCats.length}/{categories.length})</label>
             <button
-              onClick={() => setSelectedCats(selectedCats.length === categories.length ? [] : categories.map((c) => c.id))}
-              className="text-xs text-jawwib-gold hover:text-jawwib-gold-light"
+              onClick={() =>
+                setSelectedCats(selectedCats.length === categories.length ? [] : categories.map((c) => c.id))
+              }
+              className="text-xs text-jawwib-gold hover:text-jawwib-gold-dark"
             >
               {selectedCats.length === categories.length ? 'إلغاء الكل' : 'اختر الكل'}
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-1.5 max-h-60 overflow-y-auto">
+          <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto">
             {categories.map((cat) => {
               const sel = selectedCats.includes(cat.id);
               return (
@@ -207,11 +241,14 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
                   key={cat.id}
                   onClick={() => toggleCategory(cat.id)}
                   className={`flex items-center gap-2 p-2.5 rounded-xl border transition-all text-right text-sm ${
-                    sel ? 'border-jawwib-gold bg-jawwib-gold/10' : 'border-jawwib-border bg-jawwib-surface opacity-60'
+                    sel
+                      ? 'border-jawwib-gold bg-jawwib-gold/8 text-jawwib-text'
+                      : 'border-jawwib-border bg-jawwib-surface text-jawwib-text-dim opacity-60'
                   }`}
                 >
                   <span className="text-base">{cat.icon}</span>
                   <span className="font-bold text-xs">{cat.name}</span>
+                  {sel && <span className="text-jawwib-gold text-[10px] mr-auto">✓</span>}
                 </button>
               );
             })}
@@ -225,14 +262,14 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
             disabled={!playerName.trim() || selectedCats.length < 2}
             className="btn-gold w-full text-lg py-4"
           >
-            👑 لعبة كاملة (4 د.ك)
+            👑 لعبة كاملة — 4 د.ك
           </button>
           <button
             onClick={() => onCreateRoom(playerName, true, undefined, gameMode)}
             disabled={!playerName.trim()}
             className="w-full py-3.5 text-base font-bold rounded-xl border-2 border-jawwib-border text-jawwib-text-dim hover:border-jawwib-gold hover:text-jawwib-gold transition-all"
           >
-            🆓 تجربة مجانية — 9 أسئلة
+            🆓 جرّب مجانًا — 9 أسئلة
           </button>
         </div>
       </div>

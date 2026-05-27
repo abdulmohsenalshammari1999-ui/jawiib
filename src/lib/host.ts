@@ -164,6 +164,7 @@ export function getWeaponEarnedMessage(weapon: string): string {
     immunity:        'درع الحصانة 🛡️',
     forced_category: 'فرض الفئة 🎯',
     ask_friend:      'اتصل بصديق 📞',
+    extra_time:      'وقت إضافي ⏱️',
   };
   return `كسبتم سلاح: ${names[weapon] ?? weapon}! استخدموه بحكمة 😈`;
 }
@@ -190,6 +191,35 @@ export function getWeaponUsedAskFriend(): string {
   return randomFrom([
     'اتصلوا بصديق! +25 ثانية على الوقت 📞⏱️',
     'صديق المشوار! الوقت زاد — استخدموه صح 🤝',
+  ]);
+}
+
+export function getWeaponUsedExtraTime(): string {
+  return randomFrom([
+    'تمديد الوقت! عندكم فرصة ذهبية ⏱️✨',
+    '+15 ثانية! استخدموها بحكمة 🕐💛',
+  ]);
+}
+
+export function getStealPhaseMessage(teamName: string): string {
+  return randomFrom([
+    `فرصة السرقة! ${teamName} عندهم 30 ثانية يجاوبون! 🎯⚡`,
+    `${teamName} يحاولون يسرقون النقاط — يلا اجاوبوا صح! 🏴‍☠️`,
+    `السرقة المشروعة! ${teamName} الفرصة جاءتكم! 👀`,
+  ]);
+}
+
+export function getStealSuccessMessage(teamName: string): string {
+  return randomFrom([
+    `سرقة ناجحة! ${teamName} خطفوا النقاط 🎉💰`,
+    `${teamName} اجابوا صح وسرقوا السؤال! 🏴‍☠️✅`,
+  ]);
+}
+
+export function getStealFailMessage(): string {
+  return randomFrom([
+    'انتهت فرصة السرقة — السؤال بلا نقاط! 💀',
+    'الاثنين غلطوا — السؤال يمشي بدون نقاط 😅',
   ]);
 }
 

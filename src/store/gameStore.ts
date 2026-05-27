@@ -32,6 +32,10 @@ import {
   getImmunityProtectedMessage,
   getLastStandMessage,
   getStreakHypeMessage,
+  getWeaponUsedExtraTime,
+  getStealPhaseMessage,
+  getStealSuccessMessage,
+  getStealFailMessage,
 } from '@/lib/host';
 import { getCategoryById } from '@/lib/categories';
 import { ATTACK_TYPES } from '@/lib/sabotages';
@@ -41,11 +45,12 @@ import { globalPool }       from '@/engine/questionPool';
 
 const TRIAL_QUESTION_LIMIT  = 9;
 const TRIAL_CATEGORY_COUNT  = 2;
-const DEFAULT_TIMER         = 15;
+const DEFAULT_TIMER         = 30;
+const STEAL_TIMER           = 30;
 
-// Timer seconds by question point value
+// Timer seconds by question point value — all 30s, bomb halves to 15s
 const TIMER_BY_POINTS: Record<number, number> = {
-  100: 16, 200: 15, 300: 13, 400: 11, 500: 9, 600: 7,
+  100: 30, 200: 30, 300: 30, 400: 30, 500: 30, 600: 30,
 };
 
 const AVATARS = ['🦁', '🦊', '🐺', '🦅', '🐉', '🦈', '🐅', '🦂'];
@@ -122,6 +127,8 @@ export interface GameStoreState {
   dismissPendingWeapon: () => void;
   useWeapon: (teamId: TeamId, weapon: WeaponType, opts?: { targetTeamId?: TeamId; categoryId?: CategoryId }) => void;
   activateLastStand: (teamId: TeamId) => void;
+  initStealTimer: (opponentTeamId: TeamId, teamName: string) => void;
+  activateWeaponFromBox: (teamId: TeamId, weapon: WeaponType, opts?: { targetTeamId?: TeamId; categoryId?: CategoryId }) => void;
 }
 
 export const useGameStore = create<GameStoreState>()(
@@ -188,6 +195,7 @@ export const useGameStore = create<GameStoreState>()(
         forcedCategory: null,
         lastStandActive: null,
         lastStandUsed: {},
+        stealOpponentTeamId: null,
       };
       set({ game, localPlayerId: playerId, answeredCount: 0 });
       return { roomId, playerId };
@@ -296,13 +304,104 @@ export const useGameStore = create<GameStoreState>()(
 
     answerQuestion: (playerId, answerIndex) => {
       const { game } = get();
-      if (!game || game.phase !== 'question' || !game.currentQuestion) return;
+      if (!game || !game.currentQuestion) return;
+
+      // ── Steal phase answer ────────────────────────────────────────────────────
+      if (game.phase === 'steal') {
+        const question = game.currentQuestion;
+        const player   = game.room.players.find((p) => p.id === playerId);
+        if (!player) return;
+
+        const membership    = game.teamMembership;
+        const stealTeamId: TeamId | null = membership
+          ? membership.alpha.includes(playerId) ? 'alpha'
+          : membership.beta.includes(playerId)  ? 'beta'
+          : null
+          : null;
+
+        // Only the steal team can answer
+        if (stealTeamId !== game.stealOpponentTeamId) return;
+
+        const correct = answerIndex === question.correctIndex;
+        const pointsEarned = correct ? question.points : 0;
+
+        let updatedPlayers = game.room.players.map((p) =>
+          p.id === playerId && correct
+            ? { ...p, score: p.score + pointsEarned, streak: p.streak + 1 }
+            : p.id === playerId
+            ? { ...p, streak: 0 }
+            : p
+        );
+
+        const updatedBoard = game.board.map((row) =>
+          row.map((cell) =>
+            cell.questionId === question.id
+              ? { ...cell, answered: true, answeredBy: correct ? playerId : undefined }
+              : cell
+          )
+        );
+
+        const answeredQuestions = [...game.room.answeredQuestions, question.id];
+        const answeredCount     = updatedBoard.reduce((a, r) => a + r.filter((c) => c.answered).length, 0);
+        const allAnswered       = game.room.isTrial
+          ? answeredQuestions.length >= TRIAL_QUESTION_LIMIT
+          : answeredCount >= game.board.reduce((a, r) => a + r.length, 0);
+
+        const nextIdx          = (game.room.players.findIndex((p) => p.id === playerId) + 1) % game.room.players.length;
+        const nextActivePlayer = game.room.players[nextIdx].id;
+        const nextTeamId: TeamId | null = game.activeTeamId === 'alpha' ? 'beta'
+          : game.activeTeamId === 'beta' ? 'alpha' : null;
+
+        const stealTeamName = stealTeamId && membership
+          ? (stealTeamId === 'alpha' ? 'فريق البحر' : 'فريق البر')
+          : '';
+
+        set({
+          game: {
+            ...game,
+            board: updatedBoard,
+            phase: allAnswered ? 'finished' : 'result',
+            room: {
+              ...game.room,
+              players: updatedPlayers,
+              answeredQuestions,
+              status: allAnswered ? 'finished' : 'playing',
+            },
+            activePlayer: nextActivePlayer,
+            activeTeamId: nextTeamId ?? game.activeTeamId,
+            hostMessage: allAnswered
+              ? getGameOverMessage([...updatedPlayers].sort((a, b) => b.score - a.score)[0].id === playerId)
+              : correct ? getStealSuccessMessage(stealTeamName) : getStealFailMessage(),
+            lastAnswer: {
+              playerId,
+              correct,
+              points: pointsEarned,
+              timeBonus: 0,
+              streakMultiplier: 1,
+            },
+            stealOpponentTeamId: null,
+            currentQuestion: correct ? null : game.currentQuestion,
+          },
+          answeredCount,
+        });
+        return;
+      }
+
+      if (game.phase !== 'question') return;
 
       const question = game.currentQuestion;
       const player   = game.room.players.find((p) => p.id === playerId);
       if (!player) return;
 
       const sabStore = useSabotageStore.getState();
+
+      // Determine team membership early (needed for lastStand check)
+      const membership = game.teamMembership;
+      const answeringTeamId: TeamId | null = membership
+        ? membership.alpha.includes(playerId) ? 'alpha'
+        : membership.beta.includes(playerId)  ? 'beta'
+        : null
+        : null;
 
       // Apply double multiplier if active
       const doubleMultiplier = sabStore.getDoubleMultiplierFor(playerId) ?? 1;
@@ -373,12 +472,6 @@ export const useGameStore = create<GameStoreState>()(
       sabStore.advanceTurn();
 
       // ── Team weapon system ──────────────────────────────────────────────────
-      const membership = game.teamMembership;
-      const answeringTeamId: TeamId | null = membership
-        ? membership.alpha.includes(playerId) ? 'alpha'
-        : membership.beta.includes(playerId)  ? 'beta'
-        : null
-        : null;
 
       let teamStreaks   = { ...game.teamStreaks };
       let teamWeapons  = { ...game.teamWeapons };
@@ -394,7 +487,7 @@ export const useGameStore = create<GameStoreState>()(
           // Trigger mystery box every 3 consecutive correct answers
           if (newTeamStreak >= 3 && !pendingWeapon) {
             teamStreaks[answeringTeamId] = 0;
-            const weapons: WeaponType[] = ['timer_bomb', 'immunity', 'forced_category', 'ask_friend'];
+            const weapons: WeaponType[] = ['timer_bomb', 'immunity', 'forced_category', 'ask_friend', 'extra_time'];
             const weapon = weapons[Math.floor(Math.random() * weapons.length)];
             pendingWeapon = { teamId: answeringTeamId, weapon };
           }
@@ -430,6 +523,47 @@ export const useGameStore = create<GameStoreState>()(
           : getWinnerRoast()
           : getLoserRoast());
 
+      // ── Steal phase: wrong answer with no immunity in teams mode ─────────────
+      const opponentTeamId: TeamId | null = answeringTeamId === 'alpha' ? 'beta'
+        : answeringTeamId === 'beta' ? 'alpha' : null;
+      const shouldSteal = !result.correct && !immunityMsg && answeringTeamId && opponentTeamId && !allAnswered;
+
+      if (shouldSteal && opponentTeamId) {
+        const opponentName = opponentTeamId === 'alpha' ? 'فريق البحر' : 'فريق البر';
+        // Determine steal timer (bomb applies to opponent's steal too)
+        let stealTime = STEAL_TIMER;
+        if (game.activeBomb === opponentTeamId) stealTime = Math.max(5, Math.ceil(stealTime / 2));
+
+        set({
+          game: {
+            ...game,
+            board: updatedBoard,
+            phase: 'steal',
+            room: { ...game.room, players: updatedPlayers, answeredQuestions },
+            timer: stealTime,
+            hostMessage: getStealPhaseMessage(opponentName),
+            lastAnswer: {
+              playerId,
+              correct: false,
+              points: 0,
+              timeBonus: 0,
+              streakMultiplier: 1,
+            },
+            teamStreaks,
+            teamWeapons,
+            pendingWeapon,
+            activeImmunity,
+            lastStandActive: null,
+            lastStandUsed,
+            stealOpponentTeamId: opponentTeamId,
+          },
+          answeredCount,
+        });
+        // Start steal countdown
+        get().initStealTimer(opponentTeamId, opponentName);
+        return;
+      }
+
       set({
         game: {
           ...game,
@@ -461,6 +595,7 @@ export const useGameStore = create<GameStoreState>()(
           activeImmunity,
           lastStandActive: null,
           lastStandUsed,
+          stealOpponentTeamId: null,
         },
         answeredCount,
       });
@@ -601,6 +736,7 @@ export const useGameStore = create<GameStoreState>()(
           lastStandActive: null,
           lastStandUsed: {},
           activeTeamId: game.teamMembership ? 'alpha' : null,
+          stealOpponentTeamId: null,
         },
         answeredCount: 0,
       });
@@ -692,8 +828,7 @@ export const useGameStore = create<GameStoreState>()(
           break;
         }
         case 'ask_friend': {
-          // Add 25 seconds to current question timer if in question phase
-          const extraTimer = game.phase === 'question' ? 25 : 0;
+          const extraTimer = (game.phase === 'question' || game.phase === 'steal') ? 25 : 0;
           set({
             game: {
               ...game,
@@ -704,7 +839,89 @@ export const useGameStore = create<GameStoreState>()(
           });
           break;
         }
+        case 'extra_time': {
+          const extraTimer = (game.phase === 'question' || game.phase === 'steal') ? 15 : 0;
+          set({
+            game: {
+              ...game,
+              teamWeapons,
+              timer: game.timer + extraTimer,
+              hostMessage: getWeaponUsedExtraTime(),
+            },
+          });
+          break;
+        }
       }
+    },
+
+    activateWeaponFromBox: (teamId, weapon, opts) => {
+      const { game } = get();
+      if (!game || !game.pendingWeapon) return;
+      // Clear pending weapon (don't add to inventory — it's being used now)
+      set({ game: { ...game, pendingWeapon: null } });
+      // Now use it
+      const teamWeapons = { ...game.teamWeapons };
+      // Temporarily add then immediately consume via useWeapon
+      teamWeapons[teamId] = [...(teamWeapons[teamId] ?? []), weapon];
+      set({ game: { ...game, pendingWeapon: null, teamWeapons } });
+      get().useWeapon(teamId, weapon, opts);
+    },
+
+    initStealTimer: (_opponentTeamId, _teamName) => {
+      const tick = () => {
+        const current = get().game;
+        if (!current || current.phase !== 'steal') return;
+        if (current.timer <= 0) {
+          // Steal time expired — question passes with no points
+          const updatedBoard = current.board.map((row) =>
+            row.map((cell) =>
+              cell.questionId === current.currentQuestion?.id
+                ? { ...cell, answered: true }
+                : cell
+            )
+          );
+          const answeredQuestions = [
+            ...current.room.answeredQuestions,
+            ...(current.currentQuestion ? [current.currentQuestion.id] : []),
+          ];
+          const answeredCount = updatedBoard.reduce((a, r) => a + r.filter((c) => c.answered).length, 0);
+          const allAnswered = current.room.isTrial
+            ? answeredQuestions.length >= TRIAL_QUESTION_LIMIT
+            : answeredCount >= current.board.reduce((a, r) => a + r.length, 0);
+
+          const playerIds = current.room.players.map((p) => p.id);
+          const nextIdx   = (current.room.players.findIndex((p) => p.id === current.activePlayer) + 1) % playerIds.length;
+          const nextPlayer = playerIds[nextIdx];
+          const nextTeamId: TeamId | null = current.activeTeamId === 'alpha' ? 'beta'
+            : current.activeTeamId === 'beta' ? 'alpha' : null;
+
+          set({
+            game: {
+              ...current,
+              board: updatedBoard,
+              phase: allAnswered ? 'finished' : 'result',
+              room: { ...current.room, answeredQuestions, status: allAnswered ? 'finished' : 'playing' },
+              activePlayer: nextPlayer,
+              activeTeamId: nextTeamId ?? current.activeTeamId,
+              timer: 0,
+              hostMessage: getStealFailMessage(),
+              lastAnswer: {
+                playerId: current.activePlayer ?? '',
+                correct: false,
+                points: 0,
+                timeBonus: 0,
+                streakMultiplier: 1,
+              },
+              stealOpponentTeamId: null,
+            },
+            answeredCount,
+          });
+          return;
+        }
+        set({ game: { ...current, timer: current.timer - 1 } });
+        setTimeout(tick, 1000);
+      };
+      setTimeout(tick, 1000);
     },
 
     activateLastStand: (teamId) => {

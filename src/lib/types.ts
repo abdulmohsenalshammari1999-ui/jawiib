@@ -83,7 +83,7 @@ export type SabotageType =
 
 // ─── Weapon / Mystery-Box system ─────────────────────────────────────────────
 
-export type WeaponType = 'timer_bomb' | 'immunity' | 'forced_category' | 'ask_friend';
+export type WeaponType = 'timer_bomb' | 'immunity' | 'forced_category' | 'ask_friend' | 'extra_time';
 
 export interface Evidence {
   title: string;
@@ -106,7 +106,8 @@ export interface GameState {
   currentQuestion: Question | null;
   activePlayer: string | null;
   timer: number;
-  phase: 'lobby' | 'board' | 'question' | 'result' | 'sabotage' | 'finished';
+  phase: 'lobby' | 'board' | 'question' | 'steal' | 'result' | 'sabotage' | 'finished';
+  stealOpponentTeamId: TeamId | null;
   hostMessage: string;
   sabotages: Record<string, SabotageType[]>;
   selectedSabotage: SabotageType | null;

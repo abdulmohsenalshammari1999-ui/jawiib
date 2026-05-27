@@ -3,6 +3,7 @@ class AudioManager {
   soundEnabled = true;
   musicEnabled = true;
   private _bgmPlaying = false;
+  private _bgmStep = 0;
 
   private ctx(): AudioContext {
     if (!this._ctx) this._ctx = new AudioContext();
@@ -39,51 +40,80 @@ class AudioManager {
     } catch {}
   }
 
+  // Soft wood-knock tick — replaces harsh square wave
   playTick() {
-    this.tone(1200, 0.06, 'square', 0.12);
+    this.tone(420, 0.08, 'triangle', 0.1);
   }
 
+  // Urgent final-seconds tick — slightly higher, still warm
   playFinalTick() {
-    this.tone(1600, 0.08, 'square', 0.18);
+    this.tone(600, 0.07, 'triangle', 0.14);
+    setTimeout(() => this.tone(500, 0.04, 'triangle', 0.08), 60);
   }
 
+  // Rising oud-like correct tone
   playCorrect() {
-    this.tone(660, 0.15, 'sine', 0.3, 440);
-    setTimeout(() => this.tone(880, 0.2, 'sine', 0.25), 130);
+    this.tone(440, 0.18, 'sine', 0.28, 330);
+    setTimeout(() => this.tone(660, 0.22, 'sine', 0.22), 160);
+    setTimeout(() => this.tone(880, 0.18, 'sine', 0.16), 340);
   }
 
+  // Low buzzer — softened with sine
   playWrong() {
-    this.tone(300, 0.25, 'sawtooth', 0.2, 440);
+    this.tone(180, 0.22, 'sine', 0.22, 280);
+    setTimeout(() => this.tone(140, 0.18, 'sine', 0.14), 180);
   }
 
   playScore(big = false) {
     if (big) {
-      [523, 659, 784, 1047].forEach((f, i) =>
-        setTimeout(() => this.tone(f, 0.15, 'sine', 0.25), i * 80),
+      // Maqam Rast ascending: D E F G A (294 330 349 392 440)
+      [294, 330, 392, 440, 587].forEach((f, i) =>
+        setTimeout(() => this.tone(f, 0.18, 'sine', 0.22), i * 90),
       );
     } else {
-      this.tone(523, 0.1, 'sine', 0.2);
-      setTimeout(() => this.tone(659, 0.12, 'sine', 0.2), 90);
+      this.tone(392, 0.12, 'sine', 0.18);
+      setTimeout(() => this.tone(494, 0.14, 'sine', 0.18), 100);
     }
   }
 
   playSabotage() {
-    this.tone(80, 0.4, 'sawtooth', 0.3, 400);
-    setTimeout(() => this.tone(60, 0.3, 'sawtooth', 0.2), 300);
+    this.tone(110, 0.35, 'sine', 0.22, 260);
+    setTimeout(() => this.tone(90, 0.25, 'sine', 0.16), 280);
   }
 
   playWinner() {
-    const fanfare = [523, 659, 784, 659, 1047];
-    fanfare.forEach((f, i) => setTimeout(() => this.tone(f, 0.18, 'sine', 0.3), i * 110));
+    // Pentatonic fanfare: D F# A D' F#'
+    const fanfare = [294, 370, 440, 587, 740];
+    fanfare.forEach((f, i) => setTimeout(() => this.tone(f, 0.22, 'sine', 0.28), i * 120));
   }
 
   playCountdown() {
-    this.tone(880, 0.12, 'sine', 0.3);
+    this.tone(660, 0.14, 'sine', 0.28);
   }
 
   playCountdownGo() {
-    this.tone(1174, 0.25, 'sine', 0.4);
-    setTimeout(() => this.tone(1568, 0.3, 'sine', 0.35), 200);
+    this.tone(880, 0.28, 'sine', 0.36);
+    setTimeout(() => this.tone(1174, 0.32, 'sine', 0.28), 220);
+  }
+
+  playWeaponActivated() {
+    this.tone(330, 0.12, 'sine', 0.2);
+    setTimeout(() => this.tone(440, 0.14, 'sine', 0.22), 110);
+    setTimeout(() => this.tone(550, 0.18, 'sine', 0.2), 230);
+  }
+
+  playExtraTime() {
+    // Rising gentle chime
+    [294, 370, 494].forEach((f, i) =>
+      setTimeout(() => this.tone(f, 0.2, 'sine', 0.18), i * 130),
+    );
+  }
+
+  playStealPhase() {
+    // Tense low pulse
+    this.tone(220, 0.18, 'sine', 0.2);
+    setTimeout(() => this.tone(246, 0.18, 'sine', 0.18), 200);
+    setTimeout(() => this.tone(220, 0.22, 'sine', 0.22), 400);
   }
 
   speakHost(text: string) {
@@ -103,17 +133,29 @@ class AudioManager {
     try { window.speechSynthesis?.cancel(); } catch {}
   }
 
-  // Minimal BGM: a quiet ambient pulse
+  // Maqam Rast-inspired pentatonic BGM loop
+  // Notes: D3(147) E3(165) F#3(185) A3(220) B3(247) — warm oud register
   startBGM(intensity: 'low' | 'mid' | 'high' = 'low') {
     if (!this.musicEnabled || this._bgmPlaying) return;
     this._bgmPlaying = true;
-    const freqMap = { low: 110, mid: 130, high: 155 };
-    const _loop = () => {
-      if (!this._bgmPlaying || !this.musicEnabled) return;
-      this.tone(freqMap[intensity], 0.6, 'sine', 0.04);
-      setTimeout(_loop, 1800);
+    this._bgmStep = 0;
+
+    // Phrase patterns: low=gentle, mid=active, high=tense
+    const phrases: Record<typeof intensity, number[][]> = {
+      low:  [[147, 0.5], [165, 0.4], [185, 0.5], [220, 0.6], [185, 0.4], [165, 0.5]],
+      mid:  [[220, 0.4], [247, 0.35], [220, 0.4], [185, 0.35], [247, 0.45], [220, 0.5]],
+      high: [[247, 0.3], [277, 0.28], [247, 0.32], [220, 0.3], [277, 0.35], [294, 0.4]],
     };
-    setTimeout(_loop, 0);
+    const seq = phrases[intensity];
+
+    const playStep = () => {
+      if (!this._bgmPlaying || !this.musicEnabled) return;
+      const [freq, dur] = seq[this._bgmStep % seq.length];
+      this.tone(freq as number, dur as number, 'sine', 0.035);
+      this._bgmStep++;
+      setTimeout(playStep, (dur as number) * 1000 + 320);
+    };
+    setTimeout(playStep, 0);
   }
 
   stopBGM() {

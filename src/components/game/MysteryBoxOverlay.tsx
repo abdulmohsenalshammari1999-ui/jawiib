@@ -7,6 +7,7 @@ interface Props {
   teamColor: string;
   weapon: WeaponType;
   onCollect: () => void;
+  onActivate?: (weapon: WeaponType) => void;
 }
 
 const WEAPON_INFO: Record<WeaponType, { name: string; icon: string; color: string; description: string }> = {
@@ -14,9 +15,10 @@ const WEAPON_INFO: Record<WeaponType, { name: string; icon: string; color: strin
   immunity:        { name: 'درع الحصانة',    icon: '🛡️', color: '#3B82F6', description: 'يحمي فريقك من خسارة نقاط إذا غلطتوا مرة واحدة' },
   forced_category: { name: 'فرض الفئة',     icon: '🎯', color: '#8B5CF6', description: 'تختارون للخصم من أي فئة يلزم يجاوب!' },
   ask_friend:      { name: 'اتصل بصديق',    icon: '📞', color: '#10B981', description: '+25 ثانية على وقت سؤالكم الجاي' },
+  extra_time:      { name: 'وقت إضافي',      icon: '⏱️', color: '#F59E0B', description: '+15 ثانية على وقت السؤال الحالي أو الجاي' },
 };
 
-export function MysteryBoxOverlay({ teamId, teamName, teamColor, weapon, onCollect }: Props) {
+export function MysteryBoxOverlay({ teamId, teamName, teamColor, weapon, onCollect, onActivate }: Props) {
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
@@ -25,13 +27,14 @@ export function MysteryBoxOverlay({ teamId, teamName, teamColor, weapon, onColle
   }, []);
 
   const info = WEAPON_INFO[weapon];
+  const teamEmoji = teamId === 'alpha' ? '🌊' : '🐪';
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
       <div className="game-card p-6 w-full max-w-sm text-center animate-slide-in-up">
         {/* Team badge */}
         <p className="text-sm font-bold mb-3" style={{ color: teamColor }}>
-          {teamId === 'alpha' ? '🛡️' : '⚔️'} {teamName}
+          {teamEmoji} {teamName}
         </p>
 
         <h2 className="text-xl font-black text-gold-gradient mb-4">
@@ -50,10 +53,7 @@ export function MysteryBoxOverlay({ teamId, teamName, teamColor, weapon, onColle
           ) : (
             <div className="animate-bounce-in flex flex-col items-center gap-2">
               <span className="text-6xl">{info.icon}</span>
-              <p
-                className="text-lg font-black"
-                style={{ color: info.color }}
-              >
+              <p className="text-lg font-black" style={{ color: info.color }}>
                 {info.name}
               </p>
               <p className="text-xs text-jawwib-text-dim leading-relaxed max-w-[240px]">
@@ -64,9 +64,23 @@ export function MysteryBoxOverlay({ teamId, teamName, teamColor, weapon, onColle
         </div>
 
         {revealed && (
-          <button onClick={onCollect} className="btn-gold w-full animate-fade-in">
-            تم! احتفظ بالسلاح ✓
-          </button>
+          <div className="flex flex-col gap-2">
+            {onActivate && (
+              <button
+                onClick={() => onActivate(weapon)}
+                className="w-full py-3 rounded-xl font-black text-sm text-white animate-fade-in active:scale-95 transition-all"
+                style={{ background: info.color }}
+              >
+                استخدم الآن! {info.icon}
+              </button>
+            )}
+            <button
+              onClick={onCollect}
+              className="w-full py-2.5 rounded-xl border-2 border-jawwib-border text-jawwib-text-dim font-bold text-sm hover:border-jawwib-gold hover:text-jawwib-gold transition-all animate-fade-in"
+            >
+              احتفظ لاحقاً 🎒
+            </button>
+          </div>
         )}
 
         {!revealed && (

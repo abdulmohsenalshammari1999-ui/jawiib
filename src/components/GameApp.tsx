@@ -51,6 +51,7 @@ export function GameApp() {
   const setTeamMembership    = useGameStore((s) => s.setTeamMembership);
   const dismissPendingWeapon = useGameStore((s) => s.dismissPendingWeapon);
   const activateLastStand    = useGameStore((s) => s.activateLastStand);
+  const activateWeaponFromBox = useGameStore((s) => s.activateWeaponFromBox);
 
   const mode        = useRoomStore((s) => s.mode);
   const teams       = useRoomStore((s) => s.teams);
@@ -105,6 +106,11 @@ export function GameApp() {
     if (game?.phase === 'question') setCrowdVotes({ correct: 0, wrong: 0 });
   }, [game?.currentQuestion?.id, game?.phase]);
 
+  // Steal phase audio cue
+  useEffect(() => {
+    if (game?.phase === 'steal') audio.playStealPhase();
+  }, [game?.phase]);
+
   // Reset sub-view when game starts
   useEffect(() => {
     if (game?.phase === 'board') setSubView('lobby');
@@ -140,7 +146,7 @@ export function GameApp() {
   // Timer ticking audio
   useEffect(() => {
     const t = game?.timer ?? 0;
-    if (game?.phase === 'question' && t < prevTimer.current && t > 0) {
+    if ((game?.phase === 'question' || game?.phase === 'steal') && t < prevTimer.current && t > 0) {
       if (t <= 5) audio.playFinalTick();
       else if (t <= 9) audio.playTick();
     }
@@ -249,6 +255,7 @@ export function GameApp() {
       teamColor={game.pendingWeapon.teamId === 'alpha' ? '#1D4ED8' : '#B91C1C'}
       weapon={game.pendingWeapon.weapon}
       onCollect={dismissPendingWeapon}
+      onActivate={(w) => activateWeaponFromBox(game.pendingWeapon!.teamId, w)}
     />
   ) : null;
 
@@ -510,16 +517,37 @@ export function GameApp() {
     );
   }
 
-  // ── Phase: question ───────────────────────────────────────────────────────────
-  if (game.phase === 'question' && game.currentQuestion) {
-    const ap = game.activePlayer ? game.room.players.find((p) => p.id === game.activePlayer) : null;
-    const apTeamColor = ap && teamData
-      ? teamData.alpha.playerIds.includes(ap.id) ? '#1D4ED8' : '#B91C1C'
-      : null;
+  // ── Phase: question / steal ───────────────────────────────────────────────────
+  if ((game.phase === 'question' || game.phase === 'steal') && game.currentQuestion) {
+    const isSteal   = game.phase === 'steal';
+    const stealTeam = isSteal && game.stealOpponentTeamId;
+
+    // In steal phase, the "active player" is whichever local player belongs to the steal team
+    const ap = isSteal
+      ? (game.stealOpponentTeamId && game.teamMembership
+          ? game.room.players.find((p) => game.teamMembership![game.stealOpponentTeamId!]?.includes(p.id))
+          : null)
+      : game.activePlayer ? game.room.players.find((p) => p.id === game.activePlayer) : null;
+
+    const apTeamId = isSteal ? game.stealOpponentTeamId : (ap && teamData
+      ? teamData.alpha.playerIds.includes(ap.id) ? 'alpha' : 'beta'
+      : null);
+    const apTeamColor = apTeamId === 'alpha' ? '#1D4ED8' : apTeamId === 'beta' ? '#B91C1C' : null;
+
     const totalCells = game.board.reduce((a, r) => a + r.length, 0);
-    const isFinalQ   = game.room.isTrial
+    const isFinalQ   = !isSteal && (game.room.isTrial
       ? game.room.answeredQuestions.length >= 8
-      : answeredCount >= totalCells - 1;
+      : answeredCount >= totalCells - 1);
+
+    // In steal phase, any player on the steal team can answer
+    const canAnswer = isSteal
+      ? (localPlayerId && game.stealOpponentTeamId && game.teamMembership
+          ? game.teamMembership[game.stealOpponentTeamId]?.includes(localPlayerId) ?? false
+          : false)
+      : qflow.canAnswer;
+
+    const stealTeamName = stealTeam === 'alpha' ? (teamData?.alpha.name ?? 'فريق البحر') : (teamData?.beta.name ?? 'فريق البر');
+    const stealEmoji    = stealTeam === 'alpha' ? '🌊' : '🐪';
 
     return (
       <div className="min-h-screen p-4 flex flex-col gap-3">
@@ -528,15 +556,24 @@ export function GameApp() {
           <AudioControls />
         </div>
 
-        {/* Final question banner */}
-        {isFinalQ && (
+        {/* Phase indicator */}
+        {isSteal ? (
+          <div className="text-center animate-bounce-in">
+            <span
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black text-white"
+              style={{ background: 'linear-gradient(135deg,#7C3AED,#A855F7)' }}
+            >
+              🏴‍☠️ فرصة سرقة — {stealEmoji} {stealTeamName}
+            </span>
+          </div>
+        ) : isFinalQ ? (
           <div className="text-center animate-final-flare">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black text-white"
               style={{ background: 'linear-gradient(135deg,#B07D1A,#D4A94A)' }}>
               ⚡ السؤال الأخير!
             </span>
           </div>
-        )}
+        ) : null}
 
         {ap && (
           <div
@@ -548,8 +585,8 @@ export function GameApp() {
             }}
           >
             <span>{ap.avatar}</span>
-            <span>دور {ap.name}</span>
-            {!qflow.isMyTurn && (
+            <span>{isSteal ? `سرقة: ${ap.name}` : `دور ${ap.name}`}</span>
+            {!canAnswer && (
               <span className="text-jawwib-text-dim text-xs font-normal">(شاهد)</span>
             )}
           </div>
@@ -559,39 +596,41 @@ export function GameApp() {
           <QuestionCard
             question={game.currentQuestion}
             timer={game.timer}
-            maxTimer={game.currentQuestion.points === 100 ? 16 : game.currentQuestion.points === 600 ? 7 : 15}
+            maxTimer={30}
             onAnswer={(idx) => {
-              if (!qflow.canAnswer) return;
+              if (!canAnswer) return;
               if (localPlayerId) answerQuestion(localPlayerId, idx);
             }}
-            disabled={!qflow.canAnswer}
+            disabled={!canAnswer}
             hasBomb={hasBomb}
             hasDouble={hasDouble}
-            scrambledOptions={scrambledOptions}
+            scrambledOptions={isSteal ? null : scrambledOptions}
             teamColor={apTeamColor ?? undefined}
           />
         </div>
 
-        {/* Crowd prediction — spectators tap while player thinks */}
-        <div className="game-card p-3 animate-crowd-hype">
-          <p className="text-center text-xs font-bold text-jawwib-text-dim mb-2">
-            🙋 الجمهور يتوقع — ماذا سيجيب؟
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => setCrowdVotes((v) => ({ ...v, correct: v.correct + 1 }))}
-              className="py-3 rounded-xl border-2 border-jawwib-green/40 bg-jawwib-green/8 text-jawwib-green font-black text-sm tap-target"
-            >
-              صح ✅ {crowdVotes.correct > 0 && <span className="text-xs opacity-70">({crowdVotes.correct})</span>}
-            </button>
-            <button
-              onClick={() => setCrowdVotes((v) => ({ ...v, wrong: v.wrong + 1 }))}
-              className="py-3 rounded-xl border-2 border-jawwib-red/40 bg-jawwib-red/8 text-jawwib-red font-black text-sm tap-target"
-            >
-              غلط ❌ {crowdVotes.wrong > 0 && <span className="text-xs opacity-70">({crowdVotes.wrong})</span>}
-            </button>
+        {/* Crowd prediction — only on main question turn */}
+        {!isSteal && (
+          <div className="game-card p-3 animate-crowd-hype">
+            <p className="text-center text-xs font-bold text-jawwib-text-dim mb-2">
+              🙋 الجمهور يتوقع — ماذا سيجيب؟
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setCrowdVotes((v) => ({ ...v, correct: v.correct + 1 }))}
+                className="py-3 rounded-xl border-2 border-jawwib-green/40 bg-jawwib-green/8 text-jawwib-green font-black text-sm tap-target"
+              >
+                صح ✅ {crowdVotes.correct > 0 && <span className="text-xs opacity-70">({crowdVotes.correct})</span>}
+              </button>
+              <button
+                onClick={() => setCrowdVotes((v) => ({ ...v, wrong: v.wrong + 1 }))}
+                className="py-3 rounded-xl border-2 border-jawwib-red/40 bg-jawwib-red/8 text-jawwib-red font-black text-sm tap-target"
+              >
+                غلط ❌ {crowdVotes.wrong > 0 && <span className="text-xs opacity-70">({crowdVotes.wrong})</span>}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         <EffectToast lastResult={lastResult} />
       </div>

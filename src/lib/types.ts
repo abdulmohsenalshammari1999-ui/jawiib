@@ -88,7 +88,9 @@ export type WeaponType = 'timer_bomb' | 'immunity' | 'forced_category' | 'ask_fr
 export interface Evidence {
   title: string;
   description: string;
+  visualIcon?: string;  // emoji shown as visual anchor when no image
   imageUrl?: string;
+  sourceLink?: string;  // future: link to source
 }
 
 export interface Sabotage {

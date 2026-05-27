@@ -1,4 +1,5 @@
 import type { GameState } from '@/lib/types';
+import { EvidenceCard } from './game/EvidenceCard';
 
 interface ResultOverlayProps {
   lastAnswer: NonNullable<GameState['lastAnswer']>;
@@ -90,24 +91,9 @@ export function ResultOverlay({
           <p className="text-xs leading-relaxed text-jawwib-text">{hostMessage}</p>
         </div>
 
-        {/* Evidence card — shown for select questions */}
+        {/* Evidence card — shown for select questions after answer lock */}
         {currentQuestion.evidence && (
-          <div className="bg-jawwib-blue/6 border border-jawwib-blue/20 rounded-xl p-3 mb-3 animate-fade-in">
-            <p className="text-[11px] font-bold text-jawwib-blue mb-1 flex items-center gap-1">
-              <span>📖</span>
-              <span>{currentQuestion.evidence.title}</span>
-            </p>
-            <p className="text-[11px] leading-relaxed text-jawwib-text">
-              {currentQuestion.evidence.description}
-            </p>
-            {currentQuestion.evidence.imageUrl && (
-              <img
-                src={currentQuestion.evidence.imageUrl}
-                alt={currentQuestion.evidence.title}
-                className="mt-2 rounded-lg w-full object-cover max-h-28"
-              />
-            )}
-          </div>
+          <EvidenceCard evidence={currentQuestion.evidence} />
         )}
 
         <button onClick={onContinue} className="btn-gold w-full">

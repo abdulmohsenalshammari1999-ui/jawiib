@@ -259,8 +259,8 @@ export function GameApp() {
     return (
       <GameLoadingScreen
         onDone={handleIntroDone}
-        alphaTeam={mode === 'teams' ? { name: teams.alpha.name, color: '#1A5FA8', emoji: '🛡️' } : null}
-        betaTeam={mode === 'teams' ? { name: teams.beta.name,  color: '#B82118', emoji: '⚔️' } : null}
+        alphaTeam={mode === 'teams' ? { name: teams.alpha.name, color: '#1A5FA8', emoji: '🌊' } : null}
+        betaTeam={mode === 'teams' ? { name: teams.beta.name,  color: '#B82118', emoji: '🐪' } : null}
         selectedCategories={(game?.room.categories ?? []) as CategoryId[]}
         hostMessage={game?.hostMessage ?? ''}
         mode={mode}
@@ -374,7 +374,7 @@ export function GameApp() {
                 return (
                   <div key={tid} className={`game-card p-3 border-2 ${isBlue ? 'border-jawwib-blue/30 bg-blue-50/50' : 'border-jawwib-red/30 bg-red-50/50'}`}>
                     <p className={`font-bold text-sm mb-2 ${isBlue ? 'text-jawwib-blue' : 'text-jawwib-red'}`}>
-                      {isBlue ? '🛡️' : '⚔️'} {t.name}
+                      {isBlue ? '🌊' : '🐪'} {t.name}
                     </p>
                     <div className="space-y-1.5 min-h-[40px]">
                       {t.playerIds.map((pid) => {

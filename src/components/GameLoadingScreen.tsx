@@ -77,7 +77,7 @@ export function GameLoadingScreen({
                 المباراة
               </p>
 
-              {/* Teams matchup */}
+              {/* Teams matchup with lore */}
               <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
                 <div
                   className="game-card p-4 text-center border-2"
@@ -87,8 +87,14 @@ export function GameLoadingScreen({
                   <p className="font-black text-sm" style={{ color: alphaTeam.color }}>
                     {alphaTeam.name}
                   </p>
+                  <p className="text-[9px] text-jawwib-text-dim mt-1 leading-snug opacity-80">
+                    💎 أبناء الغوص<br/>والأمواج
+                  </p>
                 </div>
-                <div className="font-black text-xl text-jawwib-gold text-center">VS</div>
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="font-black text-xl text-jawwib-gold">VS</span>
+                  <span className="text-[8px] text-jawwib-text-dim">الأسطورة</span>
+                </div>
                 <div
                   className="game-card p-4 text-center border-2"
                   style={{ borderColor: `${betaTeam.color}50` }}
@@ -96,6 +102,9 @@ export function GameLoadingScreen({
                   <p className="text-3xl mb-1">{betaTeam.emoji}</p>
                   <p className="font-black text-sm" style={{ color: betaTeam.color }}>
                     {betaTeam.name}
+                  </p>
+                  <p className="text-[9px] text-jawwib-text-dim mt-1 leading-snug opacity-80">
+                    🦅 أبناء الصحراء<br/>والقوافل
                   </p>
                 </div>
               </div>

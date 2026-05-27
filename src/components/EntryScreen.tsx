@@ -19,13 +19,13 @@ export function EntryScreen({
   const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 60);
+    const t = setTimeout(() => setMounted(true), 40);
     return () => clearTimeout(t);
   }, []);
 
   const handleEnter = () => {
     setExiting(true);
-    setTimeout(onEnter, 420);
+    setTimeout(onEnter, 380);
   };
 
   const visible = mounted && !exiting;
@@ -33,7 +33,7 @@ export function EntryScreen({
   return (
     <div
       className="min-h-screen bg-diwaniya flex flex-col relative overflow-hidden"
-      style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.42s ease-out' }}
+      style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.38s ease-out' }}
     >
       <div className="sadu-accent w-full" />
 
@@ -42,23 +42,22 @@ export function EntryScreen({
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse at 25% 15%, rgba(176,125,26,0.09) 0%, transparent 52%),' +
-            'radial-gradient(ellipse at 75% 85%, rgba(26,95,168,0.07) 0%, transparent 45%)',
+            'radial-gradient(ellipse at 22% 12%, rgba(176,125,26,0.11) 0%, transparent 50%),' +
+            'radial-gradient(ellipse at 78% 88%, rgba(26,95,168,0.09) 0%, transparent 44%)',
         }}
       />
 
-      {/* Desert dune silhouette */}
       <div className="dune-silhouette" />
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6 gap-7 z-10">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6 z-10">
 
         {/* Logo */}
         <div
           className="text-center"
           style={{
             opacity: mounted ? 1 : 0,
-            transform: mounted ? 'translateY(0)' : 'translateY(24px)',
-            transition: 'opacity 0.65s ease-out, transform 0.65s ease-out',
+            transform: mounted ? 'translateY(0)' : 'translateY(20px)',
+            transition: 'opacity 0.55s ease-out, transform 0.55s ease-out',
           }}
         >
           <h1 className="text-[5.5rem] sm:text-[7rem] font-black text-gold-gradient leading-none tracking-tight">
@@ -68,7 +67,6 @@ export function EntryScreen({
           <p className="text-jawwib-text-dim text-sm mt-2 font-medium">
             لعبة الثقافة العامة الخليجية
           </p>
-          {/* Cultural motif */}
           <div className="cultural-strip mt-3">
             🌴 🐪 ☕ 🦅 🌊 🌴
           </div>
@@ -79,7 +77,7 @@ export function EntryScreen({
           className="flex items-center gap-5 text-center"
           style={{
             opacity: mounted ? 1 : 0,
-            transition: 'opacity 0.65s 0.18s ease-out',
+            transition: 'opacity 0.55s 0.12s ease-out',
           }}
         >
           {[
@@ -100,14 +98,14 @@ export function EntryScreen({
           className="w-full max-w-sm"
           style={{
             opacity: mounted ? 1 : 0,
-            transform: mounted ? 'translateY(0)' : 'translateY(12px)',
-            transition: 'opacity 0.65s 0.12s ease-out, transform 0.65s 0.12s ease-out',
+            transform: mounted ? 'translateY(0)' : 'translateY(10px)',
+            transition: 'opacity 0.55s 0.08s ease-out, transform 0.55s 0.08s ease-out',
           }}
         >
           <div className="flex items-center gap-3 bg-jawwib-surface rounded-2xl px-4 py-3 border border-jawwib-border">
             <span className="text-2xl shrink-0">🎙️</span>
             <p className="text-jawwib-text text-sm font-bold leading-snug">
-              أهلاً وسهلاً في جاوب — هل أنتم جاهزون للمنافسة؟
+              أهلاً وسهلاً في جاوب — البحر والبر يتنافسان الليلة! 🌊🐪
             </p>
           </div>
         </div>
@@ -117,13 +115,13 @@ export function EntryScreen({
           className="w-full max-w-sm space-y-3"
           style={{
             opacity: mounted ? 1 : 0,
-            transform: mounted ? 'translateY(0)' : 'translateY(12px)',
-            transition: 'opacity 0.65s 0.28s ease-out, transform 0.65s 0.28s ease-out',
+            transform: mounted ? 'translateY(0)' : 'translateY(10px)',
+            transition: 'opacity 0.55s 0.2s ease-out, transform 0.55s 0.2s ease-out',
           }}
         >
           <button
             onClick={handleEnter}
-            className="btn-gold w-full text-xl py-5 animate-pulse-gold"
+            className="btn-gold w-full text-xl py-5 animate-pulse-gold tap-target"
           >
             ابدأ اللعبة 🚀
           </button>
@@ -131,7 +129,7 @@ export function EntryScreen({
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={onToggleSound}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border text-xs font-bold transition-all tap-target ${
                 soundEnabled
                   ? 'border-jawwib-gold/40 text-jawwib-gold bg-jawwib-gold/8'
                   : 'border-jawwib-border text-jawwib-text-dim opacity-50'
@@ -141,7 +139,7 @@ export function EntryScreen({
             </button>
             <button
               onClick={onToggleMusic}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl border text-xs font-bold transition-all tap-target ${
                 musicEnabled
                   ? 'border-jawwib-gold/40 text-jawwib-gold bg-jawwib-gold/8'
                   : 'border-jawwib-border text-jawwib-text-dim opacity-50'
@@ -152,27 +150,44 @@ export function EntryScreen({
           </div>
         </div>
 
-        {/* Rivalry teaser — البحر vs البر */}
+        {/* البحر vs البر — mythology rivalry */}
         <div
-          className="flex items-center gap-3 w-full max-w-sm"
+          className="w-full max-w-sm"
           style={{
-            opacity: mounted ? 0.85 : 0,
-            transition: 'opacity 0.65s 0.38s ease-out',
+            opacity: mounted ? 1 : 0,
+            transition: 'opacity 0.55s 0.3s ease-out',
           }}
         >
-          <div className="flex-1 text-center p-3 rounded-xl border-2 border-jawwib-blue/30 bg-blue-50/40">
-            <p className="text-xl mb-0.5">🌊</p>
-            <p className="text-jawwib-blue font-black text-xs">فريق البحر</p>
+          <div className="flex items-stretch gap-3">
+            {/* البحر */}
+            <div className="flex-1 text-center p-3 rounded-2xl border-2 border-jawwib-blue/35 bg-blue-50/40">
+              <p className="text-2xl mb-1">🌊</p>
+              <p className="text-jawwib-blue font-black text-sm leading-tight">فريق البحر</p>
+              <p className="text-jawwib-text-dim text-[10px] mt-1 leading-snug opacity-80">
+                أبناء الغوص<br/>واللؤلؤ والتجارة
+              </p>
+            </div>
+
+            {/* VS */}
+            <div className="flex flex-col items-center justify-center gap-0.5">
+              <p className="text-xl font-black text-jawwib-gold leading-none">VS</p>
+              <p className="text-[9px] text-jawwib-text-dim text-center">البحر<br/>والبر</p>
+            </div>
+
+            {/* البر */}
+            <div className="flex-1 text-center p-3 rounded-2xl border-2 border-jawwib-red/35 bg-red-50/40">
+              <p className="text-2xl mb-1">🐪</p>
+              <p className="text-jawwib-red font-black text-sm leading-tight">فريق البر</p>
+              <p className="text-jawwib-text-dim text-[10px] mt-1 leading-snug opacity-80">
+                أبناء القوافل<br/>والصحراء والصيد
+              </p>
+            </div>
           </div>
-          <div className="text-center">
-            <p className="text-lg font-black text-jawwib-gold leading-none">VS</p>
-            <p className="text-[9px] text-jawwib-text-dim mt-0.5">البحر والبر</p>
-          </div>
-          <div className="flex-1 text-center p-3 rounded-xl border-2 border-jawwib-red/30 bg-red-50/40">
-            <p className="text-xl mb-0.5">🐪</p>
-            <p className="text-jawwib-red font-black text-xs">فريق البر</p>
-          </div>
+          <p className="text-center text-[10px] text-jawwib-text-dim mt-2 opacity-70">
+            كن البحر أو البر — اختر جانبك واثبت أنك الأفضل
+          </p>
         </div>
+
       </div>
 
       <div className="sadu-accent w-full" />

@@ -1,4 +1,4 @@
-import type { Player } from '@/lib/types';
+import type { Player, TeamId } from '@/lib/types';
 
 interface TeamData {
   id: 'alpha' | 'beta';
@@ -12,11 +12,29 @@ interface TeamScoreboardProps {
   teams: { alpha: TeamData; beta: TeamData } | null;
   activePlayerId: string | null;
   mode: 'ffa' | 'teams';
+  lastStandUsed?: Partial<Record<TeamId, boolean>>;
+  onActivateLastStand?: (teamId: TeamId) => void;
 }
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
-export function TeamScoreboard({ players, teams, activePlayerId, mode }: TeamScoreboardProps) {
+function streakIndicator(streak: number) {
+  if (streak <= 0) return null;
+  if (streak >= 5) return <span className="text-[11px] streak-fire">👑×{streak}</span>;
+  if (streak >= 4) return <span className="text-[11px] streak-fire">🔥🔥🔥🔥</span>;
+  if (streak >= 3) return <span className="text-[11px] text-jawwib-gold">🔥🔥🔥</span>;
+  if (streak >= 2) return <span className="text-[11px] text-jawwib-gold/70">🔥🔥</span>;
+  return <span className="text-[11px] opacity-60">🔥</span>;
+}
+
+export function TeamScoreboard({
+  players,
+  teams,
+  activePlayerId,
+  mode,
+  lastStandUsed = {},
+  onActivateLastStand,
+}: TeamScoreboardProps) {
   if (mode === 'teams' && teams) {
     const alphaPlayers = players.filter((p) => teams.alpha.playerIds.includes(p.id));
     const betaPlayers  = players.filter((p) => teams.beta.playerIds.includes(p.id));
@@ -25,7 +43,10 @@ export function TeamScoreboard({ players, teams, activePlayerId, mode }: TeamSco
     const alphaLeads   = alphaScore >= betaScore;
     const gap          = Math.abs(alphaScore - betaScore);
     const isCloseGame  = gap <= 200 && (alphaScore > 0 || betaScore > 0);
-    const isComeback   = gap >= 400;
+
+    // Last Stand eligibility: losing team trailing by 400+, one-time only
+    const alphaCanLastStand = !alphaLeads && gap >= 400 && !lastStandUsed['alpha'] && !!onActivateLastStand;
+    const betaCanLastStand  =  alphaLeads && gap >= 400 && !lastStandUsed['beta']  && !!onActivateLastStand;
 
     const activeTeam = (() => {
       if (!activePlayerId) return null;
@@ -44,7 +65,7 @@ export function TeamScoreboard({ players, teams, activePlayerId, mode }: TeamSco
             </span>
           </div>
         )}
-        {isComeback && !isCloseGame && (
+        {gap >= 400 && !isCloseGame && (
           <div className="text-center mb-2">
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
               alphaLeads
@@ -120,6 +141,24 @@ export function TeamScoreboard({ players, teams, activePlayerId, mode }: TeamSco
           </div>
         )}
 
+        {/* Last Stand buttons */}
+        {alphaCanLastStand && (
+          <button
+            onClick={() => onActivateLastStand?.('alpha')}
+            className="w-full mb-2 py-2.5 rounded-xl border-2 border-jawwib-blue/40 bg-jawwib-blue/8 text-jawwib-blue text-xs font-black last-stand-btn tap-target"
+          >
+            🌊 صمود أخير — ضاعف نقاط السؤال ×3
+          </button>
+        )}
+        {betaCanLastStand && (
+          <button
+            onClick={() => onActivateLastStand?.('beta')}
+            className="w-full mb-2 py-2.5 rounded-xl border-2 border-jawwib-red/40 bg-jawwib-red/8 text-jawwib-red text-xs font-black last-stand-btn tap-target"
+          >
+            🐪 صمود أخير — ضاعف نقاط السؤال ×3
+          </button>
+        )}
+
         {/* Individual players */}
         <div className="space-y-1">
           {[
@@ -139,9 +178,7 @@ export function TeamScoreboard({ players, teams, activePlayerId, mode }: TeamSco
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm">{player.avatar}</span>
                   <span className="font-bold text-xs">{player.name}</span>
-                  {player.streak >= 3 && (
-                    <span className="text-[10px] text-jawwib-gold">🔥{player.streak}</span>
-                  )}
+                  {player.streak > 0 && streakIndicator(player.streak)}
                 </div>
                 <span className="font-black text-sm tabular-nums" style={{ color: player.teamColor }}>
                   {player.score}
@@ -176,13 +213,11 @@ export function TeamScoreboard({ players, teams, activePlayerId, mode }: TeamSco
               <div className="flex items-center gap-2">
                 <span className="text-sm w-5">{MEDALS[idx] ?? `${idx + 1}`}</span>
                 <span className="text-base">{player.avatar}</span>
-                <div>
+                <div className="flex items-center gap-1">
                   <span className="font-bold text-sm">{player.name}</span>
-                  {player.streak >= 3 && (
-                    <span className="mr-1 text-xs text-jawwib-gold"> 🔥×{player.streak}</span>
-                  )}
+                  {player.streak > 0 && streakIndicator(player.streak)}
                   {!isLeading && gap > 0 && gap <= 300 && (
-                    <span className="mr-1 text-[10px] text-jawwib-text-dim"> −{gap}</span>
+                    <span className="text-[10px] text-jawwib-text-dim"> −{gap}</span>
                   )}
                 </div>
               </div>

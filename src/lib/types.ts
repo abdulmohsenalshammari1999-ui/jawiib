@@ -127,6 +127,9 @@ export interface GameState {
   activeBomb: TeamId | null;
   activeImmunity: Partial<Record<TeamId, boolean>>;
   forcedCategory: { targetTeamId: TeamId; categoryId: CategoryId } | null;
+  // ── Last Stand comeback mechanic ──
+  lastStandActive: TeamId | null;
+  lastStandUsed: Partial<Record<TeamId, boolean>>;
 }
 
 // ─── Sabotage system ──────────────────────────────────────────────────────────

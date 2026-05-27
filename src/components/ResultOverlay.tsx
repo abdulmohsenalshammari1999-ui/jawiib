@@ -8,6 +8,10 @@ interface ResultOverlayProps {
   onContinue: () => void;
   playerName?: string;
   teamColor?: string;
+  teamEmoji?: string;
+  isFinalQuestion?: boolean;
+  crowdVotes?: { correct: number; wrong: number };
+  playerStreak?: number;
 }
 
 export function ResultOverlay({
@@ -17,23 +21,65 @@ export function ResultOverlay({
   onContinue,
   playerName,
   teamColor,
+  teamEmoji,
+  isFinalQuestion,
+  crowdVotes,
+  playerStreak = 0,
 }: ResultOverlayProps) {
   const correctAnswer = currentQuestion.options[currentQuestion.correctIndex];
   const isCorrect     = lastAnswer.correct;
   const isBig         = Math.abs(lastAnswer.points) >= 400;
-  const isMedium      = Math.abs(lastAnswer.points) >= 200;
+  const isGoldenStreak = playerStreak >= 4;
+  const totalVotes    = (crowdVotes?.correct ?? 0) + (crowdVotes?.wrong ?? 0);
+  const crowdWasRight = crowdVotes && totalVotes > 0 &&
+    (isCorrect ? crowdVotes.correct >= crowdVotes.wrong : crowdVotes.wrong > crowdVotes.correct);
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-      <div className="game-card p-6 w-full max-w-sm animate-slide-in-up">
+      <div
+        className={`game-card p-6 w-full max-w-sm animate-slide-in-up ${
+          isGoldenStreak && isCorrect ? 'golden-streak-state' : ''
+        } ${!isCorrect ? 'animate-shame-shake' : ''}`}
+        style={teamColor ? { borderColor: `${teamColor}45` } : undefined}
+      >
+        {/* ── Final Question Banner ── */}
+        {isFinalQuestion && (
+          <div className="text-center mb-3 animate-final-flare">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black"
+              style={{ background: 'linear-gradient(135deg,#B07D1A,#D4A94A)', color: '#fff' }}>
+              ⚡ السؤال الأخير!
+            </div>
+          </div>
+        )}
+
+        {/* ── Golden Streak Banner ── */}
+        {isGoldenStreak && isCorrect && (
+          <div className="text-center mb-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-jawwib-gold/15 border border-jawwib-gold/40 text-jawwib-gold">
+              👑 سلسلة ذهبية ×{playerStreak}
+            </div>
+          </div>
+        )}
+
+        {/* ── Hall of Shame Banner (wrong answer) ── */}
+        {!isCorrect && (
+          <div className="text-center mb-3">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-jawwib-red/12 border border-jawwib-red/35 text-jawwib-red">
+              🚨 قاعة العار {teamEmoji ?? ''}
+            </div>
+          </div>
+        )}
+
         {/* Result icon */}
         <div className={`text-center mb-4 ${isBig ? 'animate-bounce-in' : 'animate-fade-in'}`}>
-          <div className={`text-6xl mb-2 ${isBig ? 'animate-bounce-in' : ''}`}>
-            {isCorrect ? (isBig ? '🔥' : isMedium ? '⭐' : '✅') : '❌'}
+          <div className={`text-6xl mb-2 ${isBig && isCorrect ? 'animate-bounce-in' : ''}`}>
+            {isCorrect
+              ? (isGoldenStreak ? '👑' : isBig ? '🔥' : '✅')
+              : (isBig ? '💀' : '❌')}
           </div>
           {playerName && (
             <p className="text-sm font-bold" style={teamColor ? { color: teamColor } : undefined}>
-              {playerName}
+              {teamEmoji ? `${teamEmoji} ` : ''}{playerName}
             </p>
           )}
         </div>
@@ -43,7 +89,9 @@ export function ResultOverlay({
             isCorrect ? 'text-jawwib-green' : 'text-jawwib-red'
           }`}
         >
-          {isCorrect ? (isBig ? 'ممتاز! 🎉' : 'إجابة صحيحة!') : 'إجابة خاطئة!'}
+          {isCorrect
+            ? (isGoldenStreak ? 'ذهبي! 👑🔥' : isBig ? 'ممتاز! 🎉' : 'إجابة صحيحة!')
+            : (isBig ? 'مصيبة! 😂' : 'خطأ فادح! 🚨')}
         </h2>
 
         {!isCorrect && (
@@ -85,18 +133,43 @@ export function ResultOverlay({
           </div>
         </div>
 
+        {/* Crowd Prediction Result */}
+        {crowdVotes && totalVotes > 0 && (
+          <div className="bg-jawwib-surface rounded-xl p-3 mb-3">
+            <p className="text-jawwib-text-dim text-xs font-bold mb-1.5 text-center">🙋 توقع الجمهور</p>
+            <div className="flex gap-2">
+              <div className={`flex-1 rounded-lg p-2 text-center text-xs font-black ${
+                isCorrect ? 'bg-jawwib-green/12 text-jawwib-green border border-jawwib-green/25' : 'bg-jawwib-surface text-jawwib-text-dim'
+              }`}>
+                <p>صح ✅</p>
+                <p className="text-base font-black">{crowdVotes.correct}</p>
+              </div>
+              <div className={`flex-1 rounded-lg p-2 text-center text-xs font-black ${
+                !isCorrect ? 'bg-jawwib-red/12 text-jawwib-red border border-jawwib-red/25' : 'bg-jawwib-surface text-jawwib-text-dim'
+              }`}>
+                <p>غلط ❌</p>
+                <p className="text-base font-black">{crowdVotes.wrong}</p>
+              </div>
+            </div>
+            {crowdWasRight !== undefined && (
+              <p className="text-center text-[10px] text-jawwib-text-dim mt-1">
+                {crowdWasRight ? '🎯 الجمهور توقع صح!' : '😱 الجمهور انخدع!'}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Host */}
         <div className="flex items-start gap-2 bg-jawwib-surface rounded-xl p-3 mb-3">
           <span className="text-base shrink-0">🎙️</span>
           <p className="text-xs leading-relaxed text-jawwib-text">{hostMessage}</p>
         </div>
 
-        {/* Evidence card — shown for select questions after answer lock */}
         {currentQuestion.evidence && (
           <EvidenceCard evidence={currentQuestion.evidence} />
         )}
 
-        <button onClick={onContinue} className="btn-gold w-full">
+        <button onClick={onContinue} className="btn-gold w-full tap-target">
           متابعة ←
         </button>
       </div>

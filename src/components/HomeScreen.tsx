@@ -34,20 +34,22 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
           </div>
         </div>
 
-        {/* Rivalry CTA — البحر vs البر */}
+        {/* Rivalry CTA — البحر vs البر mythology */}
         <div className="w-full max-w-xs">
-          <div className="flex items-center gap-3 p-4 rounded-2xl border-2 border-jawwib-gold/40 bg-jawwib-gold/5 mb-4">
+          <div className="flex items-stretch gap-2 p-3 rounded-2xl border-2 border-jawwib-gold/40 bg-jawwib-gold/5 mb-4">
             <div className="flex-1 text-center">
               <p className="text-2xl mb-0.5">🌊</p>
               <p className="text-jawwib-blue font-black text-sm">فريق البحر</p>
+              <p className="text-[9px] text-jawwib-text-dim mt-0.5 opacity-75">الغوص · التجارة · الأمواج</p>
             </div>
-            <div className="text-center">
-              <p className="text-2xl font-black text-jawwib-gold leading-none">VS</p>
-              <p className="text-[9px] text-jawwib-text-dim">البحر والبر</p>
+            <div className="flex flex-col items-center justify-center">
+              <p className="text-xl font-black text-jawwib-gold leading-none">VS</p>
+              <p className="text-[8px] text-jawwib-text-dim mt-0.5">أسطورة</p>
             </div>
             <div className="flex-1 text-center">
               <p className="text-2xl mb-0.5">🐪</p>
               <p className="text-jawwib-red font-black text-sm">فريق البر</p>
+              <p className="text-[9px] text-jawwib-text-dim mt-0.5 opacity-75">القوافل · الصيد · الضيافة</p>
             </div>
           </div>
 

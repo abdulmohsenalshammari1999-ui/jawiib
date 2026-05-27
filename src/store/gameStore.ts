@@ -30,6 +30,8 @@ import {
   getWeaponUsedForcedCategory,
   getWeaponUsedAskFriend,
   getImmunityProtectedMessage,
+  getLastStandMessage,
+  getStreakHypeMessage,
 } from '@/lib/host';
 import { getCategoryById } from '@/lib/categories';
 import { ATTACK_TYPES } from '@/lib/sabotages';
@@ -119,6 +121,7 @@ export interface GameStoreState {
   setTeamMembership: (alpha: string[], beta: string[]) => void;
   dismissPendingWeapon: () => void;
   useWeapon: (teamId: TeamId, weapon: WeaponType, opts?: { targetTeamId?: TeamId; categoryId?: CategoryId }) => void;
+  activateLastStand: (teamId: TeamId) => void;
 }
 
 export const useGameStore = create<GameStoreState>()(
@@ -183,6 +186,8 @@ export const useGameStore = create<GameStoreState>()(
         activeBomb: null,
         activeImmunity: {},
         forcedCategory: null,
+        lastStandActive: null,
+        lastStandUsed: {},
       };
       set({ game, localPlayerId: playerId, answeredCount: 0 });
       return { roomId, playerId };
@@ -302,6 +307,9 @@ export const useGameStore = create<GameStoreState>()(
       // Apply double multiplier if active
       const doubleMultiplier = sabStore.getDoubleMultiplierFor(playerId) ?? 1;
 
+      // Last Stand: 3x multiplier for the challenging team
+      const lastStandMultiplier = (game.lastStandActive && game.lastStandActive === answeringTeamId) ? 3 : 1;
+
       // Validate answer
       const result = validateAnswer({
         question,
@@ -309,7 +317,7 @@ export const useGameStore = create<GameStoreState>()(
         timeRemaining:   game.timer,
         timerDuration:   DEFAULT_TIMER,
         playerStreak:    player.streak,
-        pointMultiplier: doubleMultiplier,
+        pointMultiplier: doubleMultiplier * lastStandMultiplier,
       });
 
       // Resolve pending effects (bomb, double penalty)
@@ -411,10 +419,15 @@ export const useGameStore = create<GameStoreState>()(
         adjustedFinalPoints = 0;
       }
 
+      const lastStandUsed = { ...game.lastStandUsed };
+      if (game.lastStandActive === answeringTeamId) lastStandUsed[answeringTeamId!] = true;
+
       const hostMessage = immunityMsg ?? doubleWinMsg ?? doublelossMsg ?? bombMsg
         ?? (pendingWeapon && !game.pendingWeapon ? getMysteryBoxMessage() : null)
         ?? (result.correct
-          ? result.newStreak >= 3 ? getStreakMessage() : getWinnerRoast()
+          ? result.newStreak >= 4 ? getStreakHypeMessage(result.newStreak)
+          : result.newStreak >= 3 ? getStreakMessage()
+          : getWinnerRoast()
           : getLoserRoast());
 
       set({
@@ -446,6 +459,8 @@ export const useGameStore = create<GameStoreState>()(
           teamWeapons,
           pendingWeapon,
           activeImmunity,
+          lastStandActive: null,
+          lastStandUsed,
         },
         answeredCount,
       });
@@ -583,6 +598,8 @@ export const useGameStore = create<GameStoreState>()(
           activeBomb: null,
           activeImmunity: {},
           forcedCategory: null,
+          lastStandActive: null,
+          lastStandUsed: {},
           activeTeamId: game.teamMembership ? 'alpha' : null,
         },
         answeredCount: 0,
@@ -688,6 +705,20 @@ export const useGameStore = create<GameStoreState>()(
           break;
         }
       }
+    },
+
+    activateLastStand: (teamId) => {
+      const { game } = get();
+      if (!game) return;
+      if (game.lastStandUsed[teamId]) return;
+      set({
+        game: {
+          ...game,
+          lastStandActive: teamId,
+          lastStandUsed: { ...game.lastStandUsed, [teamId]: true },
+          hostMessage: getLastStandMessage(),
+        },
+      });
     },
   }))
 );

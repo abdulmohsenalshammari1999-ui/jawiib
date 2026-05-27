@@ -203,3 +203,51 @@ export function getImmunityProtectedMessage(): string {
 export function getForcedCategoryActiveMessage(catName: string): string {
   return `تحذير: الخصم فرض عليكم فئة "${catName}" — لازم تختارون منها! 🎯`;
 }
+
+export function getFinalQuestionMessage(): string {
+  return randomFrom([
+    'الآن أو لا! 🔥 هذا آخر سؤال والتاريخ بيُكتب الحين!',
+    'السؤال الأخير! 💀 كل شي بيتقرر — بدّ الله يا ناس!',
+    'الساعة الحاسمة! ⚡ آخر سؤال والنتيجة على الكف!',
+    'النهاية جاءت! 🏆 من بيثبّت قدمه في اللحظة الأخيرة؟',
+  ]);
+}
+
+export function getLastStandMessage(): string {
+  return randomFrom([
+    '🛡️ صمود أخير! الفريق يراهن كل شي — إذا صح 3 أضعاف!',
+    '💪 آخر رصاصة نشطة! اجاوبوا صح واقلبوا الطاولة!',
+    '🃏 الورقة الأخيرة! 3 أضعاف على المحك — يلا بقلب جريء!',
+  ]);
+}
+
+export function getBahrCelebrationMessage(): string {
+  return randomFrom([
+    'فريق البحر يهدر! 🌊 أبناء الغوص والتجارة ما يعرفون الخسارة!',
+    'البحر يلمع! 💎 مثل اللؤلؤ في الأعماق — نادر وثمين!',
+    'أبناء البحر! 🌊 رجال الموج والرياح والنجوم — ما ييخافون!',
+  ]);
+}
+
+export function getBurCelebrationMessage(): string {
+  return randomFrom([
+    'فريق البر يثور! 🐪 أبناء القوافل ما في طريق يوقفهم!',
+    'البر يصرخ! 🦅 مثل الصقر فوق الرمال — حاد وسريع!',
+    'أبناء البر! 🐪 رجال الصحراء والضيافة — كلامهم أقوى من الصخر!',
+  ]);
+}
+
+export function getStreakHypeMessage(streak: number): string {
+  if (streak >= 5) return randomFrom([
+    `👑 سلسلة ذهبية ${streak}! هذا مو إنسان هذا أسطورة!`,
+    `🔥×${streak} الصواريخ بلا توقف! المنافسين ابتكروا عذر جاهز 😂`,
+  ]);
+  if (streak >= 4) return randomFrom([
+    `💥 أربعة متتالية! الفريق المقابل يعيد حساباته 😤`,
+    `🔥🔥🔥🔥 ستريك ${streak}! وين هالعقل كان مختبي؟`,
+  ]);
+  return randomFrom([
+    `🔥 ثلاثة صح! شوفوا — عندهم نار الحين! 🏆`,
+    `ستريك ${streak}! المنافسين يبون يطقون الشاشة 💥`,
+  ]);
+}

@@ -8,7 +8,8 @@ import { useCategoryDraft } from '@/hooks/useCategoryDraft';
 import { useQuestionFlow } from '@/hooks/useQuestionFlow';
 import { audio } from '@/lib/audio';
 import { initCsvContent } from '@/lib/contentRegistry';
-import type { CategoryId } from '@/lib/types';
+import { applySeasonalBodyClass } from '@/lib/appConfig';
+import type { CategoryId, TeamId } from '@/lib/types';
 import { categories as ALL_CATS } from '@/lib/categories';
 import { HomeScreen } from './HomeScreen';
 import { Lobby } from './Lobby';
@@ -49,6 +50,7 @@ export function GameApp() {
 
   const setTeamMembership    = useGameStore((s) => s.setTeamMembership);
   const dismissPendingWeapon = useGameStore((s) => s.dismissPendingWeapon);
+  const activateLastStand    = useGameStore((s) => s.activateLastStand);
 
   const mode        = useRoomStore((s) => s.mode);
   const teams       = useRoomStore((s) => s.teams);
@@ -87,12 +89,21 @@ export function GameApp() {
   const [picksPerTeam, setPicksPerTeam] = useState(3);
   const [showEntry, setShowEntry]       = useState(true);
   const [scorePopup, setScorePopup]   = useState<{ points: number; color?: string } | null>(null);
+  const [crowdVotes, setCrowdVotes]   = useState<{ correct: number; wrong: number }>({ correct: 0, wrong: 0 });
   const prevLastAnswer = useRef(game?.lastAnswer);
   const prevPhase      = useRef(game?.phase);
   const prevTimer      = useRef(game?.timer ?? 0);
 
-  // Load CSV questions in background — merged with built-ins before first game
-  useEffect(() => { initCsvContent().catch(() => {}); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Load CSV questions + apply seasonal theme
+  useEffect(() => {
+    initCsvContent().catch(() => {});
+    applySeasonalBodyClass();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset crowd votes on each new question
+  useEffect(() => {
+    if (game?.phase === 'question') setCrowdVotes({ correct: 0, wrong: 0 });
+  }, [game?.currentQuestion?.id, game?.phase]);
 
   // Reset sub-view when game starts
   useEffect(() => {
@@ -505,6 +516,10 @@ export function GameApp() {
     const apTeamColor = ap && teamData
       ? teamData.alpha.playerIds.includes(ap.id) ? '#1D4ED8' : '#B91C1C'
       : null;
+    const totalCells = game.board.reduce((a, r) => a + r.length, 0);
+    const isFinalQ   = game.room.isTrial
+      ? game.room.answeredQuestions.length >= 8
+      : answeredCount >= totalCells - 1;
 
     return (
       <div className="min-h-screen p-4 flex flex-col gap-3">
@@ -512,6 +527,16 @@ export function GameApp() {
           <HostBubble message={game.hostMessage} compact />
           <AudioControls />
         </div>
+
+        {/* Final question banner */}
+        {isFinalQ && (
+          <div className="text-center animate-final-flare">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black text-white"
+              style={{ background: 'linear-gradient(135deg,#B07D1A,#D4A94A)' }}>
+              ⚡ السؤال الأخير!
+            </span>
+          </div>
+        )}
 
         {ap && (
           <div
@@ -547,6 +572,27 @@ export function GameApp() {
           />
         </div>
 
+        {/* Crowd prediction — spectators tap while player thinks */}
+        <div className="game-card p-3 animate-crowd-hype">
+          <p className="text-center text-xs font-bold text-jawwib-text-dim mb-2">
+            🙋 الجمهور يتوقع — ماذا سيجيب؟
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setCrowdVotes((v) => ({ ...v, correct: v.correct + 1 }))}
+              className="py-3 rounded-xl border-2 border-jawwib-green/40 bg-jawwib-green/8 text-jawwib-green font-black text-sm tap-target"
+            >
+              صح ✅ {crowdVotes.correct > 0 && <span className="text-xs opacity-70">({crowdVotes.correct})</span>}
+            </button>
+            <button
+              onClick={() => setCrowdVotes((v) => ({ ...v, wrong: v.wrong + 1 }))}
+              className="py-3 rounded-xl border-2 border-jawwib-red/40 bg-jawwib-red/8 text-jawwib-red font-black text-sm tap-target"
+            >
+              غلط ❌ {crowdVotes.wrong > 0 && <span className="text-xs opacity-70">({crowdVotes.wrong})</span>}
+            </button>
+          </div>
+        </div>
+
         <EffectToast lastResult={lastResult} />
       </div>
     );
@@ -555,9 +601,16 @@ export function GameApp() {
   // ── Phase: result ─────────────────────────────────────────────────────────────
   if (game.phase === 'result' && game.lastAnswer && game.currentQuestion) {
     const respPlayer = game.room.players.find((p) => p.id === game.lastAnswer?.playerId);
-    const tColor = respPlayer && teamData
-      ? teamData.alpha.playerIds.includes(respPlayer.id) ? '#1D4ED8' : '#B91C1C'
+    const respTeamId: TeamId | null = respPlayer && teamData
+      ? teamData.alpha.playerIds.includes(respPlayer.id) ? 'alpha' : 'beta'
       : null;
+    const tColor = respTeamId === 'alpha' ? '#1D4ED8' : respTeamId === 'beta' ? '#B91C1C' : null;
+    const tEmoji = respTeamId === 'alpha' ? '🌊' : respTeamId === 'beta' ? '🐪' : undefined;
+    const totalCells = game.board.reduce((a, r) => a + r.length, 0);
+    const isFinalQ   = game.room.isTrial
+      ? game.room.answeredQuestions.length >= 9
+      : answeredCount >= totalCells;
+    const respStreak = respPlayer?.streak ?? 0;
     return (
       <>
         {MysteryBox}
@@ -570,6 +623,10 @@ export function GameApp() {
           onContinue={returnToBoard}
           playerName={respPlayer?.name}
           teamColor={tColor ?? undefined}
+          teamEmoji={tEmoji}
+          isFinalQuestion={isFinalQ}
+          crowdVotes={crowdVotes}
+          playerStreak={respStreak}
         />
       </>
     );
@@ -639,6 +696,8 @@ export function GameApp() {
           teams={teamData}
           activePlayerId={game.activePlayer}
           mode={mode}
+          lastStandUsed={game.lastStandUsed}
+          onActivateLastStand={activateLastStand}
         />
         {!game.room.isTrial && localPlayerId && opponents.length > 0 && (
           <SabotageControls

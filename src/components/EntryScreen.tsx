@@ -47,6 +47,9 @@ export function EntryScreen({
         }}
       />
 
+      {/* Desert dune silhouette */}
+      <div className="dune-silhouette" />
+
       <div className="flex-1 flex flex-col items-center justify-center p-6 gap-7 z-10">
 
         {/* Logo */}
@@ -65,6 +68,10 @@ export function EntryScreen({
           <p className="text-jawwib-text-dim text-sm mt-2 font-medium">
             لعبة الثقافة العامة الخليجية
           </p>
+          {/* Cultural motif */}
+          <div className="cultural-strip mt-3">
+            🌴 🐪 ☕ 🦅 🌊 🌴
+          </div>
         </div>
 
         {/* Stats */}
@@ -145,22 +152,25 @@ export function EntryScreen({
           </div>
         </div>
 
-        {/* Rivalry teaser */}
+        {/* Rivalry teaser — البحر vs البر */}
         <div
           className="flex items-center gap-3 w-full max-w-sm"
           style={{
-            opacity: mounted ? 0.8 : 0,
+            opacity: mounted ? 0.85 : 0,
             transition: 'opacity 0.65s 0.38s ease-out',
           }}
         >
           <div className="flex-1 text-center p-3 rounded-xl border-2 border-jawwib-blue/30 bg-blue-50/40">
-            <p className="text-jawwib-blue font-black text-sm">الفريق الأزرق</p>
-            <p className="text-base">🛡️</p>
+            <p className="text-xl mb-0.5">🌊</p>
+            <p className="text-jawwib-blue font-black text-xs">فريق البحر</p>
           </div>
-          <div className="text-lg font-black text-jawwib-gold">VS</div>
+          <div className="text-center">
+            <p className="text-lg font-black text-jawwib-gold leading-none">VS</p>
+            <p className="text-[9px] text-jawwib-text-dim mt-0.5">البحر والبر</p>
+          </div>
           <div className="flex-1 text-center p-3 rounded-xl border-2 border-jawwib-red/30 bg-red-50/40">
-            <p className="text-jawwib-red font-black text-sm">الفريق الأحمر</p>
-            <p className="text-base">⚔️</p>
+            <p className="text-xl mb-0.5">🐪</p>
+            <p className="text-jawwib-red font-black text-xs">فريق البر</p>
           </div>
         </div>
       </div>

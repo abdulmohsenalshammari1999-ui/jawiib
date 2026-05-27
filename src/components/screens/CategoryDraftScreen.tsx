@@ -210,7 +210,7 @@ export function CategoryDraftScreen({
                       isAlpha ? 'bg-blue-100 text-jawwib-blue' : 'bg-red-100 text-jawwib-red'
                     }`}
                   >
-                    {isAlpha ? '🛡️' : '⚔️'}
+                    {isAlpha ? '🌊' : '🐪'}
                   </span>
                 )}
                 <div

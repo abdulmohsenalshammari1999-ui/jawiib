@@ -68,7 +68,7 @@ export function TeamScoreboard({ players, teams, activePlayerId, mode }: TeamSco
             }`}
           >
             <div className="flex items-center gap-1 mb-1">
-              <span className="text-jawwib-blue text-base">🛡️</span>
+              <span className="text-base">🌊</span>
               <span className="text-jawwib-blue font-bold text-xs truncate">{teams.alpha.name}</span>
               {alphaLeads && gap > 0 && <span className="text-jawwib-gold text-xs mr-auto">👑</span>}
             </div>
@@ -89,7 +89,7 @@ export function TeamScoreboard({ players, teams, activePlayerId, mode }: TeamSco
             }`}
           >
             <div className="flex items-center gap-1 mb-1">
-              <span className="text-jawwib-red text-base">⚔️</span>
+              <span className="text-base">🐪</span>
               <span className="text-jawwib-red font-bold text-xs truncate">{teams.beta.name}</span>
               {!alphaLeads && gap > 0 && <span className="text-jawwib-gold text-xs mr-auto">👑</span>}
             </div>

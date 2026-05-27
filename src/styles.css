@@ -336,3 +336,52 @@ input:focus, textarea:focus {
     radial-gradient(circle at 20% 50%, rgba(176,125,26,0.04) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(26,95,168,0.04) 0%, transparent 40%);
 }
+
+/* ── Desert dune silhouette ──────────────────────────────────────────── */
+.dune-silhouette {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background:
+    radial-gradient(ellipse 130% 80px at 18% 100%, rgba(201,168,122,0.28) 0%, transparent 68%),
+    radial-gradient(ellipse 100% 60px at 65% 100%, rgba(176,125,26,0.18) 0%, transparent 65%),
+    radial-gradient(ellipse  80% 50px at 44% 100%, rgba(212,169,74,0.14) 0%, transparent 60%),
+    radial-gradient(ellipse  60% 40px at 85% 100%, rgba(138,96,16,0.10) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+/* ── Pearl shimmer accent ────────────────────────────────────────────── */
+@keyframes pearl-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212,169,74,0); }
+  50%       { box-shadow: 0 0 20px 5px rgba(212,169,74,0.22); }
+}
+.pearl-shimmer { animation: pearl-glow 3.5s ease-in-out infinite; }
+
+/* ── Sea wave accent ─────────────────────────────────────────────────── */
+@keyframes sea-drift {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+.sea-wave-accent {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #1A5FA8 0%, #0891B2 35%, #1A7A42 65%, #1A5FA8 100%);
+  background-size: 200% 100%;
+  animation: sea-drift 5s ease-in-out infinite;
+  opacity: 0.60;
+}
+
+/* ── Cultural motif strip ────────────────────────────────────────────── */
+.cultural-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  opacity: 0.28;
+  font-size: 0.9rem;
+  letter-spacing: 0.35rem;
+  pointer-events: none;
+  user-select: none;
+}

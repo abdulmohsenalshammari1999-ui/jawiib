@@ -27,25 +27,27 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
         {/* Logo */}
         <div className="text-center animate-bounce-in">
           <h1 className="text-8xl font-black text-gold-gradient leading-none">جاوب</h1>
-          <p className="text-jawwib-text-dim text-sm mt-1">لعبة الثقافة العامة</p>
-          <div className="flex items-center justify-center gap-1 mt-1">
-            <span className="text-xs text-jawwib-text-dim">مع مقدم اللعبة</span>
-            <span className="text-gold-gradient font-bold text-xs">مرحبا</span>
-            <span>🎙️</span>
+          <div className="sadu-accent mx-auto mt-2 mb-1" style={{ maxWidth: 120 }} />
+          <p className="text-jawwib-text-dim text-sm">لعبة الثقافة العامة الخليجية</p>
+          <div className="cultural-strip mt-2">
+            🌴 🐪 ☕ 🦅 🌊
           </div>
         </div>
 
-        {/* Rivalry CTA */}
+        {/* Rivalry CTA — البحر vs البر */}
         <div className="w-full max-w-xs">
           <div className="flex items-center gap-3 p-4 rounded-2xl border-2 border-jawwib-gold/40 bg-jawwib-gold/5 mb-4">
             <div className="flex-1 text-center">
-              <p className="text-jawwib-blue font-black text-lg">الفريق الأزرق</p>
-              <p className="text-jawwib-text-dim text-xs">🛡️</p>
+              <p className="text-2xl mb-0.5">🌊</p>
+              <p className="text-jawwib-blue font-black text-sm">فريق البحر</p>
             </div>
-            <div className="text-2xl font-black text-jawwib-gold">VS</div>
+            <div className="text-center">
+              <p className="text-2xl font-black text-jawwib-gold leading-none">VS</p>
+              <p className="text-[9px] text-jawwib-text-dim">البحر والبر</p>
+            </div>
             <div className="flex-1 text-center">
-              <p className="text-jawwib-red font-black text-lg">الفريق الأحمر</p>
-              <p className="text-jawwib-text-dim text-xs">⚔️</p>
+              <p className="text-2xl mb-0.5">🐪</p>
+              <p className="text-jawwib-red font-black text-sm">فريق البر</p>
             </div>
           </div>
 
@@ -59,7 +61,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
                   : 'border-jawwib-border text-jawwib-text-dim hover:border-jawwib-gold/40'
               }`}
             >
-              <span className="text-xl">🛡️</span>
+              <span className="text-xl">🌊🐪</span>
               <span>فريق ضد فريق</span>
             </button>
             <button
@@ -70,7 +72,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
                   : 'border-jawwib-border text-jawwib-text-dim hover:border-jawwib-gold/40'
               }`}
             >
-              <span className="text-xl">⚔️</span>
+              <span className="text-xl">🏆</span>
               <span>الكل ضد الكل</span>
             </button>
           </div>
@@ -197,10 +199,10 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
                   : 'border-jawwib-border text-jawwib-text-dim'
               }`}
             >
-              <span>🛡️</span>
+              <span>🌊🐪</span>
               <div className="text-right">
                 <p className="text-sm leading-none">فريق ضد فريق</p>
-                <p className="text-[10px] opacity-60 mt-0.5">أزرق vs أحمر</p>
+                <p className="text-[10px] opacity-60 mt-0.5">البحر vs البر</p>
               </div>
             </button>
             <button
@@ -211,10 +213,10 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
                   : 'border-jawwib-border text-jawwib-text-dim'
               }`}
             >
-              <span>⚔️</span>
+              <span>🏆</span>
               <div className="text-right">
                 <p className="text-sm leading-none">الكل ضد الكل</p>
-                <p className="text-[10px] opacity-60 mt-0.5">كل لاعب لحساسبه</p>
+                <p className="text-[10px] opacity-60 mt-0.5">كل لاعب لحسابه</p>
               </div>
             </button>
           </div>

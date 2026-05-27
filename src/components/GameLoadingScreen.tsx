@@ -65,6 +65,7 @@ export function GameLoadingScreen({
   return (
     <div className="fixed inset-0 bg-diwaniya flex flex-col items-center justify-center z-50 p-4 overflow-hidden">
       <div className="absolute top-0 left-0 right-0 sadu-accent" />
+      <div className="dune-silhouette" />
 
       {/* Reveal phase: show match summary */}
       {phase === 'reveal' && (
@@ -147,9 +148,9 @@ export function GameLoadingScreen({
 
           {mode === 'teams' && alphaTeam && betaTeam && (
             <p className="text-jawwib-text-dim text-sm mt-5 animate-fade-in font-bold">
-              <span style={{ color: alphaTeam.color }}>{alphaTeam.name}</span>
+              <span style={{ color: alphaTeam.color }}>{alphaTeam.emoji} {alphaTeam.name}</span>
               <span className="text-jawwib-gold mx-2">VS</span>
-              <span style={{ color: betaTeam.color }}>{betaTeam.name}</span>
+              <span style={{ color: betaTeam.color }}>{betaTeam.name} {betaTeam.emoji}</span>
             </p>
           )}
         </div>

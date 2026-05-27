@@ -28,7 +28,8 @@ interface Confetto {
   size: number;
 }
 
-const CONFETTI_COLORS = ['#C8880A', '#F5D060', '#1D4ED8', '#15803D', '#B91C1C', '#6D28D9'];
+// Kuwait cultural palette: dark gold, light gold, pearl white, sea blue, palm green, sadu red, oud purple
+const CONFETTI_COLORS = ['#B07D1A', '#D4A94A', '#F5F0E8', '#1A5FA8', '#1A7A42', '#B82118', '#C9A87A'];
 
 function useConfetti(count = 28) {
   const [pieces] = useState<Confetto[]>(() =>
@@ -114,7 +115,8 @@ export function GameOverScreen({
 
       <div className="max-w-lg w-full text-center relative z-10">
         <div className="text-6xl mb-2 animate-bounce-in">🏆</div>
-        <h1 className="text-3xl font-black text-gold-gradient mb-5">انتهت اللعبة!</h1>
+        <h1 className="text-3xl font-black text-gold-gradient mb-1">انتهت اللعبة!</h1>
+        <div className="sea-wave-accent mx-auto mb-5" style={{ width: 120 }} />
 
         {/* Team winner */}
         {winnerTeam && loserTeam && (
@@ -207,6 +209,11 @@ export function GameOverScreen({
               );
             })}
           </div>
+        </div>
+
+        {/* Cultural footer motif */}
+        <div className="cultural-strip mb-3">
+          🌴 🐪 ☕ 🌊 🌴
         </div>
 
         <div className="flex flex-col gap-2.5">

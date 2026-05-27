@@ -93,6 +93,20 @@ export class QuestionPool {
       for (const [tier, qs] of catMap)
         catMap.set(tier, [...qs].sort(() => Math.random() - 0.5));
   }
+
+  reinitialize(source: Question[]): void {
+    this._used.clear();
+    this._index.clear();
+    for (const q of source) {
+      if (!this._index.has(q.category)) this._index.set(q.category, new Map());
+      const cat = this._index.get(q.category)!;
+      if (!cat.has(q.tier as Tier)) cat.set(q.tier as Tier, []);
+      cat.get(q.tier as Tier)!.push(q);
+    }
+    for (const catMap of this._index.values())
+      for (const [tier, qs] of catMap)
+        catMap.set(tier, [...qs].sort(() => Math.random() - 0.5));
+  }
 }
 
 export const globalPool = new QuestionPool();

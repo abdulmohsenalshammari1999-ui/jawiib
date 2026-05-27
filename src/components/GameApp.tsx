@@ -7,6 +7,7 @@ import { useHostMessage } from '@/hooks/useHostMessage';
 import { useCategoryDraft } from '@/hooks/useCategoryDraft';
 import { useQuestionFlow } from '@/hooks/useQuestionFlow';
 import { audio } from '@/lib/audio';
+import { initCsvContent } from '@/lib/contentRegistry';
 import type { CategoryId } from '@/lib/types';
 import { categories as ALL_CATS } from '@/lib/categories';
 import { HomeScreen } from './HomeScreen';
@@ -89,6 +90,9 @@ export function GameApp() {
   const prevLastAnswer = useRef(game?.lastAnswer);
   const prevPhase      = useRef(game?.phase);
   const prevTimer      = useRef(game?.timer ?? 0);
+
+  // Load CSV questions in background — merged with built-ins before first game
+  useEffect(() => { initCsvContent().catch(() => {}); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Reset sub-view when game starts
   useEffect(() => {

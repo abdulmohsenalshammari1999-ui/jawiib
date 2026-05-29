@@ -65,16 +65,19 @@ export function GameOverScreen({
   const sorted = [...players].sort((a, b) => b.score - a.score);
   const winner = sorted[0];
 
+  const isTie = mode === 'teams' && teams !== null && teams !== undefined
+    && teams.alpha.score === teams.beta.score;
+
   const winnerTeam =
-    mode === 'teams' && teams
-      ? teams.alpha.score >= teams.beta.score
+    mode === 'teams' && teams && !isTie
+      ? teams.alpha.score > teams.beta.score
         ? teams.alpha
         : teams.beta
       : null;
 
   const loserTeam =
-    mode === 'teams' && teams
-      ? teams.alpha.score >= teams.beta.score
+    mode === 'teams' && teams && !isTie
+      ? teams.alpha.score > teams.beta.score
         ? teams.beta
         : teams.alpha
       : null;
@@ -117,6 +120,23 @@ export function GameOverScreen({
         <div className="text-6xl mb-2 animate-bounce-in">🏆</div>
         <h1 className="text-3xl font-black text-gold-gradient mb-1">انتهت اللعبة!</h1>
         <div className="sea-wave-accent mx-auto mb-5" style={{ width: 120 }} />
+
+        {/* Tie result */}
+        {isTie && teams && (
+          <div className="game-card p-6 mb-4 animate-score-reveal border-2 border-jawwib-gold/40 text-center">
+            <div className="text-5xl mb-2">🤝</div>
+            <h2 className="text-2xl font-black text-gold-gradient mb-3">تعادل!</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {([teams.alpha, teams.beta] as const).map((t) => (
+                <div key={t.name} className="bg-jawwib-surface rounded-xl p-3">
+                  <p className="text-2xl mb-1">{t.emoji}</p>
+                  <p className="font-black text-sm mb-1" style={{ color: t.color }}>{t.name}</p>
+                  <p className="text-xl font-black text-jawwib-gold tabular-nums">{t.score}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Team winner */}
         {winnerTeam && loserTeam && (

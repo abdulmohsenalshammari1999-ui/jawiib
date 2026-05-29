@@ -24,7 +24,7 @@ export interface SurveyPayload {
 }
 
 export const submitSurvey = createServerFn({ method: 'POST' })
-  .validator((data: unknown) => data as SurveyPayload)
+  .inputValidator((data: unknown) => data as SurveyPayload)
   .handler(async ({ data }) => {
     const webhookUrl = process.env['SURVEY_WEBHOOK_URL'];
     if (!webhookUrl) {

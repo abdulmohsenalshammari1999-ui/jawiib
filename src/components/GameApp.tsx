@@ -322,7 +322,7 @@ export function GameApp() {
         }`}
         title={musicEnabled ? 'إيقاف الموسيقى' : 'تشغيل الموسيقى'}
       >
-        {musicEnabled ? '🎵' : '🎵'}
+        {musicEnabled ? '🎵' : '🔕'}
       </button>
     </div>
   );

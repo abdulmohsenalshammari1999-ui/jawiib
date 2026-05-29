@@ -20,14 +20,14 @@ export function PaymentModal({ onClose, onPurchase }: PaymentModalProps) {
             <span className="text-sm">عدد الأسئلة</span>
             <div className="flex gap-4">
               <span className="text-jawwib-text-dim text-xs line-through">9 فقط</span>
-              <span className="text-jawwib-green text-xs font-bold">288 سؤال</span>
+              <span className="text-jawwib-green text-xs font-bold">456 سؤال</span>
             </div>
           </div>
           <div className="flex items-center justify-between p-3 rounded-xl bg-jawwib-surface">
             <span className="text-sm">الفئات</span>
             <div className="flex gap-4">
               <span className="text-jawwib-text-dim text-xs line-through">2 عشوائية</span>
-              <span className="text-jawwib-green text-xs font-bold">16 فئة كاملة</span>
+              <span className="text-jawwib-green text-xs font-bold">22 فئة كاملة</span>
             </div>
           </div>
           <div className="flex items-center justify-between p-3 rounded-xl bg-jawwib-surface">
@@ -38,17 +38,17 @@ export function PaymentModal({ onClose, onPurchase }: PaymentModalProps) {
             </div>
           </div>
           <div className="flex items-center justify-between p-3 rounded-xl bg-jawwib-surface">
-            <span className="text-sm">مضاعف السلسلة 🔥</span>
+            <span className="text-sm">الأسلحة ⚔️</span>
             <div className="flex gap-4">
-              <span className="text-jawwib-text-dim text-xs line-through">مقفل</span>
-              <span className="text-jawwib-green text-xs font-bold">×1.5</span>
+              <span className="text-jawwib-text-dim text-xs line-through">مقفلة</span>
+              <span className="text-jawwib-green text-xs font-bold">5 أسلحة!</span>
             </div>
           </div>
           <div className="flex items-center justify-between p-3 rounded-xl bg-jawwib-surface">
-            <span className="text-sm">مكافأة السرعة ⚡</span>
+            <span className="text-sm">سرقة النقاط 🏴‍☠️</span>
             <div className="flex gap-4">
-              <span className="text-jawwib-text-dim text-xs line-through">مقفل</span>
-              <span className="text-jawwib-green text-xs font-bold">مفتوح!</span>
+              <span className="text-jawwib-text-dim text-xs line-through">مقفلة</span>
+              <span className="text-jawwib-green text-xs font-bold">مفتوحة!</span>
             </div>
           </div>
         </div>

@@ -93,10 +93,10 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
         {/* Stats row */}
         <div className="flex items-center gap-4 text-center">
           {[
-            { n: '456', label: 'سؤال' },
-            { n: '22',  label: 'فئة' },
-            { n: '6',   label: 'مستوى' },
-            { n: '💣',  label: 'تخريب' },
+            { n: '456',    label: 'سؤال' },
+            { n: '22',     label: 'فئة' },
+            { n: '🏴‍☠️', label: 'سرقة' },
+            { n: '5',      label: 'سلاح' },
           ].map((s) => (
             <div key={s.label}>
               <p className="text-jawwib-gold font-black text-lg leading-none">{s.n}</p>

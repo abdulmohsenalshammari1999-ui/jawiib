@@ -81,16 +81,31 @@ export function EntryScreen({
           }}
         >
           {[
-            { n: '456', label: 'سؤال' },
-            { n: '22',  label: 'فئة' },
-            { n: '6',   label: 'مستوى' },
-            { n: '💣',  label: 'تخريب' },
+            { n: '456',    label: 'سؤال' },
+            { n: '22',     label: 'فئة' },
+            { n: '🏴‍☠️', label: 'سرقة' },
+            { n: '5',      label: 'سلاح' },
           ].map((s) => (
             <div key={s.label}>
               <p className="text-jawwib-gold font-black text-lg leading-none">{s.n}</p>
               <p className="text-jawwib-text-dim text-[10px] mt-0.5">{s.label}</p>
             </div>
           ))}
+        </div>
+
+        {/* Differentiator strip */}
+        <div
+          className="flex items-center justify-center gap-2 text-[10px] text-jawwib-text-dim"
+          style={{
+            opacity: mounted ? 1 : 0,
+            transition: 'opacity 0.55s 0.15s ease-out',
+          }}
+        >
+          <span>🎯 22 فئة متنوعة</span>
+          <span className="opacity-40">·</span>
+          <span>🏴‍☠️ آلية السرقة</span>
+          <span className="opacity-40">·</span>
+          <span>⚔️ 5 أسلحة</span>
         </div>
 
         {/* Host welcome */}

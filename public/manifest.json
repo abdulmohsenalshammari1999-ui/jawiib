@@ -1,0 +1,15 @@
+{
+  "name": "جاوب",
+  "short_name": "جاوب",
+  "description": "لعبة الثقافة العامة الخليجية",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#06060F",
+  "theme_color": "#B07D1A",
+  "orientation": "portrait",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+  ]
+}

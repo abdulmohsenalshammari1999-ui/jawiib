@@ -17,11 +17,23 @@ export const Route = createRootRoute({
       },
       {
         name: 'description',
-        content: 'لعبة معلومات عامة عربية مع مقدم ذكي بلهجة كويتية - 16 فئة و288 سؤال',
+        content: 'لعبة الثقافة العامة الخليجية — 456 سؤال، 22 فئة، وضع فرق وكل ضد الكل، أسلحة وسرقة نقاط!',
       },
       {
         name: 'theme-color',
         content: '#06060F',
+      },
+      {
+        property: 'og:title',
+        content: 'جاوب - لعبة الثقافة العامة الخليجية',
+      },
+      {
+        property: 'og:description',
+        content: 'لعبة الثقافة العامة الخليجية — 456 سؤال، 22 فئة، وضع فرق وكل ضد الكل، أسلحة وسرقة نقاط!',
+      },
+      {
+        property: 'og:type',
+        content: 'website',
       },
     ],
     links: [
@@ -32,6 +44,10 @@ export const Route = createRootRoute({
       {
         rel: 'preconnect',
         href: 'https://fonts.gstatic.com',
+      },
+      {
+        rel: 'manifest',
+        href: '/manifest.json',
       },
     ],
   }),

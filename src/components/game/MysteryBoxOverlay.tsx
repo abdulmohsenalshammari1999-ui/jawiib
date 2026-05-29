@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { WeaponType } from '@/lib/types';
+import { audio } from '@/lib/audio';
 
 interface Props {
   teamId: 'alpha' | 'beta';
@@ -67,7 +68,12 @@ export function MysteryBoxOverlay({ teamId, teamName, teamColor, weapon, onColle
           <div className="flex flex-col gap-2">
             {onActivate && (
               <button
-                onClick={() => onActivate(weapon)}
+                onClick={() => {
+                  if (weapon === 'immunity') audio.playImmunityActivated();
+                  else if (weapon === 'extra_time') audio.playExtraTime();
+                  else audio.playWeaponActivated();
+                  onActivate(weapon);
+                }}
                 className="w-full py-3 rounded-xl font-black text-sm text-white animate-fade-in active:scale-95 transition-all"
                 style={{ background: info.color }}
               >

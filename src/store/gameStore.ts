@@ -129,6 +129,7 @@ export interface GameStoreState {
   activateLastStand: (teamId: TeamId) => void;
   initStealTimer: (opponentTeamId: TeamId, teamName: string) => void;
   activateWeaponFromBox: (teamId: TeamId, weapon: WeaponType, opts?: { targetTeamId?: TeamId; categoryId?: CategoryId }) => void;
+  skipSteal: () => void;
 }
 
 export const useGameStore = create<GameStoreState>()(
@@ -865,6 +866,55 @@ export const useGameStore = create<GameStoreState>()(
       teamWeapons[teamId] = [...(teamWeapons[teamId] ?? []), weapon];
       set({ game: { ...game, pendingWeapon: null, teamWeapons } });
       get().useWeapon(teamId, weapon, opts);
+    },
+
+    skipSteal: () => {
+      const { game } = get();
+      if (!game || game.phase !== 'steal') return;
+
+      const updatedBoard = game.board.map((row) =>
+        row.map((cell) =>
+          cell.questionId === game.currentQuestion?.id
+            ? { ...cell, answered: true }
+            : cell
+        )
+      );
+      const answeredQuestions = [
+        ...game.room.answeredQuestions,
+        ...(game.currentQuestion ? [game.currentQuestion.id] : []),
+      ];
+      const answeredCount = updatedBoard.reduce((a, r) => a + r.filter((c) => c.answered).length, 0);
+      const allAnswered   = game.room.isTrial
+        ? answeredQuestions.length >= TRIAL_QUESTION_LIMIT
+        : answeredCount >= game.board.reduce((a, r) => a + r.length, 0);
+
+      const playerIds  = game.room.players.map((p) => p.id);
+      const nextIdx    = (game.room.players.findIndex((p) => p.id === game.activePlayer) + 1) % playerIds.length;
+      const nextPlayer = playerIds[nextIdx];
+      const nextTeamId: TeamId | null = game.activeTeamId === 'alpha' ? 'beta'
+        : game.activeTeamId === 'beta' ? 'alpha' : null;
+
+      set({
+        game: {
+          ...game,
+          board: updatedBoard,
+          phase: allAnswered ? 'finished' : 'result',
+          room: { ...game.room, answeredQuestions, status: allAnswered ? 'finished' : 'playing' },
+          activePlayer: nextPlayer,
+          activeTeamId: nextTeamId ?? game.activeTeamId,
+          timer: 0,
+          hostMessage: getStealFailMessage(),
+          lastAnswer: {
+            playerId: game.activePlayer ?? '',
+            correct: false,
+            points: 0,
+            timeBonus: 0,
+            streakMultiplier: 1,
+          },
+          stealOpponentTeamId: null,
+        },
+        answeredCount,
+      });
     },
 
     initStealTimer: (_opponentTeamId, _teamName) => {

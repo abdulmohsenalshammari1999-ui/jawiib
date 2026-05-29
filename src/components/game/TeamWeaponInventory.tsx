@@ -53,7 +53,11 @@ export function TeamWeaponInventory({
 
   const handleConfirm = () => {
     if (!pending) return;
-    audio.playWeaponActivated();
+    // Immunity gets a distinct magical sound; extra_time gets chime; others get sparkle
+    if (pending === 'immunity') audio.playImmunityActivated();
+    else if (pending === 'extra_time') audio.playExtraTime();
+    else audio.playWeaponActivated();
+
     if (pending === 'timer_bomb') {
       useWeapon(localTeamId, pending, { targetTeamId: opponentTeam });
     } else if (pending === 'forced_category') {

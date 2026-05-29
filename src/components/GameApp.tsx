@@ -52,6 +52,7 @@ export function GameApp() {
   const dismissPendingWeapon = useGameStore((s) => s.dismissPendingWeapon);
   const activateLastStand    = useGameStore((s) => s.activateLastStand);
   const activateWeaponFromBox = useGameStore((s) => s.activateWeaponFromBox);
+  const skipSteal            = useGameStore((s) => s.skipSteal);
 
   const mode        = useRoomStore((s) => s.mode);
   const teams       = useRoomStore((s) => s.teams);
@@ -91,9 +92,10 @@ export function GameApp() {
   const [showEntry, setShowEntry]       = useState(true);
   const [scorePopup, setScorePopup]   = useState<{ points: number; color?: string } | null>(null);
   const [crowdVotes, setCrowdVotes]   = useState<{ correct: number; wrong: number }>({ correct: 0, wrong: 0 });
-  const prevLastAnswer = useRef(game?.lastAnswer);
-  const prevPhase      = useRef(game?.phase);
-  const prevTimer      = useRef(game?.timer ?? 0);
+  const prevLastAnswer    = useRef(game?.lastAnswer);
+  const prevPhase         = useRef(game?.phase);
+  const prevTimer         = useRef(game?.timer ?? 0);
+  const prevActiveTeamId  = useRef(game?.activeTeamId);
 
   // Load CSV questions + apply seasonal theme
   useEffect(() => {
@@ -160,6 +162,15 @@ export function GameApp() {
     }
     prevPhase.current = game?.phase;
   }, [game?.phase]);
+
+  // Turn-change sound (only fires on actual team switch, not initial mount)
+  useEffect(() => {
+    const prev = prevActiveTeamId.current;
+    if (prev && game?.activeTeamId && prev !== game.activeTeamId && game.phase === 'board') {
+      audio.playTurnChange();
+    }
+    prevActiveTeamId.current = game?.activeTeamId;
+  }, [game?.activeTeamId]);
 
   // ── Callbacks ─────────────────────────────────────────────────────────────────
   const handleCreateRoom = useCallback(
@@ -332,6 +343,8 @@ export function GameApp() {
       </>
     );
   }
+
+  const isHostPlayer = game.room.hostId === localPlayerId;
 
   // ── Phase: finished ───────────────────────────────────────────────────────────
   if (game.phase === 'finished') {
@@ -633,6 +646,16 @@ export function GameApp() {
         )}
 
         <EffectToast lastResult={lastResult} />
+
+        {/* Host / referee skip button — during steal phase only */}
+        {isSteal && isHostPlayer && (
+          <button
+            onClick={() => skipSteal()}
+            className="w-full py-2.5 rounded-xl border border-jawwib-border text-jawwib-text-dim text-xs font-bold hover:border-jawwib-red/50 hover:text-jawwib-red transition-all tap-target"
+          >
+            ⏭️ تجاوز السرقة — انتقل للسؤال الجاي
+          </button>
+        )}
       </div>
     );
   }

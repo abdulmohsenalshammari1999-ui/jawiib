@@ -26,6 +26,7 @@ import { ScorePopup } from './game/ScorePopup';
 import { CategoryDraftScreen } from './screens/CategoryDraftScreen';
 import { TeamSetupScreen } from './TeamSetupScreen';
 import { FeedbackModal } from './FeedbackModal';
+import type { GameContext } from './FeedbackModal';
 import { EntryScreen } from './EntryScreen';
 import { GameLoadingScreen } from './GameLoadingScreen';
 import { MysteryBoxOverlay } from './game/MysteryBoxOverlay';
@@ -288,8 +289,8 @@ export function GameApp() {
     return (
       <GameLoadingScreen
         onDone={handleIntroDone}
-        alphaTeam={mode === 'teams' ? { name: teams.alpha.name, color: '#1A5FA8', emoji: '🌊' } : null}
-        betaTeam={mode === 'teams' ? { name: teams.beta.name,  color: '#B82118', emoji: '🐪' } : null}
+        alphaTeam={mode === 'teams' ? { name: teams.alpha.name, color: '#1A5FA8', emoji: teams.alpha.emoji ?? '🔵' } : null}
+        betaTeam={mode === 'teams' ? { name: teams.beta.name,  color: '#B82118', emoji: teams.beta.emoji  ?? '🔴' } : null}
         selectedCategories={(game?.room.categories ?? []) as CategoryId[]}
         hostMessage={game?.hostMessage ?? ''}
         mode={mode}
@@ -348,6 +349,16 @@ export function GameApp() {
 
   // ── Phase: finished ───────────────────────────────────────────────────────────
   if (game.phase === 'finished') {
+    const finishedCtx: GameContext = {
+      mode,
+      isTrial: game.room.isTrial,
+      alphaTeamName: teamData?.alpha.name,
+      betaTeamName: teamData?.beta.name,
+      alphaScore: winnerTeamData?.alpha.score,
+      betaScore: winnerTeamData?.beta.score,
+      questionsAnswered: game.room.answeredQuestions.length,
+      categoriesPlayed: game.room.categories as string[],
+    };
     return (
       <>
         <GameOverScreen
@@ -359,7 +370,12 @@ export function GameApp() {
           mode={mode}
           onRateMatch={() => setShowFeedback(true)}
         />
-        {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+        {showFeedback && (
+          <FeedbackModal
+            onClose={() => setShowFeedback(false)}
+            gameContext={finishedCtx}
+          />
+        )}
       </>
     );
   }
@@ -405,7 +421,7 @@ export function GameApp() {
                 return (
                   <div key={tid} className={`game-card p-3 border-2 ${isBlue ? 'border-jawwib-blue/30 bg-blue-50/50' : 'border-jawwib-red/30 bg-red-50/50'}`}>
                     <p className={`font-bold text-sm mb-2 ${isBlue ? 'text-jawwib-blue' : 'text-jawwib-red'}`}>
-                      {isBlue ? '🌊' : '🐪'} {t.name}
+                      {(t as any).emoji ?? (isBlue ? '🔵' : '🔴')} {t.name}
                     </p>
                     <div className="space-y-1.5 min-h-[40px]">
                       {t.playerIds.map((pid) => {
@@ -664,7 +680,7 @@ export function GameApp() {
       ? teamData.alpha.playerIds.includes(respPlayer.id) ? 'alpha' : 'beta'
       : null;
     const tColor = respTeamId === 'alpha' ? '#1D4ED8' : respTeamId === 'beta' ? '#B91C1C' : null;
-    const tEmoji = respTeamId === 'alpha' ? '🌊' : respTeamId === 'beta' ? '🐪' : undefined;
+    const tEmoji = respTeamId === 'alpha' ? (teamData?.alpha.emoji ?? '🔵') : respTeamId === 'beta' ? (teamData?.beta.emoji ?? '🔴') : undefined;
     const totalCells = game.board.reduce((a, r) => a + r.length, 0);
     const isFinalQ   = game.room.isTrial
       ? game.room.answeredQuestions.length >= 9

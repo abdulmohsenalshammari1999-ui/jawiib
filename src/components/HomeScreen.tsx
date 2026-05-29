@@ -34,22 +34,22 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
           </div>
         </div>
 
-        {/* Rivalry CTA — البحر vs البر mythology */}
+        {/* Team vs Team CTA */}
         <div className="w-full max-w-xs">
           <div className="flex items-stretch gap-2 p-3 rounded-2xl border-2 border-jawwib-gold/40 bg-jawwib-gold/5 mb-4">
             <div className="flex-1 text-center">
-              <p className="text-2xl mb-0.5">🌊</p>
-              <p className="text-jawwib-blue font-black text-sm">فريق البحر</p>
-              <p className="text-[9px] text-jawwib-text-dim mt-0.5 opacity-75">الغوص · التجارة · الأمواج</p>
+              <p className="text-2xl mb-0.5">🔵</p>
+              <p className="text-jawwib-blue font-black text-sm">فريقك</p>
+              <p className="text-[9px] text-jawwib-text-dim mt-0.5 opacity-75">أنت تختار الاسم</p>
             </div>
             <div className="flex flex-col items-center justify-center">
               <p className="text-xl font-black text-jawwib-gold leading-none">VS</p>
-              <p className="text-[8px] text-jawwib-text-dim mt-0.5">أسطورة</p>
+              <p className="text-[8px] text-jawwib-text-dim mt-0.5">منافسة</p>
             </div>
             <div className="flex-1 text-center">
-              <p className="text-2xl mb-0.5">🐪</p>
-              <p className="text-jawwib-red font-black text-sm">فريق البر</p>
-              <p className="text-[9px] text-jawwib-text-dim mt-0.5 opacity-75">القوافل · الصيد · الضيافة</p>
+              <p className="text-2xl mb-0.5">🔴</p>
+              <p className="text-jawwib-red font-black text-sm">منافسيك</p>
+              <p className="text-[9px] text-jawwib-text-dim mt-0.5 opacity-75">هم يختارون الاسم</p>
             </div>
           </div>
 
@@ -201,10 +201,10 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
                   : 'border-jawwib-border text-jawwib-text-dim'
               }`}
             >
-              <span>🌊🐪</span>
+              <span>🔵🔴</span>
               <div className="text-right">
                 <p className="text-sm leading-none">فريق ضد فريق</p>
-                <p className="text-[10px] opacity-60 mt-0.5">البحر vs البر</p>
+                <p className="text-[10px] opacity-60 mt-0.5">سمّ فريقك أنت</p>
               </div>
             </button>
             <button

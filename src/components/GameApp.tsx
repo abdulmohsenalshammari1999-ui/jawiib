@@ -552,15 +552,12 @@ export function GameApp() {
       ? game.room.answeredQuestions.length >= 8
       : answeredCount >= totalCells - 1);
 
-    // In steal phase, any player on the steal team can answer
-    const canAnswer = isSteal
-      ? (localPlayerId && game.stealOpponentTeamId && game.teamMembership
-          ? game.teamMembership[game.stealOpponentTeamId]?.includes(localPlayerId) ?? false
-          : false)
-      : qflow.canAnswer;
+    // In steal phase, any player on the device can answer — the store attributes
+    // points to the correct steal-team player automatically (single-device model).
+    const canAnswer = isSteal ? (localPlayerId != null) : qflow.canAnswer;
 
-    const stealTeamName = stealTeam === 'alpha' ? (teamData?.alpha.name ?? 'فريق البحر') : (teamData?.beta.name ?? 'فريق البر');
-    const stealEmoji    = stealTeam === 'alpha' ? '🌊' : '🐪';
+    const stealTeamName = stealTeam === 'alpha' ? (teamData?.alpha.name ?? 'الفريق الأزرق') : (teamData?.beta.name ?? 'الفريق الأحمر');
+    const stealEmoji    = stealTeam === 'alpha' ? (teamData?.alpha.emoji ?? '🔵') : (teamData?.beta.emoji ?? '🔴');
 
     return (
       <div className="min-h-screen p-4 flex flex-col gap-3">

@@ -309,27 +309,28 @@ export const useGameStore = create<GameStoreState>()(
 
       // ── Steal phase answer ────────────────────────────────────────────────────
       if (game.phase === 'steal') {
-        const question = game.currentQuestion;
-        const player   = game.room.players.find((p) => p.id === playerId);
-        if (!player) return;
+        const question  = game.currentQuestion;
+        const stealTeamId = game.stealOpponentTeamId;
+        if (!stealTeamId) return;
 
-        const membership    = game.teamMembership;
-        const stealTeamId: TeamId | null = membership
-          ? membership.alpha.includes(playerId) ? 'alpha'
-          : membership.beta.includes(playerId)  ? 'beta'
-          : null
-          : null;
+        // In single-device mode the host physically answers for the steal team.
+        // Attribute points to the first player of the steal team regardless of
+        // who called this action.
+        const stealPlayerIds = game.teamMembership?.[stealTeamId] ?? [];
+        const targetPlayerId = stealPlayerIds.includes(playerId)
+          ? playerId
+          : (stealPlayerIds[0] ?? playerId);
 
-        // Only the steal team can answer
-        if (stealTeamId !== game.stealOpponentTeamId) return;
+        const targetPlayer = game.room.players.find((p) => p.id === targetPlayerId);
+        if (!targetPlayer) return;
 
-        const correct = answerIndex === question.correctIndex;
+        const correct      = answerIndex === question.correctIndex;
         const pointsEarned = correct ? question.points : 0;
 
-        let updatedPlayers = game.room.players.map((p) =>
-          p.id === playerId && correct
+        const updatedPlayers = game.room.players.map((p) =>
+          p.id === targetPlayerId && correct
             ? { ...p, score: p.score + pointsEarned, streak: p.streak + 1 }
-            : p.id === playerId
+            : p.id === targetPlayerId
             ? { ...p, streak: 0 }
             : p
         );
@@ -337,7 +338,7 @@ export const useGameStore = create<GameStoreState>()(
         const updatedBoard = game.board.map((row) =>
           row.map((cell) =>
             cell.questionId === question.id
-              ? { ...cell, answered: true, answeredBy: correct ? playerId : undefined }
+              ? { ...cell, answered: true, answeredBy: correct ? targetPlayerId : undefined }
               : cell
           )
         );
@@ -348,14 +349,10 @@ export const useGameStore = create<GameStoreState>()(
           ? answeredQuestions.length >= TRIAL_QUESTION_LIMIT
           : answeredCount >= game.board.reduce((a, r) => a + r.length, 0);
 
-        const nextIdx          = (game.room.players.findIndex((p) => p.id === playerId) + 1) % game.room.players.length;
+        const nextIdx          = (game.room.players.findIndex((p) => p.id === targetPlayerId) + 1) % game.room.players.length;
         const nextActivePlayer = game.room.players[nextIdx].id;
         const nextTeamId: TeamId | null = game.activeTeamId === 'alpha' ? 'beta'
           : game.activeTeamId === 'beta' ? 'alpha' : null;
-
-        const stealTeamName = stealTeamId && membership
-          ? (stealTeamId === 'alpha' ? 'فريق البحر' : 'فريق البر')
-          : '';
 
         set({
           game: {
@@ -371,17 +368,16 @@ export const useGameStore = create<GameStoreState>()(
             activePlayer: nextActivePlayer,
             activeTeamId: nextTeamId ?? game.activeTeamId,
             hostMessage: allAnswered
-              ? getGameOverMessage([...updatedPlayers].sort((a, b) => b.score - a.score)[0].id === playerId)
-              : correct ? getStealSuccessMessage(stealTeamName) : getStealFailMessage(),
+              ? getGameOverMessage([...updatedPlayers].sort((a, b) => b.score - a.score)[0].id === targetPlayerId)
+              : correct ? getStealSuccessMessage(targetPlayer.name) : getStealFailMessage(),
             lastAnswer: {
-              playerId,
+              playerId: targetPlayerId,
               correct,
               points: pointsEarned,
               timeBonus: 0,
               streakMultiplier: 1,
             },
             stealOpponentTeamId: null,
-            currentQuestion: correct ? null : game.currentQuestion,
           },
           answeredCount,
         });
@@ -530,7 +526,7 @@ export const useGameStore = create<GameStoreState>()(
       const shouldSteal = !result.correct && !immunityMsg && answeringTeamId && opponentTeamId && !allAnswered;
 
       if (shouldSteal && opponentTeamId) {
-        const opponentName = opponentTeamId === 'alpha' ? 'فريق البحر' : 'فريق البر';
+        const opponentName = 'الفريق المنافس';
         // Determine steal timer (bomb applies to opponent's steal too)
         let stealTime = STEAL_TIMER;
         if (game.activeBomb === opponentTeamId) stealTime = Math.max(5, Math.ceil(stealTime / 2));

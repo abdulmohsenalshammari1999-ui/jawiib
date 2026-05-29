@@ -105,7 +105,7 @@ export function EntryScreen({
           <div className="flex items-center gap-3 bg-jawwib-surface rounded-2xl px-4 py-3 border border-jawwib-border">
             <span className="text-2xl shrink-0">🎙️</span>
             <p className="text-jawwib-text text-sm font-bold leading-snug">
-              أهلاً وسهلاً في جاوب — البحر والبر يتنافسان الليلة! 🌊🐪
+              أهلاً وسهلاً في جاوب — لعبة الثقافة العامة الخليجية! 🏆✨
             </p>
           </div>
         </div>
@@ -150,7 +150,7 @@ export function EntryScreen({
           </div>
         </div>
 
-        {/* البحر vs البر — mythology rivalry */}
+        {/* Team preview */}
         <div
           className="w-full max-w-sm"
           style={{
@@ -159,32 +159,27 @@ export function EntryScreen({
           }}
         >
           <div className="flex items-stretch gap-3">
-            {/* البحر */}
             <div className="flex-1 text-center p-3 rounded-2xl border-2 border-jawwib-blue/35 bg-blue-50/40">
-              <p className="text-2xl mb-1">🌊</p>
-              <p className="text-jawwib-blue font-black text-sm leading-tight">فريق البحر</p>
+              <p className="text-2xl mb-1">🔵</p>
+              <p className="text-jawwib-blue font-black text-sm leading-tight">فريقك</p>
               <p className="text-jawwib-text-dim text-[10px] mt-1 leading-snug opacity-80">
-                أبناء الغوص<br/>واللؤلؤ والتجارة
+                أنت تختار<br/>اسم فريقك
               </p>
             </div>
-
-            {/* VS */}
             <div className="flex flex-col items-center justify-center gap-0.5">
               <p className="text-xl font-black text-jawwib-gold leading-none">VS</p>
-              <p className="text-[9px] text-jawwib-text-dim text-center">البحر<br/>والبر</p>
+              <p className="text-[9px] text-jawwib-text-dim text-center">فريق<br/>ضد فريق</p>
             </div>
-
-            {/* البر */}
             <div className="flex-1 text-center p-3 rounded-2xl border-2 border-jawwib-red/35 bg-red-50/40">
-              <p className="text-2xl mb-1">🐪</p>
-              <p className="text-jawwib-red font-black text-sm leading-tight">فريق البر</p>
+              <p className="text-2xl mb-1">🔴</p>
+              <p className="text-jawwib-red font-black text-sm leading-tight">منافسيك</p>
               <p className="text-jawwib-text-dim text-[10px] mt-1 leading-snug opacity-80">
-                أبناء القوافل<br/>والصحراء والصيد
+                هم يختارون<br/>اسم فريقهم
               </p>
             </div>
           </div>
           <p className="text-center text-[10px] text-jawwib-text-dim mt-2 opacity-70">
-            كن البحر أو البر — اختر جانبك واثبت أنك الأفضل
+            سمّ فريقك واثبت أنك الأفضل 🏆
           </p>
         </div>
 

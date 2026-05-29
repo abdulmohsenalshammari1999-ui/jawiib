@@ -87,6 +87,15 @@ export function GameOverScreen({
       ? Math.abs(teams.alpha.score - teams.beta.score)
       : 0;
 
+  const whatsappText =
+    winnerTeam
+      ? `🏆 ${winnerTeam.name} فازت في جاوب بـ ${winnerTeam.score} نقطة! هل تقدر تتحداهم؟ جاوب.app`
+      : winner
+      ? `🏆 ${winner.name} فاز في جاوب بـ ${winner.score} نقطة! جرّب جاوب — 22 فئة و456 سؤال خليجي!`
+      : 'جرّب جاوب — 22 فئة و456 سؤال خليجي!';
+
+  const whatsappHref = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
+
   return (
     <div className="animate-fade-in min-h-screen flex items-center justify-center p-4">
       {/* Confetti */}
@@ -240,6 +249,16 @@ export function GameOverScreen({
           <button onClick={onPlayAgain} className="btn-gold w-full text-lg py-4">
             🔄 العب مرة ثانية
           </button>
+          {/* WhatsApp share */}
+          <a
+            href={whatsappHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full text-base py-3.5 rounded-xl font-bold text-white text-center block"
+            style={{ backgroundColor: '#25D366' }}
+          >
+            شارك النتيجة على واتساب 📲
+          </a>
           {onRateMatch && (
             <button
               onClick={onRateMatch}

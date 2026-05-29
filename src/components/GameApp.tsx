@@ -265,6 +265,7 @@ export function GameApp() {
       teamId={game.pendingWeapon.teamId}
       teamName={teams[game.pendingWeapon.teamId]?.name ?? ''}
       teamColor={game.pendingWeapon.teamId === 'alpha' ? '#1D4ED8' : '#B91C1C'}
+      teamEmoji={(teams[game.pendingWeapon.teamId] as any)?.emoji}
       weapon={game.pendingWeapon.weapon}
       onCollect={dismissPendingWeapon}
       onActivate={(w) => activateWeaponFromBox(game.pendingWeapon!.teamId, w)}

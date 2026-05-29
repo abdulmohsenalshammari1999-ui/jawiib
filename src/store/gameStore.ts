@@ -343,7 +343,8 @@ export const useGameStore = create<GameStoreState>()(
           )
         );
 
-        const answeredQuestions = [...game.room.answeredQuestions, question.id];
+        // answeredQuestions was already updated when steal was triggered — don't add again
+        const answeredQuestions = game.room.answeredQuestions;
         const answeredCount     = updatedBoard.reduce((a, r) => a + r.filter((c) => c.answered).length, 0);
         const allAnswered       = game.room.isTrial
           ? answeredQuestions.length >= TRIAL_QUESTION_LIMIT
@@ -875,10 +876,8 @@ export const useGameStore = create<GameStoreState>()(
             : cell
         )
       );
-      const answeredQuestions = [
-        ...game.room.answeredQuestions,
-        ...(game.currentQuestion ? [game.currentQuestion.id] : []),
-      ];
+      // answeredQuestions was already updated at steal trigger — don't add again
+      const answeredQuestions = game.room.answeredQuestions;
       const answeredCount = updatedBoard.reduce((a, r) => a + r.filter((c) => c.answered).length, 0);
       const allAnswered   = game.room.isTrial
         ? answeredQuestions.length >= TRIAL_QUESTION_LIMIT
@@ -926,10 +925,8 @@ export const useGameStore = create<GameStoreState>()(
                 : cell
             )
           );
-          const answeredQuestions = [
-            ...current.room.answeredQuestions,
-            ...(current.currentQuestion ? [current.currentQuestion.id] : []),
-          ];
+          // answeredQuestions was already updated at steal trigger — don't add again
+          const answeredQuestions = current.room.answeredQuestions;
           const answeredCount = updatedBoard.reduce((a, r) => a + r.filter((c) => c.answered).length, 0);
           const allAnswered = current.room.isTrial
             ? answeredQuestions.length >= TRIAL_QUESTION_LIMIT

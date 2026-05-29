@@ -6,6 +6,7 @@ interface Props {
   teamId: 'alpha' | 'beta';
   teamName: string;
   teamColor: string;
+  teamEmoji?: string;
   weapon: WeaponType;
   onCollect: () => void;
   onActivate?: (weapon: WeaponType) => void;
@@ -19,7 +20,7 @@ const WEAPON_INFO: Record<WeaponType, { name: string; icon: string; color: strin
   extra_time:      { name: 'وقت إضافي',      icon: '⏱️', color: '#F59E0B', description: '+15 ثانية على وقت السؤال الحالي أو الجاي' },
 };
 
-export function MysteryBoxOverlay({ teamId, teamName, teamColor, weapon, onCollect, onActivate }: Props) {
+export function MysteryBoxOverlay({ teamId, teamName, teamColor, teamEmoji: teamEmojiProp, weapon, onCollect, onActivate }: Props) {
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
@@ -28,7 +29,7 @@ export function MysteryBoxOverlay({ teamId, teamName, teamColor, weapon, onColle
   }, []);
 
   const info = WEAPON_INFO[weapon];
-  const teamEmoji = teamId === 'alpha' ? '🌊' : '🐪';
+  const teamEmoji = teamEmojiProp ?? (teamId === 'alpha' ? '🔵' : '🔴');
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
@@ -66,7 +67,8 @@ export function MysteryBoxOverlay({ teamId, teamName, teamColor, weapon, onColle
 
         {revealed && (
           <div className="flex flex-col gap-2">
-            {onActivate && (
+            {/* forced_category requires a category picker — can't activate directly from box */}
+            {onActivate && weapon !== 'forced_category' && (
               <button
                 onClick={() => {
                   if (weapon === 'immunity') audio.playImmunityActivated();
@@ -84,7 +86,7 @@ export function MysteryBoxOverlay({ teamId, teamName, teamColor, weapon, onColle
               onClick={onCollect}
               className="w-full py-2.5 rounded-xl border-2 border-jawwib-border text-jawwib-text-dim font-bold text-sm hover:border-jawwib-gold hover:text-jawwib-gold transition-all animate-fade-in"
             >
-              احتفظ لاحقاً 🎒
+              {weapon === 'forced_category' ? 'احتفظ — تحتاج تختار فئة 🎯' : 'احتفظ لاحقاً 🎒'}
             </button>
           </div>
         )}

@@ -7,6 +7,7 @@ import { useHostMessage } from '@/hooks/useHostMessage';
 import { useCategoryDraft } from '@/hooks/useCategoryDraft';
 import { useQuestionFlow } from '@/hooks/useQuestionFlow';
 import { audio } from '@/lib/audio';
+import { globalPool } from '@/engine/questionPool';
 import { initCsvContent } from '@/lib/contentRegistry';
 import { applySeasonalBodyClass } from '@/lib/appConfig';
 import type { CategoryId, TeamId } from '@/lib/types';
@@ -156,10 +157,12 @@ export function GameApp() {
     prevTimer.current = t;
   }, [game?.timer, game?.phase]);
 
-  // Winner fanfare
+  // Winner fanfare + persist seen questions
   useEffect(() => {
     if (game?.phase === 'finished' && prevPhase.current !== 'finished') {
       setTimeout(() => audio.playWinner(), 400);
+      // Persist drawn question IDs to localStorage so they're deprioritised next session
+      globalPool.persistAndReset();
     }
     prevPhase.current = game?.phase;
   }, [game?.phase]);

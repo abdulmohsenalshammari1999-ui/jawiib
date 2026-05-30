@@ -250,12 +250,16 @@ export function GameApp() {
     return null;
   })();
 
-  const activeTeamColor = localTeamId === 'alpha' ? '#1D4ED8' : localTeamId === 'beta' ? '#B91C1C' : null;
+  const activeTeamColor = mode === 'teams' && game?.activeTeamId
+    ? game.activeTeamId === 'alpha' ? '#1D4ED8' : '#B91C1C'
+    : localTeamId === 'alpha' ? '#1D4ED8' : localTeamId === 'beta' ? '#B91C1C' : null;
 
   const winnerTeamData = (() => {
     if (!game || mode !== 'teams' || !teamData) return null;
-    const alphaScore = game.room.players.filter((p) => teamData.alpha.playerIds.includes(p.id)).reduce((s, p) => s + p.score, 0);
-    const betaScore  = game.room.players.filter((p) => teamData.beta.playerIds.includes(p.id)).reduce((s, p) => s + p.score, 0);
+    const alphaScore = game.teamScores?.alpha
+      ?? game.room.players.filter((p) => teamData.alpha.playerIds.includes(p.id)).reduce((s, p) => s + p.score, 0);
+    const betaScore  = game.teamScores?.beta
+      ?? game.room.players.filter((p) => teamData.beta.playerIds.includes(p.id)).reduce((s, p) => s + p.score, 0);
     return {
       alpha: { ...teamData.alpha, score: alphaScore },
       beta:  { ...teamData.beta,  score: betaScore  },
@@ -562,9 +566,11 @@ export function GameApp() {
           : null)
       : game.activePlayer ? game.room.players.find((p) => p.id === game.activePlayer) : null;
 
-    const apTeamId = isSteal ? game.stealOpponentTeamId : (ap && teamData
-      ? teamData.alpha.playerIds.includes(ap.id) ? 'alpha' : 'beta'
-      : null);
+    const apTeamId = isSteal
+      ? game.stealOpponentTeamId
+      : game.activeTeamId ?? (ap && teamData
+          ? teamData.alpha.playerIds.includes(ap.id) ? 'alpha' : 'beta'
+          : null);
     const apTeamColor = apTeamId === 'alpha' ? '#1D4ED8' : apTeamId === 'beta' ? '#B91C1C' : null;
 
     const totalCells = game.board.reduce((a, r) => a + r.length, 0);
@@ -714,10 +720,14 @@ export function GameApp() {
   // ── Phase: board ──────────────────────────────────────────────────────────────
   const opponents = game.room.players.filter((p) => p.id !== localPlayerId);
   const ap = game.activePlayer ? game.room.players.find((p) => p.id === game.activePlayer) : null;
-  const apTeamColor = ap && teamData
+  const boardActiveTeamId = mode === 'teams' ? game.activeTeamId : null;
+  const apTeamColor = boardActiveTeamId
+    ? boardActiveTeamId === 'alpha' ? '#1D4ED8' : '#B91C1C'
+    : ap && teamData
     ? teamData.alpha.playerIds.includes(ap.id) ? '#1D4ED8' : '#B91C1C'
     : null;
-  const isMyTurn = ap?.id === localPlayerId;
+  // In single-device teams mode the host manages both teams — always their turn
+  const isMyTurn = mode === 'teams' ? true : ap?.id === localPlayerId;
 
   return (
     <div className="min-h-screen p-4">
@@ -737,7 +747,7 @@ export function GameApp() {
 
       <HostBubble message={game.hostMessage} compact />
 
-      {ap && (
+      {(boardActiveTeamId || ap) && (
         <div
           className="mb-3 px-4 py-2.5 rounded-xl text-center text-sm border-2 transition-all"
           style={{
@@ -746,14 +756,19 @@ export function GameApp() {
           }}
         >
           <span className="text-jawwib-text-dim">دور: </span>
-          <span className="font-bold" style={{ color: apTeamColor ?? '#C8880A' }}>
-            {ap.avatar} {ap.name}
-          </span>
-          {isMyTurn && (
-            <span className="mr-2 text-xs" style={{ color: apTeamColor ?? '#C8880A' }}>
-              (اختر سؤالًا)
+          {boardActiveTeamId && teamData ? (
+            <span className="font-bold" style={{ color: apTeamColor ?? '#C8880A' }}>
+              {(teamData[boardActiveTeamId] as any).emoji ?? (boardActiveTeamId === 'alpha' ? '🔵' : '🔴')}{' '}
+              {teamData[boardActiveTeamId].name}
             </span>
-          )}
+          ) : ap ? (
+            <span className="font-bold" style={{ color: apTeamColor ?? '#C8880A' }}>
+              {ap.avatar} {ap.name}
+            </span>
+          ) : null}
+          <span className="mr-2 text-xs" style={{ color: apTeamColor ?? '#C8880A' }}>
+            (اختر سؤالًا)
+          </span>
         </div>
       )}
 
@@ -774,6 +789,8 @@ export function GameApp() {
           players={game.room.players}
           teams={teamData}
           activePlayerId={game.activePlayer}
+          activeTeamId={game.activeTeamId}
+          teamScores={game.teamScores}
           mode={mode}
           lastStandUsed={game.lastStandUsed}
           onActivateLastStand={activateLastStand}

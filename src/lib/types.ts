@@ -131,6 +131,8 @@ export interface GameState {
   // ── Last Stand comeback mechanic ──
   lastStandActive: TeamId | null;
   lastStandUsed: Partial<Record<TeamId, boolean>>;
+  // ── Per-team score totals (single-device safe) ──
+  teamScores: Partial<Record<TeamId, number>>;
 }
 
 // ─── Sabotage system ──────────────────────────────────────────────────────────

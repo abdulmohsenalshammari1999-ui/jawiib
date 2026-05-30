@@ -11,6 +11,8 @@ interface TeamScoreboardProps {
   players: Player[];
   teams: { alpha: TeamData; beta: TeamData } | null;
   activePlayerId: string | null;
+  activeTeamId?: TeamId | null;
+  teamScores?: Partial<Record<TeamId, number>>;
   mode: 'ffa' | 'teams';
   lastStandUsed?: Partial<Record<TeamId, boolean>>;
   onActivateLastStand?: (teamId: TeamId) => void;
@@ -31,6 +33,8 @@ export function TeamScoreboard({
   players,
   teams,
   activePlayerId,
+  activeTeamId,
+  teamScores,
   mode,
   lastStandUsed = {},
   onActivateLastStand,
@@ -38,8 +42,8 @@ export function TeamScoreboard({
   if (mode === 'teams' && teams) {
     const alphaPlayers = players.filter((p) => teams.alpha.playerIds.includes(p.id));
     const betaPlayers  = players.filter((p) => teams.beta.playerIds.includes(p.id));
-    const alphaScore   = alphaPlayers.reduce((s, p) => s + p.score, 0);
-    const betaScore    = betaPlayers.reduce((s, p) => s + p.score, 0);
+    const alphaScore   = teamScores?.alpha ?? alphaPlayers.reduce((s, p) => s + p.score, 0);
+    const betaScore    = teamScores?.beta  ?? betaPlayers.reduce((s, p) => s + p.score, 0);
     const alphaLeads   = alphaScore >= betaScore;
     const gap          = Math.abs(alphaScore - betaScore);
     const isCloseGame  = gap <= 200 && (alphaScore > 0 || betaScore > 0);
@@ -48,12 +52,14 @@ export function TeamScoreboard({
     const alphaCanLastStand = !alphaLeads && gap >= 400 && !lastStandUsed['alpha'] && !!onActivateLastStand;
     const betaCanLastStand  =  alphaLeads && gap >= 400 && !lastStandUsed['beta']  && !!onActivateLastStand;
 
-    const activeTeam = (() => {
-      if (!activePlayerId) return null;
-      if (teams.alpha.playerIds.includes(activePlayerId)) return 'alpha';
-      if (teams.beta.playerIds.includes(activePlayerId)) return 'beta';
-      return null;
-    })();
+    const activeTeam: TeamId | null = activeTeamId !== undefined
+      ? activeTeamId
+      : (() => {
+          if (!activePlayerId) return null;
+          if (teams.alpha.playerIds.includes(activePlayerId)) return 'alpha';
+          if (teams.beta.playerIds.includes(activePlayerId)) return 'beta';
+          return null;
+        })();
 
     return (
       <div className="game-card p-4">

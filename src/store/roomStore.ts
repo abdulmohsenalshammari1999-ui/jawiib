@@ -164,6 +164,10 @@ export const useRoomStore = create<RoomStoreState>()(
             activeBomb: null,
             activeImmunity: {},
             forcedCategory: null,
+            stealOpponentTeamId: null,
+            lastStandActive: null,
+            lastStandUsed: {},
+            teamScores: {},
           },
         });
       }

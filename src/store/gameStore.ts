@@ -197,6 +197,7 @@ export const useGameStore = create<GameStoreState>()(
         lastStandActive: null,
         lastStandUsed: {},
         stealOpponentTeamId: null,
+        teamScores: {},
       };
       set({ game, localPlayerId: playerId, answeredCount: 0 });
       return { roomId, playerId };
@@ -355,6 +356,10 @@ export const useGameStore = create<GameStoreState>()(
         const nextTeamId: TeamId | null = game.activeTeamId === 'alpha' ? 'beta'
           : game.activeTeamId === 'beta' ? 'alpha' : null;
 
+        const stealTeamScores: Partial<Record<TeamId, number>> = stealTeamId
+          ? { ...(game.teamScores ?? {}), [stealTeamId]: (game.teamScores?.[stealTeamId] ?? 0) + pointsEarned }
+          : (game.teamScores ?? {});
+
         set({
           game: {
             ...game,
@@ -368,6 +373,7 @@ export const useGameStore = create<GameStoreState>()(
             },
             activePlayer: nextActivePlayer,
             activeTeamId: nextTeamId ?? game.activeTeamId,
+            teamScores: stealTeamScores,
             hostMessage: allAnswered
               ? getGameOverMessage([...updatedPlayers].sort((a, b) => b.score - a.score)[0].id === targetPlayerId)
               : correct ? getStealSuccessMessage(targetPlayer.name) : getStealFailMessage(),
@@ -394,12 +400,15 @@ export const useGameStore = create<GameStoreState>()(
       const sabStore = useSabotageStore.getState();
 
       // Determine team membership early (needed for lastStand check)
+      // Use activeTeamId as source of truth — beta.playerIds is empty in single-device mode
       const membership = game.teamMembership;
-      const answeringTeamId: TeamId | null = membership
-        ? membership.alpha.includes(playerId) ? 'alpha'
-        : membership.beta.includes(playerId)  ? 'beta'
-        : null
-        : null;
+      const answeringTeamId: TeamId | null = game.activeTeamId ?? (
+        membership
+          ? membership.alpha.includes(playerId) ? 'alpha'
+          : membership.beta.includes(playerId)  ? 'beta'
+          : null
+          : null
+      );
 
       // Apply double multiplier if active
       const doubleMultiplier = sabStore.getDoubleMultiplierFor(playerId) ?? 1;
@@ -510,6 +519,13 @@ export const useGameStore = create<GameStoreState>()(
         adjustedFinalPoints = 0;
       }
 
+      const updatedTeamScores: Partial<Record<TeamId, number>> = answeringTeamId
+        ? {
+            ...(game.teamScores ?? {}),
+            [answeringTeamId]: Math.max(0, (game.teamScores?.[answeringTeamId] ?? 0) + adjustedFinalPoints),
+          }
+        : (game.teamScores ?? {});
+
       const lastStandUsed = { ...game.lastStandUsed };
       if (game.lastStandActive === answeringTeamId) lastStandUsed[answeringTeamId!] = true;
 
@@ -547,6 +563,7 @@ export const useGameStore = create<GameStoreState>()(
               timeBonus: 0,
               streakMultiplier: 1,
             },
+            teamScores: game.teamScores ?? {},
             teamStreaks,
             teamWeapons,
             pendingWeapon,
@@ -587,6 +604,7 @@ export const useGameStore = create<GameStoreState>()(
             timeBonus:        result.timeBonus,
             streakMultiplier: result.streakMultiplier * doubleMultiplier,
           },
+          teamScores: updatedTeamScores,
           teamStreaks,
           teamWeapons,
           pendingWeapon,
@@ -725,6 +743,7 @@ export const useGameStore = create<GameStoreState>()(
           selectedSabotage: null,
           sabotageTarget: null,
           lastAnswer: null,
+          teamScores: game.teamMembership ? { alpha: 0, beta: 0 } : {},
           teamStreaks: {},
           teamWeapons: game.teamMembership ? { alpha: [], beta: [] } : {},
           pendingWeapon: null,
@@ -748,6 +767,7 @@ export const useGameStore = create<GameStoreState>()(
           ...game,
           teamMembership: { alpha, beta },
           activeTeamId: 'alpha',
+          teamScores: { alpha: 0, beta: 0 },
           teamStreaks: { alpha: 0, beta: 0 },
           teamWeapons: { alpha: [], beta: [] },
           pendingWeapon: null,

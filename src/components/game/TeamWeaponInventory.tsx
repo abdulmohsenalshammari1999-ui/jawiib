@@ -12,6 +12,7 @@ interface Props {
   forcedCategory: { targetTeamId: TeamId; categoryId: CategoryId } | null;
   activeImmunity: Partial<Record<TeamId, boolean>>;
   activeBomb: TeamId | null;
+  boardCategories?: CategoryId[];
 }
 
 const WEAPON_INFO: Record<WeaponType, { name: string; icon: string; color: string; hint: string }> = {
@@ -30,6 +31,7 @@ export function TeamWeaponInventory({
   forcedCategory,
   activeImmunity,
   activeBomb,
+  boardCategories,
 }: Props) {
   const useWeapon    = useGameStore((s) => s.useWeapon);
   const [catPicker, setCatPicker] = useState<{ weapon: WeaponType; targetTeam: TeamId } | null>(null);
@@ -172,16 +174,18 @@ export function TeamWeaponInventory({
               🎯 اختر الفئة للخصم
             </h3>
             <div className="grid grid-cols-2 gap-1.5 max-h-64 overflow-y-auto">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCatPick(cat.id)}
-                  className="flex items-center gap-1.5 text-xs font-bold px-2 py-2 rounded-lg border border-jawwib-border hover:border-jawwib-gold hover:text-jawwib-gold transition-all text-right"
-                >
-                  <span>{cat.icon}</span>
-                  <span className="truncate">{cat.name}</span>
-                </button>
-              ))}
+              {categories
+                .filter((cat) => !boardCategories || boardCategories.includes(cat.id))
+                .map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleCatPick(cat.id)}
+                    className="flex items-center gap-1.5 text-xs font-bold px-2 py-2 rounded-lg border border-jawwib-border hover:border-jawwib-gold hover:text-jawwib-gold transition-all text-right"
+                  >
+                    <span>{cat.icon}</span>
+                    <span className="truncate">{cat.name}</span>
+                  </button>
+                ))}
             </div>
             <button
               onClick={() => setCatPicker(null)}

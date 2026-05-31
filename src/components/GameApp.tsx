@@ -820,6 +820,7 @@ export function GameApp() {
           forcedCategory={game.forcedCategory}
           activeImmunity={game.activeImmunity}
           activeBomb={game.activeBomb}
+          boardCategories={game.room.categories}
         />
       )}
 

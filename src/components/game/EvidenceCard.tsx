@@ -1,4 +1,5 @@
 import type { Evidence } from '@/lib/types';
+import { ImageMedia, AudioMedia, VideoMedia } from './MediaRenderer';
 
 interface Props {
   evidence: Evidence;
@@ -22,48 +23,63 @@ export function EvidenceCard({ evidence }: Props) {
         }}
       />
 
-      <div className="px-3.5 pt-3 pb-3.5">
+      <div className="px-4 pt-3.5 pb-4">
         {/* Label */}
-        <p className="text-[10px] font-black tracking-wider text-jawwib-gold uppercase mb-2 flex items-center gap-1">
+        <p className="text-[10px] font-black tracking-wider text-jawwib-gold uppercase mb-3 flex items-center gap-1">
           <span>💡</span>
           <span>لماذا هذه الإجابة الصحيحة؟</span>
         </p>
 
+        {/* Media (image / audio / video) */}
+        {evidence.videoUrl && (
+          <div className="mb-3">
+            <VideoMedia src={evidence.videoUrl} caption={evidence.title} muted={false} />
+          </div>
+        )}
+        {!evidence.videoUrl && evidence.audioUrl && (
+          <div className="mb-3">
+            <AudioMedia src={evidence.audioUrl} label={evidence.title} />
+          </div>
+        )}
+        {!evidence.videoUrl && !evidence.audioUrl && evidence.imageUrl && (
+          <div className="mb-3">
+            <ImageMedia src={evidence.imageUrl} alt={evidence.title} />
+          </div>
+        )}
+
         <div className="flex gap-3 items-start">
-          {/* Visual anchor — image takes priority over emoji */}
-          {evidence.imageUrl ? (
-            <img
-              src={evidence.imageUrl}
-              alt={evidence.title}
-              className="w-16 h-16 rounded-xl object-cover shrink-0 shadow-sm"
-            />
-          ) : evidence.visualIcon ? (
+          {/* Emoji anchor — shown only when no rich media */}
+          {!evidence.imageUrl && !evidence.audioUrl && !evidence.videoUrl && evidence.visualIcon && (
             <div
-              className="w-16 h-16 rounded-xl flex items-center justify-center text-4xl shrink-0"
+              className="w-14 h-14 rounded-xl flex items-center justify-center text-3xl shrink-0"
               style={{ background: 'rgba(176, 125, 26, 0.08)', border: '1px solid rgba(176, 125, 26, 0.2)' }}
             >
               {evidence.visualIcon}
             </div>
-          ) : null}
+          )}
 
           <div className="flex-1 min-w-0">
             {/* Title */}
-            <p className="text-sm font-black text-jawwib-text leading-snug mb-1">
+            <p className="text-sm font-black text-jawwib-text leading-snug mb-1.5">
               {evidence.title}
             </p>
 
-            {/* Description — 4 line clamp for mobile */}
-            <p
-              className="text-[11.5px] leading-relaxed text-jawwib-text/75"
-              style={{
-                display:           '-webkit-box',
-                WebkitLineClamp:   4,
-                WebkitBoxOrient:   'vertical',
-                overflow:          'hidden',
-              }}
-            >
+            {/* Description */}
+            <p className="text-sm leading-relaxed text-jawwib-text/80">
               {evidence.description}
             </p>
+
+            {/* Source link */}
+            {evidence.sourceLink && (
+              <a
+                href={evidence.sourceLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block mt-2 text-[10px] text-jawwib-gold underline underline-offset-2"
+              >
+                📎 المصدر
+              </a>
+            )}
           </div>
         </div>
       </div>

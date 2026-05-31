@@ -1,4 +1,5 @@
 export type CategoryId =
+  // ── Original 22 ──────────────────────────────────────────────────────────
   | 'culture'
   | 'sport'
   | 'history'
@@ -20,7 +21,50 @@ export type CategoryId =
   | 'gcc_football'
   | 'diwaniya'
   | 'kuwait_food'
-  | 'kuwait_celebs';
+  | 'kuwait_celebs'
+  // ── Islamic ──────────────────────────────────────────────────────────────
+  | 'quran_tafsir'
+  | 'hadith'
+  | 'islamic_history'
+  | 'prophets'
+  // ── Arab & World ─────────────────────────────────────────────────────────
+  | 'arab_world'
+  | 'world_history'
+  | 'politics'
+  // ── Economy & Business ───────────────────────────────────────────────────
+  | 'economics'
+  | 'finance'
+  | 'entrepreneurship'
+  // ── Technology ───────────────────────────────────────────────────────────
+  | 'technology'
+  | 'ai_tech'
+  | 'cybersecurity'
+  | 'programming'
+  // ── Health & Mind ────────────────────────────────────────────────────────
+  | 'medicine'
+  | 'human_body'
+  | 'psychology'
+  // ── Nature & Universe ────────────────────────────────────────────────────
+  | 'space'
+  | 'environment'
+  | 'animals'
+  // ── Arts & Culture ───────────────────────────────────────────────────────
+  | 'architecture'
+  | 'literature'
+  | 'art_visual'
+  | 'arabic_language'
+  // ── Entertainment ────────────────────────────────────────────────────────
+  | 'movies_intl'
+  | 'tv_shows_intl'
+  | 'video_games'
+  | 'celebrities_intl'
+  | 'flags_maps'
+  // ── Challenge Modes ──────────────────────────────────────────────────────
+  | 'math_logic'
+  | 'riddles_ar';
+
+// ── Question media type ───────────────────────────────────────────────────────
+export type QuestionType = 'text' | 'image' | 'audio' | 'video' | 'math' | 'riddle';
 
 export interface Question {
   id: string;
@@ -30,6 +74,15 @@ export interface Question {
   text: string;
   options: string[];
   correctIndex: number;
+  // Multimedia
+  type?: QuestionType;        // defaults to 'text'
+  mediaUrl?: string;          // image / audio / video URL
+  mediaDuration?: number;     // seconds — relevant for audio/video clips
+  // Educational reveal content
+  explanation?: string;       // why this answer is correct
+  funFact?: string;           // interesting related fact
+  didYouKnow?: string;        // extra knowledge nugget
+  source?: string;            // reference / attribution
   evidence?: Evidence;
 }
 
@@ -88,9 +141,11 @@ export type WeaponType = 'timer_bomb' | 'immunity' | 'forced_category' | 'ask_fr
 export interface Evidence {
   title: string;
   description: string;
-  visualIcon?: string;  // emoji shown as visual anchor when no image
+  visualIcon?: string;
   imageUrl?: string;
-  sourceLink?: string;  // future: link to source
+  audioUrl?: string;
+  videoUrl?: string;
+  sourceLink?: string;
 }
 
 export interface Sabotage {

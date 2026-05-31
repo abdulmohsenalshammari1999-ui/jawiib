@@ -8,9 +8,15 @@
  *   category_id, category_name_ar, category_name_en, category_group,
  *   category_icon, difficulty_points, question_ar, question_en,
  *   option_a, option_b, option_c, option_d, correct_option,
- *   explanation_ar, evidence_image, evidence_title, evidence_description, active
+ *   question_type, media_url, media_duration,
+ *   explanation_ar, fun_fact_ar, did_you_know_ar, source,
+ *   evidence_image, evidence_audio, evidence_video,
+ *   evidence_title, evidence_description, active
+ *
+ * question_type: text | image | audio | video | math | riddle  (default: text)
+ * media_duration: integer seconds (hint for audio/video clips)
  */
-import type { Question, CategoryId, Evidence } from './types';
+import type { Question, CategoryId, Evidence, QuestionType } from './types';
 import type { Category } from './types';
 
 export interface CsvValidationError {
@@ -132,12 +138,29 @@ export function parseCsvContent(text: string): CsvLoadResult {
     const options = [row['option_a'], row['option_b'], row['option_c'], row['option_d']];
     const correctIndex = CORRECT_MAP[correctKey];
 
+    // Multimedia fields
+    const VALID_TYPES = new Set<string>(['text','image','audio','video','math','riddle']);
+    const rawType = (row['question_type'] ?? 'text').toLowerCase().trim();
+    const qType: QuestionType = VALID_TYPES.has(rawType) ? rawType as QuestionType : 'text';
+    const mediaUrl     = row['media_url']      || undefined;
+    const mediaDurRaw  = parseInt(row['media_duration'] ?? '', 10);
+    const mediaDuration = isNaN(mediaDurRaw) ? undefined : mediaDurRaw;
+
+    // Educational reveal fields
+    const explanation = row['explanation_ar'] || undefined;
+    const funFact     = row['fun_fact_ar']    || undefined;
+    const didYouKnow  = row['did_you_know_ar']|| undefined;
+    const source      = row['source']         || undefined;
+
+    // Evidence card
     let evidence: Evidence | undefined;
     if (row['evidence_title'] || row['evidence_description']) {
       evidence = {
-        title: row['evidence_title'] || '',
+        title:       row['evidence_title']       || '',
         description: row['evidence_description'] || '',
-        imageUrl: row['evidence_image'] || undefined,
+        imageUrl:    row['evidence_image']        || undefined,
+        audioUrl:    row['evidence_audio']        || undefined,
+        videoUrl:    row['evidence_video']        || undefined,
       };
     }
 
@@ -145,10 +168,17 @@ export function parseCsvContent(text: string): CsvLoadResult {
       id: `${categoryId}-${tier}-csv${csvIdx}`,
       category: categoryId,
       tier,
-      points: points as 100 | 200 | 300 | 400 | 500 | 600,
-      text: row['question_ar'],
+      points:    points as 100 | 200 | 300 | 400 | 500 | 600,
+      text:      row['question_ar'],
       options,
       correctIndex,
+      type:      qType,
+      mediaUrl,
+      mediaDuration,
+      explanation,
+      funFact,
+      didYouKnow,
+      source,
       evidence,
     });
   }

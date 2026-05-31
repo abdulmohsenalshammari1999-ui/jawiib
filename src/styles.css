@@ -442,3 +442,84 @@ input:focus, textarea:focus {
 
 /* ── Ramadan mode hook — set VITE_SEASONAL_THEME=ramadan to activate ─── */
 .ramadan-mode { /* seasonal palette applied via JS class on <body> */ }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY & READABILITY UPGRADES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Larger base text for readability ─────────────────────────────────── */
+body {
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+/* ── Answer option — larger tap area, stronger contrast ──────────────── */
+.answer-option {
+  min-height: 56px;
+  font-size: 15px;
+  line-height: 1.4;
+  transition: transform 0.15s, border-color 0.15s, background 0.15s;
+}
+.answer-option:hover:not(:disabled) {
+  transform: scale(1.015);
+  border-color: #B07D1A !important;
+  background: #FBF8EE !important;
+}
+.answer-option:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* ── Timer bar — high-contrast warning states ─────────────────────────── */
+.timer-critical {        /* < 25% time */
+  background: linear-gradient(90deg, #B91C1C, #EF4444) !important;
+  animation: timer-pulse 0.5s ease-in-out infinite;
+}
+@keyframes timer-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.75; }
+}
+
+/* ── High-contrast mode (prefers-contrast: more) ─────────────────────── */
+@media (prefers-contrast: more) {
+  body {
+    --color-jawwib-border: #7A5020;
+    --color-jawwib-text-dim: #5A4020;
+  }
+  .game-card {
+    border-width: 2px;
+    border-color: #7A5020;
+  }
+  .answer-option {
+    border-width: 2px !important;
+  }
+}
+
+/* ── Reduced motion ────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Color-blind friendly focus rings ─────────────────────────────────── */
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #B07D1A;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── Large-screen readable typography ────────────────────────────────── */
+@media (min-width: 768px) {
+  .answer-option { font-size: 16px; min-height: 60px; }
+}
+@media (min-width: 1024px) {
+  .answer-option { font-size: 17px; min-height: 64px; }
+  body { font-size: 17px; }
+}
+
+/* ── Media card zoom cursor ────────────────────────────────────────────── */
+.cursor-zoom-in  { cursor: zoom-in; }
+.cursor-zoom-out { cursor: zoom-out; }

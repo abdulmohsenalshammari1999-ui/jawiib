@@ -594,13 +594,21 @@ export function GameApp() {
 
         {/* Phase indicator */}
         {isSteal ? (
-          <div className="text-center animate-bounce-in">
-            <span
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-black text-white"
-              style={{ background: 'linear-gradient(135deg,#7C3AED,#A855F7)' }}
-            >
-              🏴‍☠️ فرصة سرقة — {stealEmoji} {stealTeamName}
-            </span>
+          <div
+            className="animate-bounce-in rounded-2xl px-4 py-3 text-center border-2"
+            style={{
+              background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.08))',
+              borderColor: '#7C3AED',
+              boxShadow: '0 0 24px rgba(124,58,237,0.25)',
+            }}
+          >
+            <p className="text-2xl mb-0.5">🏴‍☠️</p>
+            <p className="font-black text-base" style={{ color: apTeamColor ?? '#7C3AED' }}>
+              {stealEmoji} {stealTeamName}
+            </p>
+            <p className="text-xs font-bold text-jawwib-text-dim mt-0.5">
+              فرصة السرقة! أجيبوا صح تكسبون النقاط
+            </p>
           </div>
         ) : isFinalQ ? (
           <div className="text-center animate-final-flare">
@@ -630,6 +638,7 @@ export function GameApp() {
 
         <div className="flex-1 flex items-center justify-center">
           <QuestionCard
+            key={`${game.currentQuestion.id}-${game.phase}`}
             question={game.currentQuestion}
             timer={game.timer}
             maxTimer={30}

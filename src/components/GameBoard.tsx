@@ -9,6 +9,7 @@ interface GameBoardProps {
   answeredCount: number;
   activeTeamColor?: string | null;
   isMyTurn?: boolean;
+  forcedCategoryId?: CategoryId;
 }
 
 const TIER_POINTS = [100, 200, 300, 400, 500, 600] as const;
@@ -30,6 +31,7 @@ export function GameBoard({
   answeredCount,
   activeTeamColor,
   isMyTurn = true,
+  forcedCategoryId,
 }: GameBoardProps) {
   const trialLimit = 9;
 
@@ -59,30 +61,36 @@ export function GameBoard({
           return (
             <div
               key={cat.id}
-              className="grid gap-1.5 items-center"
+              className={`grid gap-1.5 items-center rounded-lg transition-all ${
+                forcedCategoryId === cat.id ? 'bg-jawwib-purple/8 ring-1 ring-jawwib-purple/30' : ''
+              }`}
               style={{ gridTemplateColumns: '100px repeat(6, 1fr)' }}
             >
               {/* Category label */}
               <div className="flex items-center gap-1 px-1 min-w-0">
                 <span className="text-sm shrink-0">{cat.icon}</span>
-                <span className="text-[11px] font-bold text-jawwib-text-dim truncate leading-tight">{cat.name}</span>
+                <span className={`text-[11px] font-bold truncate leading-tight ${
+                  forcedCategoryId === cat.id ? 'text-jawwib-purple' : 'text-jawwib-text-dim'
+                }`}>{cat.name}</span>
+                {forcedCategoryId === cat.id && <span className="text-[9px] text-jawwib-purple font-black shrink-0">🎯</span>}
               </div>
 
               {/* Cells */}
               {row.map((cell, colIndex) => {
-                const pts = TIER_POINTS[colIndex];
-                const style = TIER_STYLES[pts];
+                const pts = cell.points;
+                const style = TIER_STYLES[pts] ?? TIER_STYLES[TIER_POINTS[colIndex]];
                 const isLocked = isTrial && answeredCount >= trialLimit && !cell.answered;
-                const canClick = !cell.answered && !isLocked && isMyTurn;
+                const isForcedOut = !cell.answered && !!forcedCategoryId && cell.category !== forcedCategoryId;
+                const canClick = !cell.answered && !isLocked && !isForcedOut && isMyTurn;
 
                 return (
                   <button
                     key={`${rowIndex}-${colIndex}`}
                     onClick={() => canClick && onSelectQuestion(cell.questionId)}
-                    disabled={cell.answered || isLocked || !isMyTurn}
+                    disabled={cell.answered || isLocked || isForcedOut || !isMyTurn}
                     className={`board-cell flex items-center justify-center py-2.5 min-h-[44px] text-center relative ${
                       cell.answered ? 'answered' : ''
-                    } ${isLocked ? '!opacity-20 cursor-not-allowed' : ''} ${
+                    } ${isLocked || isForcedOut ? '!opacity-20 cursor-not-allowed' : ''} ${
                       !isMyTurn && !cell.answered ? 'cursor-default opacity-60' : ''
                     }`}
                     style={

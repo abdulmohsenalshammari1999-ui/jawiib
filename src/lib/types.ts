@@ -114,6 +114,7 @@ export interface GameState {
   sabotageTarget: string | null;
   lastAnswer: {
     playerId: string;
+    teamId?: TeamId | null;
     correct: boolean;
     points: number;
     timeBonus: number;

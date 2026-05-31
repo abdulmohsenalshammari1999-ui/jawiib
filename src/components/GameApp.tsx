@@ -686,9 +686,11 @@ export function GameApp() {
   // ── Phase: result ─────────────────────────────────────────────────────────────
   if (game.phase === 'result' && game.lastAnswer && game.currentQuestion) {
     const respPlayer = game.room.players.find((p) => p.id === game.lastAnswer?.playerId);
-    const respTeamId: TeamId | null = respPlayer && teamData
-      ? teamData.alpha.playerIds.includes(respPlayer.id) ? 'alpha' : 'beta'
-      : null;
+    // Use stored teamId if available (reliable in single-device); fall back to playerIds lookup
+    const respTeamId: TeamId | null = game.lastAnswer.teamId
+      ?? (respPlayer && teamData
+          ? teamData.alpha.playerIds.includes(respPlayer.id) ? 'alpha' : 'beta'
+          : null);
     const tColor = respTeamId === 'alpha' ? '#1D4ED8' : respTeamId === 'beta' ? '#B91C1C' : null;
     const tEmoji = respTeamId === 'alpha' ? (teamData?.alpha.emoji ?? '🔵') : respTeamId === 'beta' ? (teamData?.beta.emoji ?? '🔴') : undefined;
     const totalCells = game.board.reduce((a, r) => a + r.length, 0);
@@ -781,6 +783,11 @@ export function GameApp() {
           answeredCount={answeredCount}
           activeTeamColor={activeTeamColor}
           isMyTurn={isMyTurn}
+          forcedCategoryId={
+            boardActiveTeamId && game.forcedCategory?.targetTeamId === boardActiveTeamId
+              ? game.forcedCategory.categoryId
+              : undefined
+          }
         />
       </div>
 
@@ -804,9 +811,9 @@ export function GameApp() {
         )}
       </div>
 
-      {mode === 'teams' && localTeamId && (
+      {mode === 'teams' && game.activeTeamId && (
         <TeamWeaponInventory
-          localTeamId={localTeamId}
+          localTeamId={game.activeTeamId}
           teamWeapons={game.teamWeapons}
           activeTeamId={game.activeTeamId}
           phase={game.phase}

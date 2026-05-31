@@ -281,21 +281,9 @@ export const useGameStore = create<GameStoreState>()(
         const current = get().game;
         if (!current || current.phase !== 'question') return;
         if (current.timer <= 0) {
-          set({
-            game: {
-              ...current,
-              phase: 'result',
-              timer: 0,
-              hostMessage: getLoserRoast(),
-              lastAnswer: {
-                playerId: current.activePlayer ?? '',
-                correct: false,
-                points: 0,
-                timeBonus: 0,
-                streakMultiplier: 1,
-              },
-            },
-          });
+          // Delegate to answerQuestion so steal logic fires and board cell is marked answered.
+          // Any answerIndex works — timeRemaining=0 forces timedOut=true in validateAnswer.
+          get().answerQuestion(current.activePlayer ?? '', 0);
           return;
         }
         set({ game: { ...current, timer: current.timer - 1 } });
@@ -379,6 +367,7 @@ export const useGameStore = create<GameStoreState>()(
               : correct ? getStealSuccessMessage(targetPlayer.name) : getStealFailMessage(),
             lastAnswer: {
               playerId: targetPlayerId,
+              teamId: stealTeamId,
               correct,
               points: pointsEarned,
               timeBonus: 0,
@@ -558,6 +547,7 @@ export const useGameStore = create<GameStoreState>()(
             hostMessage: getStealPhaseMessage(opponentName),
             lastAnswer: {
               playerId,
+              teamId: answeringTeamId,
               correct: false,
               points: 0,
               timeBonus: 0,
@@ -568,6 +558,7 @@ export const useGameStore = create<GameStoreState>()(
             teamWeapons,
             pendingWeapon,
             activeImmunity,
+            forcedCategory: game.forcedCategory?.targetTeamId === answeringTeamId ? null : game.forcedCategory,
             lastStandActive: null,
             lastStandUsed,
             stealOpponentTeamId: opponentTeamId,
@@ -599,6 +590,7 @@ export const useGameStore = create<GameStoreState>()(
             : hostMessage,
           lastAnswer: {
             playerId,
+            teamId: answeringTeamId,
             correct:          result.correct,
             points:           adjustedFinalPoints,
             timeBonus:        result.timeBonus,
@@ -609,6 +601,7 @@ export const useGameStore = create<GameStoreState>()(
           teamWeapons,
           pendingWeapon,
           activeImmunity,
+          forcedCategory: game.forcedCategory?.targetTeamId === answeringTeamId ? null : game.forcedCategory,
           lastStandActive: null,
           lastStandUsed,
           stealOpponentTeamId: null,

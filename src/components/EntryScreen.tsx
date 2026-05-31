@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { HowToPlayModal, useFirstVisit } from './HowToPlayModal';
 
 interface EntryScreenProps {
   onEnter: () => void;
@@ -17,11 +18,21 @@ export function EntryScreen({
 }: EntryScreenProps) {
   const [mounted, setMounted] = useState(false);
   const [exiting, setExiting] = useState(false);
+  const [showHowTo, setShowHowTo] = useState(false);
+  const { isFirstVisit, markSeen } = useFirstVisit();
 
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 40);
     return () => clearTimeout(t);
   }, []);
+
+  // Auto-open on first visit once the entry screen is fully visible
+  useEffect(() => {
+    if (isFirstVisit && mounted) {
+      const t = setTimeout(() => setShowHowTo(true), 600);
+      return () => clearTimeout(t);
+    }
+  }, [isFirstVisit, mounted]);
 
   const handleEnter = () => {
     setExiting(true);
@@ -36,6 +47,23 @@ export function EntryScreen({
       style={{ opacity: visible ? 1 : 0, transition: 'opacity 0.38s ease-out' }}
     >
       <div className="sadu-accent w-full" />
+
+      {/* How-to-play trigger */}
+      <button
+        onClick={() => setShowHowTo(true)}
+        className="absolute top-3 left-3 z-20 w-9 h-9 flex items-center justify-center rounded-full text-sm font-black transition-all tap-target"
+        style={{
+          background: 'rgba(176,125,26,0.12)',
+          border: '1.5px solid rgba(176,125,26,0.35)',
+          color: '#B07D1A',
+          opacity: mounted ? 1 : 0,
+          transition: 'opacity 0.55s 0.4s ease-out',
+        }}
+        aria-label="How to play"
+        title="How to play / كيف تلعب"
+      >
+        ?
+      </button>
 
       {/* Ambient glows */}
       <div
@@ -201,6 +229,15 @@ export function EntryScreen({
       </div>
 
       <div className="sadu-accent w-full" />
+
+      {showHowTo && (
+        <HowToPlayModal
+          onClose={() => {
+            markSeen();
+            setShowHowTo(false);
+          }}
+        />
+      )}
     </div>
   );
 }

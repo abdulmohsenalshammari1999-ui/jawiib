@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { categories } from '@/lib/categories';
 import type { CategoryId } from '@/lib/types';
+import { HowToPlayButton } from './HowToPlay';
 
 interface HomeScreenProps {
   onCreateRoom: (name: string, isTrial: boolean, cats?: CategoryId[], mode?: 'ffa' | 'teams') => void;
@@ -94,9 +95,12 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
           ))}
         </div>
 
-        {/* Trial badge */}
-        <div className="w-full max-w-xs p-3 rounded-xl bg-jawwib-gold/5 border border-jawwib-gold/20 text-center">
-          <p className="text-jawwib-gold text-xs font-bold">✨ 9 أسئلة تجريبية مجانية</p>
+        {/* Bottom row: trial badge + how to play */}
+        <div className="w-full max-w-xs flex items-center gap-3">
+          <div className="flex-1 p-3 rounded-xl bg-jawwib-gold/5 border border-jawwib-gold/20 text-center">
+            <p className="text-jawwib-gold text-xs font-bold">✨ 9 أسئلة تجريبية مجانية</p>
+          </div>
+          <HowToPlayButton />
         </div>
       </div>
     );

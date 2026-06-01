@@ -1,0 +1,25 @@
+{
+  "name": "abdulmohsens-daily-statesman-brief",
+  "version": "1.0.0",
+  "description": "Abdulmohsen's Daily Statesman Brief — automated morning email briefing",
+  "type": "module",
+  "scripts": {
+    "start": "node --loader tsx/esm src/scheduler.ts",
+    "send-now": "node --loader tsx/esm src/send-now.ts",
+    "dev": "tsx src/scheduler.ts",
+    "test": "tsx src/send-now.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/nodemailer": "^6.4.17",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

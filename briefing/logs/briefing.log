@@ -1,0 +1,7 @@
+[2026-06-01T11:33:38.599Z] [INFO] send-now: firing brief immediately (test mode)
+[2026-06-01T11:33:38.599Z] [INFO] ═══ Starting Daily Statesman Brief pipeline ═══
+[2026-06-01T11:33:38.600Z] [ERROR] ANTHROPIC_API_KEY is not set. Cannot generate brief.
+[2026-06-01T11:35:13.172Z] [SUCCESS] Sample brief generated:
+[2026-06-01T11:35:13.172Z] [INFO]   HTML → briefing/sample-brief.html
+[2026-06-01T11:35:13.172Z] [INFO]   Text → briefing/sample-brief.txt
+[2026-06-01T11:35:13.172Z] [INFO]   Word count: ~1243

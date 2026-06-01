@@ -100,7 +100,7 @@ Delete the default `Code.gs` content before pasting — replace it entirely.
 - [ ] Trigger: `scheduledSend` → daily → hour 7 UTC
 - [ ] Test email received at `abdulmohsen.alshammari1999@gmail.com`
 - [ ] Email subject: `Daily Statesman Brief — [date]`
-- [ ] Email contains all 14 sections (Executive Summary through Tomorrow's Watchlist)
+- [ ] Email contains all 15 sections (Executive Summary through E-Commerce Opportunity Radar)
 - [ ] Word count 1,000–1,500 words
 - [ ] Delivery logged to Google Sheet "Statesman Brief Delivery Log"
 

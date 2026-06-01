@@ -33,6 +33,35 @@ var CONFIG = {
     "Entrepreneurship in Kuwait"
   ],
 
+  // E-Commerce Opportunity Radar — Kuwait market context
+  ecommerce: {
+    market: "Kuwait",
+    targetAudience: "Kuwaiti consumers",
+    sourcingChannels: ["Alibaba", "regional distributors", "local wholesale", "GCC suppliers"],
+    // Kuwait seasonal calendar — AI uses this to flag timing windows
+    kuwaitSeasonalCalendar: [
+      "Ramadan & Eid Al-Fitr — gifting, home decor, modest fashion, food items surge",
+      "Eid Al-Adha — premium gifting, home entertaining, travel accessories",
+      "Hala February — shopping festival, promotions, lifestyle products",
+      "National Day / Liberation Day (Feb 25–26) — patriotic merchandise, gatherings",
+      "Back to School (Aug–Sep) — stationery, tech accessories, bags",
+      "Summer (Jun–Aug) — travel accessories, outdoor, cooling products",
+      "Winter (Nov–Feb) — fashion, home warmth, indoor lifestyle",
+      "Kuwait Shopping Festival (if active) — electronics, fashion, home"
+    ],
+    kuwaitConsumerProfile: [
+      "High gifting culture — packaging and presentation matter",
+      "Strong modest fashion demand — abayas, thobes, covered swimwear",
+      "Home lifestyle and interior decor",
+      "Premium and branded preference — perceived quality over price",
+      "Social media driven — TikTok and Instagram Kuwait trends move fast",
+      "Tech-savvy early adopters",
+      "Health, wellness, and fitness growing category",
+      "Pet products growing segment",
+      "Kids and baby products — family-centric culture"
+    ]
+  },
+
   // RSS sources — add/remove as needed
   rssSources: [
     // Kuwait

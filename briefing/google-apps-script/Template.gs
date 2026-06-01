@@ -24,6 +24,25 @@ function buildEmailHtml(brief) {
     '</td></tr>';
   }
 
+  // Highlighted section — used for e-commerce radar to make it visually distinct
+  function sectionHighlight(title, content, emoji, highlightColor) {
+    emoji = emoji || "";
+    highlightColor = highlightColor || "#c8963e";
+    return '<tr><td style="padding:0 0 20px 0;">' +
+      '<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fffdf5;border-left:3px solid ' + highlightColor + ';border-radius:4px;box-shadow:0 2px 8px rgba(200,150,62,0.08);">' +
+        '<tr><td style="padding:18px 22px 6px 22px;">' +
+          '<h2 style="margin:0 0 4px 0;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:' + highlightColor + ';font-family:Georgia,serif;">' +
+            (emoji ? emoji + '&nbsp;&nbsp;' : '') + title +
+          '</h2>' +
+          '<p style="margin:0 0 12px 0;font-size:11px;color:#999;font-family:Georgia,serif;letter-spacing:0.5px;">KUWAIT MARKET · FORWARD-LOOKING · SOURCE BEFORE IT PEAKS</p>' +
+        '</td></tr>' +
+        '<tr><td style="padding:0 22px 18px 22px;font-size:14px;line-height:1.75;color:#2c2c2c;font-family:Georgia,serif;">' +
+          content +
+        '</td></tr>' +
+      '</table>' +
+    '</td></tr>';
+  }
+
   function divider() {
     return '<tr><td style="padding:4px 0 12px 0;"><hr style="border:none;border-top:1px solid ' + border + ';margin:0;" /></td></tr>';
   }
@@ -65,12 +84,13 @@ function buildEmailHtml(brief) {
     section("Smart Factoids",              brief.smartFactoids,       "💡") + divider() +
     section("Personal Momentum Note",      brief.personalMomentum,    "⚡") + divider() +
     section("Three Strategic Questions",   brief.threeQuestions,      "❓") + divider() +
-    section("Tomorrow's Watchlist",        brief.tomorrowWatchlist,   "👁️") +
+    section("Tomorrow's Watchlist",        brief.tomorrowWatchlist,   "👁️") + divider() +
+    sectionHighlight("E-Commerce Opportunity Radar — Kuwait", brief.ecommerceRadar, "🛒", accent) +
 
     // Footer
     '<tr><td style="padding:24px 0 8px 0;text-align:center;font-size:11px;color:#888;font-family:Georgia,serif;border-top:1px solid ' + border + ';">' +
       'Prepared for Abdulmohsen Al-Shammari &nbsp;&middot;&nbsp; Abdulmohsen\'s Daily Statesman Brief<br/>' +
-      'Delivered at 10:00 AM Asia/Kuwait &nbsp;&middot;&nbsp; Sources: KUNA, Reuters, BBC, FT, IMF &amp; more' +
+      'Delivered at 10:00 AM Asia/Kuwait &nbsp;&middot;&nbsp; 15 sections including Kuwait E-Commerce Radar<br/>Sources: KUNA, Reuters, BBC, FT, IMF, Alibaba Trends &amp; more' +
     '</td></tr>' +
 
     '</table></td></tr>' +

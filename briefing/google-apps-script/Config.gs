@@ -83,7 +83,7 @@ var CONFIG = {
 
   // Claude model — use latest capable model
   anthropicModel: "claude-opus-4-8",
-  anthropicMaxTokens: 6000
+  anthropicMaxTokens: 7000
 };
 
 /**

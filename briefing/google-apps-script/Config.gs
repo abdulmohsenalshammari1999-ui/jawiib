@@ -1,0 +1,69 @@
+// ─────────────────────────────────────────────────────────────────
+// Config.gs — All editable settings for the Daily Statesman Brief
+// Edit these values directly, or set them via Setup.gs > setProperties()
+// ─────────────────────────────────────────────────────────────────
+
+var CONFIG = {
+  recipientName: "Abdulmohsen",
+  recipientEmail: "abdulmohsen.alshammari1999@gmail.com",
+  senderName: "The Statesman Brief",
+
+  // Send time: 10:00 AM Asia/Kuwait = 07:00 UTC
+  // Controlled via the time-based trigger created in Setup.gs
+  sendHourUTC: 7,
+  timezone: "Asia/Kuwait",
+
+  maxWordCount: 1500,
+  minWordCount: 1000,
+
+  tone: {
+    style: "presidential daily briefing",
+    voice: "elite Chief of Staff / trusted executive assistant",
+    qualities: ["sharp", "warm", "sourced", "analytical", "dignified", "concise"]
+  },
+
+  relevancePriorities: [
+    "Kuwait government affairs and public administration",
+    "Kuwait digital business, home business licensing, e-commerce regulations",
+    "MOCI, Kuwait Business Center, CITRA updates",
+    "Oil state economics and GCC geopolitics",
+    "Political Science and MPA academic insights",
+    "AI, automation, and productivity technology",
+    "Strategic decision-making and leadership",
+    "Entrepreneurship in Kuwait"
+  ],
+
+  // RSS sources — add/remove as needed
+  rssSources: [
+    // Kuwait
+    { name: "KUNA",          url: "https://www.kuna.net.kw/rss.aspx?lang=en",      category: "kuwait" },
+    { name: "Kuwait Times",  url: "https://www.kuwaittimes.com/feed/",              category: "kuwait" },
+    { name: "Arab Times",    url: "https://www.arabtimesonline.com/feed/",          category: "kuwait" },
+    // Oil & Energy
+    { name: "Reuters Biz",   url: "https://feeds.reuters.com/reuters/businessNews", category: "energy" },
+    // World
+    { name: "Reuters Top",   url: "https://feeds.reuters.com/reuters/topNews",      category: "world" },
+    { name: "BBC World",     url: "https://feeds.bbci.co.uk/news/world/rss.xml",    category: "world" },
+    { name: "AP News",       url: "https://feeds.apnews.com/rss/apf-topnews",       category: "world" },
+    // AI & Tech
+    { name: "MIT Tech",      url: "https://www.technologyreview.com/feed/",         category: "tech" },
+    { name: "The Verge",     url: "https://www.theverge.com/rss/index.xml",         category: "tech" },
+    // Economics
+    { name: "IMF News",      url: "https://www.imf.org/en/News/rss?language=eng",   category: "economics" }
+  ],
+
+  // Claude model — use latest capable model
+  anthropicModel: "claude-opus-4-8",
+  anthropicMaxTokens: 6000
+};
+
+/**
+ * Get the Anthropic API key from Script Properties.
+ * Set it once via Setup.gs > setProperties() or manually in
+ * Script Editor → Project Settings → Script Properties.
+ */
+function getAnthropicKey() {
+  var key = PropertiesService.getScriptProperties().getProperty("ANTHROPIC_API_KEY");
+  if (!key) throw new Error("ANTHROPIC_API_KEY not set. Run Setup.gs > setProperties() first.");
+  return key;
+}

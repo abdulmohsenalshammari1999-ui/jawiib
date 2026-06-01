@@ -46,6 +46,7 @@ export function GameApp() {
   const selectQuestion   = useGameStore((s) => s.selectQuestion);
   const answerQuestion   = useGameStore((s) => s.answerQuestion);
   const returnToBoard    = useGameStore((s) => s.returnToBoard);
+  const triggerStealPhase = useGameStore((s) => s.triggerStealPhase);
   const resetGame        = useGameStore((s) => s.resetGame);
   const updateCategories = useGameStore((s) => s.updateCategories);
   const rematch          = useGameStore((s) => s.rematch);
@@ -651,6 +652,7 @@ export function GameApp() {
             hasDouble={hasDouble}
             scrambledOptions={isSteal ? null : scrambledOptions}
             teamColor={apTeamColor ?? undefined}
+            suppressCorrectReveal={!isSteal && mode === 'teams'}
           />
         </div>
 
@@ -716,7 +718,8 @@ export function GameApp() {
           lastAnswer={game.lastAnswer}
           currentQuestion={game.currentQuestion}
           hostMessage={game.hostMessage}
-          onContinue={returnToBoard}
+          onContinue={game.lastAnswer?.pendingSteal ? triggerStealPhase : returnToBoard}
+          pendingSteal={game.lastAnswer?.pendingSteal}
           playerName={respPlayer?.name}
           teamColor={tColor ?? undefined}
           teamEmoji={tEmoji}

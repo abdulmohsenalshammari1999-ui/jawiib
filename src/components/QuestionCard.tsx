@@ -8,6 +8,8 @@ interface QuestionCardProps {
   timer: number;
   maxTimer?: number;
   onAnswer: (index: number) => void;
+  /** In teams mode: suppress correct-answer green highlight so steal team can't see it */
+  suppressCorrectReveal?: boolean;
   disabled?: boolean;
   hasBomb?: boolean;
   hasDouble?: boolean;
@@ -45,6 +47,7 @@ export function QuestionCard({
   hasDouble = false,
   scrambledOptions,
   teamColor,
+  suppressCorrectReveal = false,
 }: QuestionCardProps) {
   const [selected, setSelected]   = useState<number | null>(null);
   const [revealed, setRevealed]   = useState(false);
@@ -76,10 +79,15 @@ export function QuestionCard({
       const opt = scrambledOptions[displayIdx];
       trueIdx = question.options.indexOf(opt);
     }
-    setTimeout(() => {
-      setRevealed(true);
-      setTimeout(() => onAnswer(trueIdx), 350);
-    }, 220);
+    if (suppressCorrectReveal) {
+      // In teams mode: skip the reveal animation so steal team never sees correct answer
+      setTimeout(() => onAnswer(trueIdx), 300);
+    } else {
+      setTimeout(() => {
+        setRevealed(true);
+        setTimeout(() => onAnswer(trueIdx), 350);
+      }, 220);
+    }
   };
 
   const optionStyle = (idx: number): string => {

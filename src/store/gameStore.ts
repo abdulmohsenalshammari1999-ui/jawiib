@@ -99,6 +99,7 @@ export interface GameSlice extends GameState {
   answerQuestion: (playerId: string, answerIndex: number) => void;
   useSabotage: (playerId: string, type: SabotageType, targetId: string) => void;
   returnToBoard: () => void;
+  triggerStealPhase: () => void;
   resetGame: () => void;
   setHostMessage: (msg: string) => void;
   tickTimer: () => void;
@@ -118,6 +119,7 @@ export interface GameStoreState {
   answerQuestion: (playerId: string, answerIndex: number) => void;
   useSabotage: (playerId: string, type: SabotageType, targetId: string) => void;
   returnToBoard: () => void;
+  triggerStealPhase: () => void;
   resetGame: () => void;
   setHostMessage: (msg: string) => void;
   updateCategories: (cats: CategoryId[]) => void;
@@ -532,19 +534,19 @@ export const useGameStore = create<GameStoreState>()(
       const shouldSteal = !result.correct && !immunityMsg && answeringTeamId && opponentTeamId && !allAnswered;
 
       if (shouldSteal && opponentTeamId) {
-        const opponentName = 'الفريق المنافس';
         // Determine steal timer (bomb applies to opponent's steal too)
         let stealTime = STEAL_TIMER;
         if (game.activeBomb === opponentTeamId) stealTime = Math.max(5, Math.ceil(stealTime / 2));
 
+        // Show brief "Incorrect" result first — hide correct answer until steal resolves
         set({
           game: {
             ...game,
             board: updatedBoard,
-            phase: 'steal',
+            phase: 'result',
             room: { ...game.room, players: updatedPlayers, answeredQuestions },
             timer: stealTime,
-            hostMessage: getStealPhaseMessage(opponentName),
+            hostMessage: getLoserRoast(),
             lastAnswer: {
               playerId,
               teamId: answeringTeamId,
@@ -552,6 +554,7 @@ export const useGameStore = create<GameStoreState>()(
               points: 0,
               timeBonus: 0,
               streakMultiplier: 1,
+              pendingSteal: true,
             },
             teamScores: game.teamScores ?? {},
             teamStreaks,
@@ -565,8 +568,7 @@ export const useGameStore = create<GameStoreState>()(
           },
           answeredCount,
         });
-        // Start steal countdown
-        get().initStealTimer(opponentTeamId, opponentName);
+        // Steal timer starts when host clicks Continue (triggerStealPhase)
         return;
       }
 
@@ -668,6 +670,22 @@ export const useGameStore = create<GameStoreState>()(
       const { game } = get();
       if (!game) return;
       set({ game: { ...game, phase: 'board', currentQuestion: null, lastAnswer: null } });
+    },
+
+    triggerStealPhase: () => {
+      const { game } = get();
+      if (!game?.stealOpponentTeamId) return;
+      const opponentTeamId = game.stealOpponentTeamId;
+      const opponentName = 'الفريق المنافس';
+      set({
+        game: {
+          ...game,
+          phase: 'steal',
+          hostMessage: getStealPhaseMessage(opponentName),
+          lastAnswer: game.lastAnswer ? { ...game.lastAnswer, pendingSteal: false } : null,
+        },
+      });
+      get().initStealTimer(opponentTeamId, opponentName);
     },
 
     resetGame: () => {

@@ -12,6 +12,8 @@ interface ResultOverlayProps {
   isFinalQuestion?: boolean;
   crowdVotes?: { correct: number; wrong: number };
   playerStreak?: number;
+  /** Hide correct answer & explanation — opposing team's steal chance is still pending */
+  pendingSteal?: boolean;
 }
 
 function EducationalSection({ question }: { question: Question }) {
@@ -90,6 +92,7 @@ export function ResultOverlay({
   isFinalQuestion,
   crowdVotes,
   playerStreak = 0,
+  pendingSteal = false,
 }: ResultOverlayProps) {
   const correctAnswer  = currentQuestion.options[currentQuestion.correctIndex];
   const isCorrect      = lastAnswer.correct;
@@ -158,70 +161,82 @@ export function ResultOverlay({
             : (isBig ? 'مصيبة! 😂' : 'خطأ فادح! 🚨')}
         </h2>
 
-        {/* ── Correct answer reveal ───────────────────────────────────── */}
-        {!isCorrect && (
+        {/* ── Correct answer reveal — hidden while steal is pending ───── */}
+        {!isCorrect && !pendingSteal && (
           <div className="bg-jawwib-green/8 border border-jawwib-green/25 rounded-xl p-3 mb-3 text-center">
             <p className="text-jawwib-text-dim text-xs mb-1">الجواب الصحيح كان</p>
             <p className="text-jawwib-green font-bold text-base">{correctAnswer}</p>
           </div>
         )}
 
-        {/* ── Points breakdown ────────────────────────────────────────── */}
-        <div className="bg-jawwib-surface rounded-xl p-3 mb-3 space-y-1.5">
-          {isCorrect && (
-            <div className="flex justify-between text-sm">
-              <span className="text-jawwib-text-dim">نقاط السؤال</span>
-              <span className="text-jawwib-gold font-bold">+{currentQuestion.points}</span>
-            </div>
-          )}
-          {lastAnswer.timeBonus > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-jawwib-text-dim">⚡ بونص السرعة</span>
-              <span className="text-jawwib-blue font-bold">+{lastAnswer.timeBonus}</span>
-            </div>
-          )}
-          {lastAnswer.streakMultiplier > 1 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-jawwib-text-dim">🔥 مضاعف السلسلة</span>
-              <span className="text-jawwib-purple font-bold">×{lastAnswer.streakMultiplier.toFixed(1)}</span>
-            </div>
-          )}
-          <div className="border-t border-jawwib-border pt-1.5 flex justify-between items-center">
-            <span className="font-bold text-sm">الإجمالي</span>
-            <span
-              className={`font-black text-2xl animate-score-reveal tabular-nums ${
-                lastAnswer.points >= 0 ? 'text-jawwib-gold' : 'text-jawwib-red'
-              }`}
-            >
-              {lastAnswer.points >= 0 ? '+' : ''}{lastAnswer.points}
-            </span>
+        {/* ── Steal pending notice ─────────────────────────────────────── */}
+        {pendingSteal && (
+          <div className="bg-jawwib-purple/8 border border-jawwib-purple/30 rounded-xl p-3 mb-3 text-center">
+            <p className="text-jawwib-purple font-black text-sm">🏴‍☠️ الفريق المنافس لديه فرصة للسرقة!</p>
+            <p className="text-jawwib-text-dim text-xs mt-1">الإجابة الصحيحة ستُكشف بعد محاولتهم</p>
           </div>
-        </div>
+        )}
 
-        {/* ── Crowd prediction ────────────────────────────────────────── */}
-        {crowdVotes && totalVotes > 0 && (
-          <div className="bg-jawwib-surface rounded-xl p-3 mb-3">
-            <p className="text-jawwib-text-dim text-xs font-bold mb-1.5 text-center">🙋 توقع الجمهور</p>
-            <div className="flex gap-2">
-              <div className={`flex-1 rounded-lg p-2 text-center text-xs font-black ${
-                isCorrect ? 'bg-jawwib-green/12 text-jawwib-green border border-jawwib-green/25' : 'bg-jawwib-surface text-jawwib-text-dim'
-              }`}>
-                <p>صح ✅</p>
-                <p className="text-base font-black">{crowdVotes.correct}</p>
-              </div>
-              <div className={`flex-1 rounded-lg p-2 text-center text-xs font-black ${
-                !isCorrect ? 'bg-jawwib-red/12 text-jawwib-red border border-jawwib-red/25' : 'bg-jawwib-surface text-jawwib-text-dim'
-              }`}>
-                <p>غلط ❌</p>
-                <p className="text-base font-black">{crowdVotes.wrong}</p>
+        {/* ── Points & details — hidden while steal is pending ────────── */}
+        {!pendingSteal && (
+          <>
+            <div className="bg-jawwib-surface rounded-xl p-3 mb-3 space-y-1.5">
+              {isCorrect && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-jawwib-text-dim">نقاط السؤال</span>
+                  <span className="text-jawwib-gold font-bold">+{currentQuestion.points}</span>
+                </div>
+              )}
+              {lastAnswer.timeBonus > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-jawwib-text-dim">⚡ بونص السرعة</span>
+                  <span className="text-jawwib-blue font-bold">+{lastAnswer.timeBonus}</span>
+                </div>
+              )}
+              {lastAnswer.streakMultiplier > 1 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-jawwib-text-dim">🔥 مضاعف السلسلة</span>
+                  <span className="text-jawwib-purple font-bold">×{lastAnswer.streakMultiplier.toFixed(1)}</span>
+                </div>
+              )}
+              <div className="border-t border-jawwib-border pt-1.5 flex justify-between items-center">
+                <span className="font-bold text-sm">الإجمالي</span>
+                <span
+                  className={`font-black text-2xl animate-score-reveal tabular-nums ${
+                    lastAnswer.points >= 0 ? 'text-jawwib-gold' : 'text-jawwib-red'
+                  }`}
+                >
+                  {lastAnswer.points >= 0 ? '+' : ''}{lastAnswer.points}
+                </span>
               </div>
             </div>
-            {crowdWasRight !== undefined && (
-              <p className="text-center text-[10px] text-jawwib-text-dim mt-1">
-                {crowdWasRight ? '🎯 الجمهور توقع صح!' : '😱 الجمهور انخدع!'}
-              </p>
+
+            {/* Crowd prediction */}
+            {crowdVotes && totalVotes > 0 && (
+              <div className="bg-jawwib-surface rounded-xl p-3 mb-3">
+                <p className="text-jawwib-text-dim text-xs font-bold mb-1.5 text-center">🙋 توقع الجمهور</p>
+                <div className="flex gap-2">
+                  <div className={`flex-1 rounded-lg p-2 text-center text-xs font-black ${
+                    isCorrect ? 'bg-jawwib-green/12 text-jawwib-green border border-jawwib-green/25' : 'bg-jawwib-surface text-jawwib-text-dim'
+                  }`}>
+                    <p>صح ✅</p>
+                    <p className="text-base font-black">{crowdVotes.correct}</p>
+                  </div>
+                  <div className={`flex-1 rounded-lg p-2 text-center text-xs font-black ${
+                    !isCorrect ? 'bg-jawwib-red/12 text-jawwib-red border border-jawwib-red/25' : 'bg-jawwib-surface text-jawwib-text-dim'
+                  }`}>
+                    <p>غلط ❌</p>
+                    <p className="text-base font-black">{crowdVotes.wrong}</p>
+                  </div>
+                </div>
+                {crowdWasRight !== undefined && (
+                  <p className="text-center text-[10px] text-jawwib-text-dim mt-1">
+                    {crowdWasRight ? '🎯 الجمهور توقع صح!' : '😱 الجمهور انخدع!'}
+                  </p>
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
 
         {/* ── Host message ─────────────────────────────────────────────── */}
@@ -230,16 +245,18 @@ export function ResultOverlay({
           <p className="text-sm leading-relaxed text-jawwib-text">{hostMessage}</p>
         </div>
 
-        {/* ── Educational reveal ───────────────────────────────────────── */}
-        <EducationalSection question={currentQuestion} />
-
-        {/* ── Evidence card ────────────────────────────────────────────── */}
-        {currentQuestion.evidence && (
-          <EvidenceCard evidence={currentQuestion.evidence} />
+        {/* ── Educational reveal & Evidence — hidden while steal pending ─ */}
+        {!pendingSteal && (
+          <>
+            <EducationalSection question={currentQuestion} />
+            {currentQuestion.evidence && (
+              <EvidenceCard evidence={currentQuestion.evidence} />
+            )}
+          </>
         )}
 
         <button onClick={onContinue} className="btn-gold w-full mt-4 tap-target text-base py-4">
-          متابعة ←
+          {pendingSteal ? 'فرصة السرقة! ←' : 'متابعة ←'}
         </button>
       </div>
     </div>

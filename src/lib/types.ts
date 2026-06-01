@@ -174,6 +174,8 @@ export interface GameState {
     points: number;
     timeBonus: number;
     streakMultiplier: number;
+    /** True when the opposing team still has a steal attempt pending — hide reveal until steal resolves */
+    pendingSteal?: boolean;
   } | null;
   // ── Teams weapon system ──
   teamMembership: { alpha: string[]; beta: string[] } | null;

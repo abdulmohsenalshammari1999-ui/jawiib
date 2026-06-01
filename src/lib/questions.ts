@@ -7,6 +7,7 @@
  * Difficulty mapping: tier 1 = easiest (100pt), tier 6 = hardest (600pt).
  */
 import type { Question, CategoryId, Evidence } from './types';
+import { ALL_EXPANDED_QUESTIONS } from './questionsExpanded';
 
 // Evidence cards shown after answer reveal for selected questions.
 // Key = question id (category-tier-index).
@@ -1024,6 +1025,9 @@ for (const q of questions) {
   const ev = EVIDENCE_MAP[q.id];
   if (ev) q.evidence = ev;
 }
+
+// Merge expanded questions (31 new categories, 558 questions)
+questions.push(...ALL_EXPANDED_QUESTIONS);
 
 export function getQuestionsByCategory(category: CategoryId): Question[] {
   return questions.filter((q) => q.category === category);

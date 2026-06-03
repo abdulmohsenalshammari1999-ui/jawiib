@@ -106,6 +106,7 @@ export function GameApp() {
   // ── Local state ───────────────────────────────────────────────────────────────
   const [subView, setSubView]           = useState<SubView>('lobby');
   const [showPayment, setShowPayment]   = useState(false);
+  const [pendingFullGame, setPendingFullGame] = useState<{ name: string; cats?: CategoryId[]; mode: 'ffa' | 'teams' } | null>(null);
   const [showIntro, setShowIntro]       = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [picksPerTeam, setPicksPerTeam] = useState(3);
@@ -301,6 +302,12 @@ export function GameApp() {
   const handleCreateRoom = useCallback(
     (name: string, isTrial: boolean, cats?: CategoryId[], gameMode?: 'ffa' | 'teams') => {
       const m = gameMode ?? 'teams';
+      if (!isTrial) {
+        // Gate full game behind payment — store pending params and show modal
+        setPendingFullGame({ name, cats, mode: m });
+        setShowPayment(true);
+        return { playerId: '' };
+      }
       setMode(m);
       const result = createRoom(name, isTrial, cats);
       if (m === 'teams') {
@@ -325,12 +332,23 @@ export function GameApp() {
   );
 
   const handlePurchase = useCallback(() => {
+    const paymentUrl = import.meta.env['VITE_PAYMENT_URL'] as string | undefined;
+    if (paymentUrl) window.open(paymentUrl, '_blank', 'noopener,noreferrer');
+  }, []);
+
+  const handlePurchaseConfirmed = useCallback(() => {
     setShowPayment(false);
-    if (game && localPlayerId) {
+    if (pendingFullGame) {
+      const { name, cats, mode: m } = pendingFullGame;
+      setMode(m);
+      const result = createRoom(name, false, cats);
+      if (m === 'teams') { initTeams(); assignTeam(result.playerId, 'alpha'); setSubView('setup'); }
+      setPendingFullGame(null);
+    } else if (game && localPlayerId) {
       const host = game.room.players.find((p) => p.id === localPlayerId);
       if (host) { resetGame(); createRoom(host.name, false); }
     }
-  }, [game, localPlayerId, resetGame, createRoom]);
+  }, [pendingFullGame, game, localPlayerId, resetGame, createRoom, setMode, initTeams, assignTeam]);
 
   const handleDraftComplete = useCallback(() => {
     const cats = draft.selectedCategories as CategoryId[];
@@ -516,7 +534,7 @@ export function GameApp() {
     return (
       <>
         <div className="min-h-screen bg-jawwib-bg" />
-        <PaymentModal onClose={() => setShowPayment(false)} onPurchase={handlePurchase} />
+        <PaymentModal onClose={() => { setShowPayment(false); setPendingFullGame(null); }} onPurchase={handlePurchase} onConfirmed={handlePurchaseConfirmed} />
       </>
     );
   }

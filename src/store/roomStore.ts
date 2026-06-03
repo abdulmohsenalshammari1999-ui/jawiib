@@ -168,6 +168,7 @@ export const useRoomStore = create<RoomStoreState>()(
             lastStandActive: null,
             lastStandUsed: {},
             teamScores: {},
+            teamDisplay: null,
           },
         });
       }

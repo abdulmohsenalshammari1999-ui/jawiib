@@ -200,7 +200,7 @@ export async function loadCsvContent(url?: string): Promise<CsvLoadResult> {
     const text = await res.text();
     return parseCsvContent(text);
   } catch (err) {
-    console.warn('[Jawib] CSV load failed, using built-in questions:', err);
+    void err;
     return { questions: [], categories: [], errors: [], skipped: 0, loaded: 0 };
   }
 }

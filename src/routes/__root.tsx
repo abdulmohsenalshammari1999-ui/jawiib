@@ -36,12 +36,52 @@ export const Route = createRootRoute({
         content: 'website',
       },
       {
+        property: 'og:image',
+        content: 'https://jawib.app/og-image.png',
+      },
+      {
+        property: 'og:url',
+        content: 'https://jawib.app',
+      },
+      {
+        property: 'og:site_name',
+        content: 'جاوب',
+      },
+      {
+        name: 'twitter:card',
+        content: 'summary_large_image',
+      },
+      {
+        name: 'twitter:title',
+        content: 'جاوب - لعبة الثقافة العامة الخليجية',
+      },
+      {
+        name: 'twitter:description',
+        content: 'لعبة الثقافة العامة الخليجية — 456 سؤال، 22 فئة، وضع فرق وكل ضد الكل، أسلحة وسرقة نقاط!',
+      },
+      {
+        name: 'twitter:image',
+        content: 'https://jawib.app/og-image.png',
+      },
+      {
+        name: 'apple-mobile-web-app-capable',
+        content: 'yes',
+      },
+      {
+        name: 'apple-mobile-web-app-status-bar-style',
+        content: 'default',
+      },
+      {
+        name: 'apple-mobile-web-app-title',
+        content: 'جاوب',
+      },
+      {
         name: 'copyright',
         content: '© 2025 Jawib. All rights reserved.',
       },
       {
         name: 'robots',
-        content: 'noindex, nofollow',
+        content: 'index, follow',
       },
     ],
     links: [
@@ -56,6 +96,14 @@ export const Route = createRootRoute({
       {
         rel: 'manifest',
         href: '/manifest.json',
+      },
+      {
+        rel: 'canonical',
+        href: 'https://jawib.app',
+      },
+      {
+        rel: 'apple-touch-icon',
+        href: '/apple-touch-icon.png',
       },
     ],
   }),

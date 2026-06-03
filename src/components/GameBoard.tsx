@@ -1,4 +1,5 @@
 import { getCategoryById } from '@/lib/categories';
+import { TRIAL_QUESTION_LIMIT } from '@/store/gameStore';
 import type { GameBoardCell, CategoryId } from '@/lib/types';
 
 interface GameBoardProps {
@@ -35,7 +36,7 @@ export function GameBoard({
   forcedCategoryId,
   tvMode = false,
 }: GameBoardProps) {
-  const trialLimit = 9;
+  const trialLimit = TRIAL_QUESTION_LIMIT;
   const catColWidth = tvMode ? '130px' : '100px';
   const gridCols = `${catColWidth} repeat(6, 1fr)`;
 

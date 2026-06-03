@@ -204,6 +204,8 @@ export interface GameState {
   lastStandUsed: Partial<Record<TeamId, boolean>>;
   // ── Per-team score totals (single-device safe) ──
   teamScores: Partial<Record<TeamId, number>>;
+  // ── Display info (persisted so names survive refresh) ──
+  teamDisplay: { alpha: { name: string; emoji: string }; beta: { name: string; emoji: string } } | null;
 }
 
 // ─── Sabotage system ──────────────────────────────────────────────────────────

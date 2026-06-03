@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { subscribeWithSelector, persist } from 'zustand/middleware';
 import { v4 as uuid } from 'uuid';
 import type {
   GameState,
@@ -43,7 +43,7 @@ import { engine }           from '@/engine/questionEngine';
 import { validateAnswer }   from '@/engine/answerValidator';
 import { globalPool }       from '@/engine/questionPool';
 
-const TRIAL_QUESTION_LIMIT  = 9;
+export const TRIAL_QUESTION_LIMIT  = 9;
 const TRIAL_CATEGORY_COUNT  = 2;
 const DEFAULT_TIMER         = 30;
 const STEAL_TIMER           = 30;
@@ -129,17 +129,20 @@ export interface GameStoreState {
   updateCategories: (cats: CategoryId[]) => void;
   rematch: () => void;
   // Weapon system
-  setTeamMembership: (alpha: string[], beta: string[]) => void;
+  setTeamMembership: (alpha: string[], beta: string[], alphaName?: string, alphaEmoji?: string, betaName?: string, betaEmoji?: string) => void;
   dismissPendingWeapon: () => void;
   useWeapon: (teamId: TeamId, weapon: WeaponType, opts?: { targetTeamId?: TeamId; categoryId?: CategoryId }) => void;
   activateLastStand: (teamId: TeamId) => void;
   initStealTimer: (opponentTeamId: TeamId, teamName: string) => void;
   activateWeaponFromBox: (teamId: TeamId, weapon: WeaponType, opts?: { targetTeamId?: TeamId; categoryId?: CategoryId }) => void;
   skipSteal: () => void;
+  resumeTimers: () => void;
 }
 
 export const useGameStore = create<GameStoreState>()(
-  subscribeWithSelector((set, get) => ({
+  subscribeWithSelector(
+  persist(
+  (set, get) => ({
     game: null,
     localPlayerId: null,
     answeredCount: 0,
@@ -204,6 +207,7 @@ export const useGameStore = create<GameStoreState>()(
         lastStandUsed: {},
         stealOpponentTeamId: null,
         teamScores: {},
+        teamDisplay: null,
       };
       set({ game, localPlayerId: playerId, answeredCount: 0 });
       return { roomId, playerId };
@@ -779,13 +783,17 @@ export const useGameStore = create<GameStoreState>()(
       });
     },
 
-    setTeamMembership: (alpha, beta) => {
+    setTeamMembership: (alpha, beta, alphaName?, alphaEmoji?, betaName?, betaEmoji?) => {
       const { game } = get();
       if (!game) return;
       set({
         game: {
           ...game,
           teamMembership: { alpha, beta },
+          teamDisplay: {
+            alpha: { name: alphaName ?? 'البحر', emoji: alphaEmoji ?? '🌊' },
+            beta:  { name: betaName  ?? 'البر',  emoji: betaEmoji  ?? '🐪' },
+          },
           activeTeamId: 'alpha',
           teamScores: { alpha: 0, beta: 0 },
           teamStreaks: { alpha: 0, beta: 0 },
@@ -1021,5 +1029,33 @@ export const useGameStore = create<GameStoreState>()(
         },
       });
     },
-  }))
+
+    resumeTimers: () => {
+      const { game } = get();
+      if (!game) return;
+      if (game.phase === 'question' && game.timer > 0) {
+        if (_questionTimerRef !== null) { clearTimeout(_questionTimerRef); _questionTimerRef = null; }
+        const tick = () => {
+          const current = get().game;
+          if (!current || current.phase !== 'question') return;
+          if (current.timer <= 0) { get().answerQuestion(current.activePlayer ?? '', 0); return; }
+          set({ game: { ...current, timer: current.timer - 1 } });
+          _questionTimerRef = setTimeout(tick, 1000);
+        };
+        _questionTimerRef = setTimeout(tick, 1000);
+      }
+      if (game.phase === 'steal' && game.timer > 0 && game.stealOpponentTeamId) {
+        get().initStealTimer(game.stealOpponentTeamId, '');
+      }
+    },
+  }),
+  {
+    name: 'jawib-v1',
+    partialize: (state) => ({
+      game: state.game,
+      localPlayerId: state.localPlayerId,
+      answeredCount: state.answeredCount,
+    }),
+  }
+  ))
 );

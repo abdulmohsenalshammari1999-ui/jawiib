@@ -65,6 +65,7 @@ export function GameApp() {
   const activateLastStand    = useGameStore((s) => s.activateLastStand);
   const activateWeaponFromBox = useGameStore((s) => s.activateWeaponFromBox);
   const skipSteal            = useGameStore((s) => s.skipSteal);
+  const resumeTimers         = useGameStore((s) => s.resumeTimers);
 
   const mode        = useRoomStore((s) => s.mode);
   const teams       = useRoomStore((s) => s.teams);
@@ -103,11 +104,19 @@ export function GameApp() {
   const [showIntro, setShowIntro]       = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [picksPerTeam, setPicksPerTeam] = useState(3);
-  const [showEntry, setShowEntry]       = useState(true);
+  // Lazy-init: skip entry screen if a game is already in progress from persisted state
+  const [showEntry, setShowEntry]       = useState(() => {
+    const g = useGameStore.getState().game;
+    return !g || g.phase === 'lobby';
+  });
   const [scorePopup, setScorePopup]     = useState<{ points: number; color?: string } | null>(null);
   const [crowdVotes, setCrowdVotes]     = useState<{ correct: number; wrong: number }>({ correct: 0, wrong: 0 });
   const [volume, setVolume]             = useState(0.85);
   const [showVolume, setShowVolume]     = useState(false);
+  // Board pick timer — 45s countdown during board phase in teams mode
+  const [boardPickTimer, setBoardPickTimer] = useState<number | null>(null);
+  // Steal handoff — host must tap "pass device" before steal answers are enabled
+  const [stealHandoffDone, setStealHandoffDone] = useState(false);
 
   const prevLastAnswer    = useRef(game?.lastAnswer);
   const prevPhase         = useRef(game?.phase);
@@ -126,6 +135,55 @@ export function GameApp() {
   useEffect(() => { audio.setMusic(musicEnabled); }, [musicEnabled]);
 
   // TV mode is applied via data-tv prop on each game-wrapper div (see phase renders below)
+
+  // ── Restore persisted game session on mount ───────────────────────────────
+  useEffect(() => {
+    const g = useGameStore.getState().game;
+    if (!g) return;
+    if (g.teamMembership) {
+      setMode('teams');
+      initTeams();
+      if (g.teamDisplay) {
+        renameTeam('alpha', g.teamDisplay.alpha.name);
+        renameTeam('beta',  g.teamDisplay.beta.name);
+      }
+      g.teamMembership.alpha.forEach((id) => assignTeam(id, 'alpha'));
+      g.teamMembership.beta.forEach((id)  => assignTeam(id, 'beta'));
+    }
+    if (g.phase === 'question' || g.phase === 'steal') resumeTimers();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Board pick timer ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (game?.phase === 'board' && mode === 'teams') setBoardPickTimer(45);
+    else setBoardPickTimer(null);
+  }, [game?.phase, mode]);
+
+  useEffect(() => {
+    if (boardPickTimer === null || game?.phase !== 'board') return;
+    if (boardPickTimer <= 0) {
+      const forced = (game.forcedCategory?.targetTeamId === game.activeTeamId)
+        ? game.forcedCategory!.categoryId : null;
+      const pool = game.board.flatMap((row) =>
+        row.filter((c) => !c.answered && (!forced || c.category === forced))
+      );
+      const fallback = game.board.flatMap((r) => r.filter((c) => !c.answered));
+      const candidates = pool.length > 0 ? pool : fallback;
+      if (candidates.length > 0) {
+        const cell = candidates[Math.floor(Math.random() * candidates.length)];
+        audio.playTick();
+        selectQuestion(cell.questionId);
+      }
+      return;
+    }
+    const t = setTimeout(() => setBoardPickTimer((n) => (n !== null ? n - 1 : null)), 1000);
+    return () => clearTimeout(t);
+  }, [boardPickTimer, game?.phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset steal handoff gate when steal phase begins
+  useEffect(() => {
+    if (game?.phase === 'steal') setStealHandoffDone(false);
+  }, [game?.phase]);
 
   // Reset crowd votes on each new question
   useEffect(() => {
@@ -264,7 +322,11 @@ export function GameApp() {
   const handleIntroDone = useCallback(() => {
     setShowIntro(false);
     if (mode === 'teams') {
-      setTeamMembership(teams.alpha.playerIds, teams.beta.playerIds);
+      setTeamMembership(
+        teams.alpha.playerIds, teams.beta.playerIds,
+        teams.alpha.name, (teams.alpha as any).emoji,
+        teams.beta.name,  (teams.beta  as any).emoji,
+      );
     }
     startGame();
   }, [startGame, mode, teams, setTeamMembership]);
@@ -722,7 +784,33 @@ export function GameApp() {
             </div>
           )}
 
-          <div className="flex-1 flex items-center justify-center">
+          {/* Steal handoff gate — show "pass device" screen until host taps through */}
+          {isSteal && !stealHandoffDone && (
+            <div
+              className="rounded-2xl border-2 p-6 text-center animate-fade-in"
+              style={{
+                borderColor: apTeamColor ?? '#7C3AED',
+                background: apTeamColor ? `${apTeamColor}10` : 'rgba(124,58,237,0.08)',
+              }}
+            >
+              <p className="text-4xl mb-3">📱</p>
+              <p className="font-black text-lg mb-1" style={{ color: apTeamColor ?? '#7C3AED' }}>
+                مرّر الجهاز
+              </p>
+              <p className="text-sm text-jawwib-text-dim mb-4">
+                للـ {stealEmoji} {stealTeamName}
+              </p>
+              <button
+                className="btn-primary w-full py-3 font-black text-base tap-target"
+                style={{ background: apTeamColor ?? '#7C3AED' }}
+                onClick={() => setStealHandoffDone(true)}
+              >
+                جاهزين ✓
+              </button>
+            </div>
+          )}
+
+          <div className={`flex-1 flex items-center justify-center ${isSteal && !stealHandoffDone ? 'hidden' : ''}`}>
             <QuestionCard
               key={`${game.currentQuestion.id}-${game.phase}`}
               question={game.currentQuestion}
@@ -873,6 +961,34 @@ export function GameApp() {
           </div>
         )}
 
+        {/* Board pick countdown bar */}
+        {boardPickTimer !== null && mode === 'teams' && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-bold" style={{ color: boardPickTimer <= 10 ? '#EF4444' : '#C8880A' }}>
+                ⏱ اختر سؤالًا خلال
+              </span>
+              <span
+                className="text-sm font-black tabular-nums"
+                style={{ color: boardPickTimer <= 10 ? '#EF4444' : '#C8880A' }}
+              >
+                {boardPickTimer}ث
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-jawwib-surface overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-1000"
+                style={{
+                  width: `${(boardPickTimer / 45) * 100}%`,
+                  background: boardPickTimer <= 10
+                    ? 'linear-gradient(90deg,#B91C1C,#EF4444)'
+                    : 'linear-gradient(90deg,#B07D1A,#D4A94A)',
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         <div className="mb-4 overflow-x-auto">
           <GameBoard
             board={game.board}
@@ -902,27 +1018,31 @@ export function GameApp() {
             lastStandUsed={game.lastStandUsed}
             onActivateLastStand={activateLastStand}
           />
-          {!game.room.isTrial && localPlayerId && opponents.length > 0 && (
-            <SabotageControls
-              localPlayerId={localPlayerId}
-              opponents={opponents}
-              phase={game.phase}
-            />
-          )}
+          {/* Merged inventory panel: sabotages + weapons in one block */}
+          {(!game.room.isTrial && localPlayerId && opponents.length > 0) || (mode === 'teams' && game.activeTeamId) ? (
+            <div className="game-card p-3 space-y-3">
+              {!game.room.isTrial && localPlayerId && opponents.length > 0 && (
+                <SabotageControls
+                  localPlayerId={localPlayerId}
+                  opponents={opponents}
+                  phase={game.phase}
+                />
+              )}
+              {mode === 'teams' && game.activeTeamId && (
+                <TeamWeaponInventory
+                  localTeamId={game.activeTeamId}
+                  teamWeapons={game.teamWeapons}
+                  activeTeamId={game.activeTeamId}
+                  phase={game.phase}
+                  forcedCategory={game.forcedCategory}
+                  activeImmunity={game.activeImmunity}
+                  activeBomb={game.activeBomb}
+                  boardCategories={game.room.categories}
+                />
+              )}
+            </div>
+          ) : null}
         </div>
-
-        {mode === 'teams' && game.activeTeamId && (
-          <TeamWeaponInventory
-            localTeamId={game.activeTeamId}
-            teamWeapons={game.teamWeapons}
-            activeTeamId={game.activeTeamId}
-            phase={game.phase}
-            forcedCategory={game.forcedCategory}
-            activeImmunity={game.activeImmunity}
-            activeBomb={game.activeBomb}
-            boardCategories={game.room.categories}
-          />
-        )}
 
         {game.room.isTrial && answeredCount >= 6 && (
           <div className="mt-4 p-4 rounded-xl bg-jawwib-gold/10 border border-jawwib-gold/30 text-center">

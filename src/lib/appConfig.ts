@@ -1,5 +1,5 @@
 /**
- * App-level feature flags and seasonal themes.
+ * App-level feature flags, seasonal themes, and localisation.
  *
  * Ramadan mode: set VITE_SEASONAL_THEME=ramadan in your .env
  * This wires up the .ramadan-mode CSS class on <body>, enabling
@@ -7,14 +7,25 @@
  * without touching game logic.
  *
  * Future seasonal slots:
- *   - 'national_day'  → Kuwait National Day (Feb 25–26)
+ *   - 'national_day'  → National Day
  *   - 'eid'           → Eid Al Fitr / Adha
  *   - 'gulf_cup'      → GCC football season
+ *
+ * Localisation env vars (set in .env or Netlify UI):
+ *   VITE_APP_URL             — public app URL, default: jawib.app
+ *   VITE_CURRENCY_LABEL      — currency symbol shown in UI, default: د.ك
+ *   VITE_CURRENCY_AMOUNT     — price per full game, default: 4
+ *   VITE_SUPPORT_WHATSAPP    — support WhatsApp number (e.g. 96512345678), no default
+ *   VITE_PAYMENT_URL         — external payment link, no default
  */
 export type SeasonalTheme = 'default' | 'ramadan' | 'national_day' | 'eid' | 'gulf_cup';
 
 export const APP_CONFIG = {
   seasonalTheme: (import.meta.env['VITE_SEASONAL_THEME'] ?? 'default') as SeasonalTheme,
+  appUrl: (import.meta.env['VITE_APP_URL'] as string | undefined) ?? 'jawib.app',
+  currencyLabel: (import.meta.env['VITE_CURRENCY_LABEL'] as string | undefined) ?? 'د.ك',
+  currencyAmount: (import.meta.env['VITE_CURRENCY_AMOUNT'] as string | undefined) ?? '4',
+  supportWhatsApp: (import.meta.env['VITE_SUPPORT_WHATSAPP'] as string | undefined) ?? null,
   /** Categories to surface first during Ramadan */
   ramadanFeaturedCategories: ['ramadan', 'quran', 'culture', 'kuwait_history'],
   /** Categories to surface first during Gulf Cup */

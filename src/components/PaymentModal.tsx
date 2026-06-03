@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { APP_CONFIG } from '@/lib/appConfig';
 
 interface PaymentModalProps {
   onClose: () => void;
@@ -48,8 +49,8 @@ export function PaymentModal({ onClose, onPurchase, onConfirmed }: PaymentModalP
 
             <div className="text-center mb-5">
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-4xl font-bold text-gold-gradient">4</span>
-                <span className="text-xl text-jawwib-gold font-bold">د.ك</span>
+                <span className="text-4xl font-bold text-gold-gradient">{APP_CONFIG.currencyAmount}</span>
+                <span className="text-xl text-jawwib-gold font-bold">{APP_CONFIG.currencyLabel}</span>
               </div>
               <p className="text-jawwib-text-dim text-xs mt-1">لكل لعبة • دفعة واحدة</p>
             </div>
@@ -59,9 +60,9 @@ export function PaymentModal({ onClose, onPurchase, onConfirmed }: PaymentModalP
                 <button onClick={handleBuyNow} className="btn-gold w-full text-lg py-3">
                   ادفع الآن 💳
                 </button>
-              ) : (
+              ) : APP_CONFIG.supportWhatsApp ? (
                 <a
-                  href="https://wa.me/96500000000"
+                  href={`https://wa.me/${APP_CONFIG.supportWhatsApp}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-gold block w-full text-lg py-3 text-center"
@@ -69,7 +70,7 @@ export function PaymentModal({ onClose, onPurchase, onConfirmed }: PaymentModalP
                 >
                   تواصل للدفع 💬
                 </a>
-              )}
+              ) : null}
               <button onClick={onClose} className="w-full py-3 text-sm text-jawwib-text-dim hover:text-jawwib-text transition-colors">
                 لا شكراً، أكمل التجربة
               </button>

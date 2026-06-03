@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { Player } from '@/lib/types';
+import { APP_CONFIG } from '@/lib/appConfig';
 import { ShareCard } from './ShareCard';
 
 interface TeamResult {
@@ -30,7 +31,7 @@ interface Confetto {
 }
 
 const CONFETTI_COLORS = ['#B07D1A', '#D4A94A', '#F5F0E8', '#1A5FA8', '#1A7A42', '#B82118', '#C9A87A'];
-const APP_URL = 'jawib.app';
+const APP_URL = APP_CONFIG.appUrl;
 
 function useConfetti(count = 28) {
   const [pieces] = useState<Confetto[]>(() =>
@@ -76,7 +77,7 @@ function buildWhatsappText(
       `هل فريقك أقوى؟ 👇`,
       `🎮 *${APP_URL}*`,
       ``,
-      `#جاوب #لعبة_خليجية #كويت`,
+      `#جاوب #ثقافة_عامة`,
     ];
     return lines.filter((l) => l !== null).join('\n');
   }
@@ -89,7 +90,7 @@ function buildWhatsappText(
       `من يكسر التعادل في الجولة القادمة؟`,
       ``,
       `🎮 *${APP_URL}*`,
-      `#جاوب #خليجي`,
+      `#جاوب`,
     ].join('\n');
   }
 
@@ -104,11 +105,11 @@ function buildWhatsappText(
       `جرّب تتحداه! 😤`,
       `🎮 *${APP_URL}*`,
       ``,
-      `#جاوب #ثقافة_عامة #خليجي`,
+      `#جاوب #ثقافة_عامة`,
     ].filter(Boolean).join('\n');
   }
 
-  return `🎮 جرّب جاوب — اللعبة الخليجية الأولى!\n${APP_URL}\n#جاوب`;
+  return `🎮 جرّب جاوب — لعبة الثقافة العامة!\n${APP_URL}\n#جاوب`;
 }
 
 function buildSnapText(
@@ -149,9 +150,8 @@ function buildInstagramText(
   mode: 'ffa' | 'teams',
 ): string {
   const tags = [
-    '#جاوب', '#لعبة_خليجية', '#كويت', '#ثقافة_عامة',
-    '#تحدي', '#entertainment', '#kuwait', '#arabic_game',
-    '#خليجي', '#لعبة',
+    '#جاوب', '#ثقافة_عامة', '#تحدي',
+    '#entertainment', '#arabic_game', '#لعبة',
   ].join(' ');
 
   if (winnerTeam && loserTeam) {
@@ -167,7 +167,7 @@ function buildInstagramText(
       mvp ? `⭐ MVP: ${mvp.avatar} ${mvp.name}` : '',
       ``,
       `تحدّانا — إذا كنت تجرؤ 😏`,
-      `اللعبة الخليجية الأولى 🇰🇼`,
+      `لعبة الثقافة العامة العربية 🎮`,
       ``,
       `🔗 ${APP_URL}`,
       ``,
@@ -200,7 +200,7 @@ function buildInstagramText(
     ].filter(Boolean).join('\n');
   }
 
-  return [`جاوب — اللعبة الخليجية الأولى! 🎮`, `🔗 ${APP_URL}`, ``, tags].join('\n');
+  return [`جاوب — لعبة الثقافة العامة! 🎮`, `🔗 ${APP_URL}`, ``, tags].join('\n');
 }
 
 // ── Share button ──────────────────────────────────────────────────────────────

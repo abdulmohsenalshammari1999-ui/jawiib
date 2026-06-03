@@ -111,7 +111,7 @@ export function EntryScreen({
           </h1>
           <div className="sadu-accent mx-auto mt-3 max-w-[144px]" />
           <p className="text-jawwib-text-dim text-sm mt-2 font-medium">
-            لعبة الثقافة العامة الخليجية
+            لعبة الثقافة العامة العربية
           </p>
           <div className="cultural-strip mt-3">
             🌴 🐪 ☕ 🦅 🌊 🌴
@@ -166,7 +166,7 @@ export function EntryScreen({
           <div className="flex items-center gap-3 bg-jawwib-surface rounded-2xl px-4 py-3 border border-jawwib-border">
             <span className="text-2xl shrink-0">🎙️</span>
             <p className="text-jawwib-text text-sm font-bold leading-snug">
-              أهلاً وسهلاً في جاوب — لعبة الثقافة العامة الخليجية! 🏆✨
+              أهلاً وسهلاً في جاوب — لعبة الثقافة العامة العربية! 🏆✨
             </p>
           </div>
         </div>

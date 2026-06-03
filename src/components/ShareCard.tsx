@@ -29,8 +29,8 @@ export function ShareCard({
 
   const caption = isTeams
     ? isTie
-      ? `🤝 تعادل مذهل في جاوب!\n${winnerEmoji} ${winnerName}: ${fmt(winnerScore)}\n👉 jawib.app\n#جاوب #لعبة_خليجية`
-      : `🏆 فاز ${winnerEmoji} ${winnerName} في جاوب بـ${fmt(winnerScore)} نقطة!\n${loserEmoji} ${loserName}: ${fmt(loserScore ?? 0)}\n👉 jawib.app\n#جاوب #لعبة_خليجية #كويت`
+      ? `🤝 تعادل مذهل في جاوب!\n${winnerEmoji} ${winnerName}: ${fmt(winnerScore)}\n👉 jawib.app\n#جاوب #ثقافة_عامة`
+      : `🏆 فاز ${winnerEmoji} ${winnerName} في جاوب بـ${fmt(winnerScore)} نقطة!\n${loserEmoji} ${loserName}: ${fmt(loserScore ?? 0)}\n👉 jawib.app\n#جاوب #ثقافة_عامة`
     : `🏆 ${winnerEmoji} ${winnerName} حطّم الجميع في جاوب!\n${fmt(winnerScore)} نقطة 🔥\n👉 jawib.app\n#جاوب #ثقافة_عامة`;
 
   async function copyCaption() {

@@ -10,7 +10,8 @@ import { useQuestionFlow } from '@/hooks/useQuestionFlow';
 import { audio } from '@/lib/audio';
 import { globalPool } from '@/engine/questionPool';
 import { initCsvContent } from '@/lib/contentRegistry';
-import { applySeasonalBodyClass } from '@/lib/appConfig';
+import { applySeasonalBodyClass, APP_CONFIG } from '@/lib/appConfig';
+import { hapticSuccess, hapticError, hapticSelection } from '@/lib/haptics';
 import type { CategoryId, TeamId } from '@/lib/types';
 import { categories as ALL_CATS } from '@/lib/categories';
 import { HomeScreen } from './HomeScreen';
@@ -106,7 +107,7 @@ export function GameApp() {
   // ── Local state ───────────────────────────────────────────────────────────────
   const [subView, setSubView]           = useState<SubView>('lobby');
   const [showPayment, setShowPayment]   = useState(false);
-  const [pendingFullGame, setPendingFullGame] = useState<{ name: string; cats?: CategoryId[]; mode: 'ffa' | 'teams' } | null>(null);
+  const [pendingFullGame, setPendingFullGame] = useState<{ name: string; cats?: CategoryId[]; mode: 'ffa' | 'teams'; isQuick?: boolean } | null>(null);
   const [showIntro, setShowIntro]       = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [picksPerTeam, setPicksPerTeam] = useState(3);
@@ -225,10 +226,12 @@ export function GameApp() {
       }
       if (game.lastAnswer.correct) {
         audio.playCorrect();
+        void hapticSuccess();
         if (Math.abs(pts) >= 400) setTimeout(() => audio.playScore(true), 300);
         else audio.playScore(false);
       } else {
         audio.playWrong();
+        void hapticError();
       }
     }
   }, [game?.lastAnswer]);
@@ -299,17 +302,20 @@ export function GameApp() {
   }, [game?.phase, musicEnabled, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Callbacks ─────────────────────────────────────────────────────────────────
+  // Payment is active only when at least one payment channel is configured
+  const paymentConfigured = !!(APP_CONFIG.supportWhatsApp || import.meta.env['VITE_PAYMENT_URL']);
+
   const handleCreateRoom = useCallback(
     (name: string, isTrial: boolean, cats?: CategoryId[], gameMode?: 'ffa' | 'teams') => {
       const m = gameMode ?? 'teams';
-      if (!isTrial) {
+      if (!isTrial && paymentConfigured) {
         // Gate full game behind payment — store pending params and show modal
         setPendingFullGame({ name, cats, mode: m });
         setShowPayment(true);
         return { playerId: '' };
       }
       setMode(m);
-      const result = createRoom(name, isTrial, cats);
+      const result = createRoom(name, false, cats);
       if (m === 'teams') {
         initTeams();
         assignTeam(result.playerId, 'alpha');
@@ -317,7 +323,7 @@ export function GameApp() {
       }
       return result;
     },
-    [createRoom, setMode, initTeams, assignTeam]
+    [createRoom, setMode, initTeams, assignTeam, paymentConfigured]
   );
 
   const handleJoinRoom = useCallback(
@@ -339,16 +345,39 @@ export function GameApp() {
   const handlePurchaseConfirmed = useCallback(() => {
     setShowPayment(false);
     if (pendingFullGame) {
-      const { name, cats, mode: m } = pendingFullGame;
+      const { name, cats, mode: m, isQuick } = pendingFullGame;
       setMode(m);
       const result = createRoom(name, false, cats);
-      if (m === 'teams') { initTeams(); assignTeam(result.playerId, 'alpha'); setSubView('setup'); }
+      if (m === 'teams') {
+        initTeams();
+        assignTeam(result.playerId, 'alpha');
+        // Quick play skips naming/team-setup, goes straight to lobby
+        if (!isQuick) setSubView('setup');
+      }
       setPendingFullGame(null);
     } else if (game && localPlayerId) {
       const host = game.room.players.find((p) => p.id === localPlayerId);
       if (host) { resetGame(); createRoom(host.name, false); }
     }
   }, [pendingFullGame, game, localPlayerId, resetGame, createRoom, setMode, initTeams, assignTeam]);
+
+  const handleQuickPlay = useCallback(
+    (name: string) => {
+      const shuffled = [...ALL_CATS].sort(() => Math.random() - 0.5);
+      const cats = shuffled.slice(0, 5).map((c) => c.id) as CategoryId[];
+      if (paymentConfigured) {
+        setPendingFullGame({ name, cats, mode: 'teams', isQuick: true });
+        setShowPayment(true);
+        return;
+      }
+      setMode('teams');
+      const result = createRoom(name, false, cats);
+      initTeams();
+      assignTeam(result.playerId, 'alpha');
+      // Don't go to setup — jump straight to lobby
+    },
+    [createRoom, setMode, initTeams, assignTeam, paymentConfigured]
+  );
 
   const handleDraftComplete = useCallback(() => {
     const cats = draft.selectedCategories as CategoryId[];
@@ -373,6 +402,7 @@ export function GameApp() {
   const handleSelectQuestion = useCallback(
     (qid: string) => {
       audio.playTick();
+      void hapticSelection();
       selectQuestion(qid);
     },
     [selectQuestion]
@@ -524,6 +554,7 @@ export function GameApp() {
       <HomeScreen
         onCreateRoom={(name, isTrial, cats, gm) => handleCreateRoom(name, isTrial, cats, gm)}
         onJoinRoom={(name, code) => handleJoinRoom(name, code)}
+        onQuickPlay={handleQuickPlay}
         accountName={account?.name}
         accountAvatar={account?.avatar}
       />

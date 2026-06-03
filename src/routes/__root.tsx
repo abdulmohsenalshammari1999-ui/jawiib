@@ -35,6 +35,14 @@ export const Route = createRootRoute({
         property: 'og:type',
         content: 'website',
       },
+      {
+        name: 'copyright',
+        content: '© 2025 Jawib. All rights reserved.',
+      },
+      {
+        name: 'robots',
+        content: 'noindex, nofollow',
+      },
     ],
     links: [
       {

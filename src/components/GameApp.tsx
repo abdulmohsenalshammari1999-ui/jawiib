@@ -829,9 +829,10 @@ export function GameApp() {
 
         <HostBubble message={game.hostMessage} compact />
 
-        {/* Active team turn banner */}
+        {/* Active team turn banner — key forces remount so animation replays each turn */}
         {(boardActiveTeamId || ap) && (
           <div
+            key={boardActiveTeamId ?? ap?.id}
             className="mb-3 px-4 py-3 rounded-xl text-center border-2 transition-all duration-500 animate-turn-banner"
             style={{
               borderColor: apTeamColor ? `${apTeamColor}40` : '#C8880A25',

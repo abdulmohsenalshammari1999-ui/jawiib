@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { audio } from '@/lib/audio';
 import { categories as ALL_CATS } from '@/lib/categories';
 import type { CategoryId } from '@/lib/types';
@@ -31,28 +31,31 @@ export function GameLoadingScreen({
 }: GameLoadingScreenProps) {
   const [step, setStep]     = useState(0);
   const [phase, setPhase]   = useState<'reveal' | 'countdown'>('reveal');
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     audio.playCountdown();
 
     const reveal = setTimeout(() => {
       setPhase('countdown');
-      const interval = setInterval(() => {
+      intervalRef.current = setInterval(() => {
         setStep((s) => {
           const next = s + 1;
           if (next < STEPS.length - 1) audio.playCountdown();
           if (next === STEPS.length - 1) audio.playCountdownGo();
           if (next >= STEPS.length) {
-            clearInterval(interval);
+            if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
             onDone();
           }
           return next;
         });
       }, 900);
-      return () => clearInterval(interval);
     }, 1800);
 
-    return () => clearTimeout(reveal);
+    return () => {
+      clearTimeout(reveal);
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const catItems = selectedCategories

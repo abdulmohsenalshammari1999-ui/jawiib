@@ -88,6 +88,10 @@ function initSabotages(playerIds: string[]): Record<string, SabotageType[]> {
   );
 }
 
+// Module-level timer refs so concurrent tick loops can be cancelled
+let _questionTimerRef: ReturnType<typeof setTimeout> | null = null;
+let _stealTimerRef: ReturnType<typeof setTimeout> | null = null;
+
 export interface GameSlice extends GameState {
   // Derived
   answeredCount: number;
@@ -278,7 +282,8 @@ export const useGameStore = create<GameStoreState>()(
         },
       });
 
-      // Tick timer — stop if phase changes
+      // Tick timer — cancel any previous loop then start fresh
+      if (_questionTimerRef !== null) { clearTimeout(_questionTimerRef); _questionTimerRef = null; }
       const tick = () => {
         const current = get().game;
         if (!current || current.phase !== 'question') return;
@@ -289,9 +294,9 @@ export const useGameStore = create<GameStoreState>()(
           return;
         }
         set({ game: { ...current, timer: current.timer - 1 } });
-        setTimeout(tick, 1000);
+        _questionTimerRef = setTimeout(tick, 1000);
       };
-      setTimeout(tick, 1000);
+      _questionTimerRef = setTimeout(tick, 1000);
     },
 
     answerQuestion: (playerId, answerIndex) => {
@@ -689,6 +694,8 @@ export const useGameStore = create<GameStoreState>()(
     },
 
     resetGame: () => {
+      if (_questionTimerRef !== null) { clearTimeout(_questionTimerRef); _questionTimerRef = null; }
+      if (_stealTimerRef    !== null) { clearTimeout(_stealTimerRef);    _stealTimerRef    = null; }
       useSabotageStore.getState().resetSabotagees();
       set({ game: null, localPlayerId: null, answeredCount: 0 });
     },
@@ -722,6 +729,8 @@ export const useGameStore = create<GameStoreState>()(
     },
 
     rematch: () => {
+      if (_questionTimerRef !== null) { clearTimeout(_questionTimerRef); _questionTimerRef = null; }
+      if (_stealTimerRef    !== null) { clearTimeout(_stealTimerRef);    _stealTimerRef    = null; }
       const { game } = get();
       if (!game) return;
       const players = game.room.players.map((p) => ({ ...p, score: 0, streak: 0 }));
@@ -944,6 +953,7 @@ export const useGameStore = create<GameStoreState>()(
     },
 
     initStealTimer: (_opponentTeamId, _teamName) => {
+      if (_stealTimerRef !== null) { clearTimeout(_stealTimerRef); _stealTimerRef = null; }
       const tick = () => {
         const current = get().game;
         if (!current || current.phase !== 'steal') return;
@@ -993,9 +1003,9 @@ export const useGameStore = create<GameStoreState>()(
           return;
         }
         set({ game: { ...current, timer: current.timer - 1 } });
-        setTimeout(tick, 1000);
+        _stealTimerRef = setTimeout(tick, 1000);
       };
-      setTimeout(tick, 1000);
+      _stealTimerRef = setTimeout(tick, 1000);
     },
 
     activateLastStand: (teamId) => {

@@ -129,7 +129,7 @@ export function ResultOverlay({
             </div>
           </div>
         )}
-        {!isCorrect && (
+        {!isCorrect && !pendingSteal && (
           <div className="text-center mb-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-jawwib-red/12 border border-jawwib-red/35 text-jawwib-red">
               🚨 قاعة العار {teamEmoji ?? ''}

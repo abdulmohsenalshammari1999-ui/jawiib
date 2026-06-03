@@ -18,7 +18,9 @@ export function SabotageControls({ localPlayerId, opponents, phase }: SabotageCo
   const [selectedType, setSelectedType] = useState<SabotageType | null>(null);
 
   const canActivateInPhase = (type: SabotageType) => {
-    if (phase === 'board') return !BETWEEN_Q_ONLY.includes(type) || SELF_TYPES.includes(type);
+    if (BETWEEN_Q_ONLY.includes(type) && !SELF_TYPES.includes(type)) {
+      return phase === 'board' || phase === 'result';
+    }
     return true;
   };
 

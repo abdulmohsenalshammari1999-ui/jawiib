@@ -125,11 +125,7 @@ export function GameApp() {
   useEffect(() => { audio.setSound(soundEnabled); }, [soundEnabled]);
   useEffect(() => { audio.setMusic(musicEnabled); }, [musicEnabled]);
 
-  // Sync TV mode to <html> so CSS rules apply globally across all phases
-  useEffect(() => {
-    document.documentElement.setAttribute('data-tv', tvMode ? 'true' : 'false');
-    return () => { document.documentElement.removeAttribute('data-tv'); };
-  }, [tvMode]);
+  // TV mode is applied via data-tv prop on each game-wrapper div (see phase renders below)
 
   // Reset crowd votes on each new question
   useEffect(() => {
@@ -665,6 +661,7 @@ export function GameApp() {
     return (
       <div
         className={`game-wrapper phase-question`}
+        data-tv={tvMode ? 'true' : undefined}
         data-active-team={apTeamId ?? undefined}
       >
         <div className="min-h-screen p-4 flex flex-col gap-3">
@@ -798,7 +795,7 @@ export function GameApp() {
       : answeredCount >= totalCells;
     const respStreak = respPlayer?.streak ?? 0;
     return (
-      <div className="game-wrapper" data-active-team={respTeamId ?? undefined}>
+      <div className="game-wrapper" data-active-team={respTeamId ?? undefined} data-tv={tvMode ? 'true' : undefined}>
         {MysteryBox}
         {scorePopup && <ScorePopup points={scorePopup.points} color={scorePopup.color} />}
         <div className="min-h-screen p-4 bg-jawwib-bg" />
@@ -831,7 +828,7 @@ export function GameApp() {
   const isMyTurn = mode === 'teams' ? true : ap?.id === localPlayerId;
 
   return (
-    <div className="game-wrapper" data-active-team={boardActiveTeamId ?? undefined}>
+    <div className="game-wrapper" data-active-team={boardActiveTeamId ?? undefined} data-tv={tvMode ? 'true' : undefined}>
       <div className="min-h-screen p-4">
         {MysteryBox}
         {scorePopup && <ScorePopup points={scorePopup.points} color={scorePopup.color} />}

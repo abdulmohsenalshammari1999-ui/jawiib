@@ -749,50 +749,50 @@ a:focus-visible {
    TV MODE — host taps 📺 to scale everything up for room viewing.
    Applied via data-tv="true" on <html> so it covers all phases.
    ══════════════════════════════════════════════════════════════════════ */
-html[data-tv="true"] body { font-size: 19px; }
+.game-wrapper[data-tv="true"] body { font-size: 19px; }
 
-html[data-tv="true"] .question-text {
+.game-wrapper[data-tv="true"] .question-text {
   font-size: clamp(24px, 5vw, 34px);
   line-height: 1.45;
 }
 
-html[data-tv="true"] .answer-option {
+.game-wrapper[data-tv="true"] .answer-option {
   font-size: 20px;
   min-height: 72px;
   padding-top: 0.85rem;
   padding-bottom: 0.85rem;
 }
 
-html[data-tv="true"] .score-display {
+.game-wrapper[data-tv="true"] .score-display {
   font-size: clamp(30px, 7vw, 48px);
 }
 
-html[data-tv="true"] .timer-display {
+.game-wrapper[data-tv="true"] .timer-display {
   font-size: clamp(22px, 5vw, 36px);
 }
 
-html[data-tv="true"] .game-card {
+.game-wrapper[data-tv="true"] .game-card {
   padding: 1.4rem;
   border-radius: 1.1rem;
 }
 
-html[data-tv="true"] .board-cell {
+.game-wrapper[data-tv="true"] .board-cell {
   min-height: 56px;
   font-size: 15px;
 }
 
-html[data-tv="true"] .category-label {
+.game-wrapper[data-tv="true"] .category-label {
   font-size: 13px;
   padding: 0.3rem 0.7rem;
 }
 
-html[data-tv="true"] .host-bubble {
+.game-wrapper[data-tv="true"] .host-bubble {
   font-size: 15px;
   padding: 0.8rem 1rem;
 }
 
 /* Widen the fixed category column in TV mode */
-html[data-tv="true"] .board-category-col {
+.game-wrapper[data-tv="true"] .board-category-col {
   width: 130px;
 }
 

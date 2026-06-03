@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { HowToPlayModal, useFirstVisit } from './HowToPlayModal';
+import { useAccountStore } from '@/store/accountStore';
+import { RegisterScreen } from './RegisterScreen';
 
 interface EntryScreenProps {
   onEnter: () => void;
@@ -7,6 +9,7 @@ interface EntryScreenProps {
   musicEnabled: boolean;
   onToggleSound: () => void;
   onToggleMusic: () => void;
+  account?: { name: string; avatar: string; stats: { gamesPlayed: number; wins: number } } | null;
 }
 
 export function EntryScreen({
@@ -15,10 +18,13 @@ export function EntryScreen({
   musicEnabled,
   onToggleSound,
   onToggleMusic,
+  account,
 }: EntryScreenProps) {
+  const editProfile = useAccountStore((s) => s.editProfile);
   const [mounted, setMounted] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [showHowTo, setShowHowTo] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
   const { isFirstVisit, markSeen } = useFirstVisit();
 
   useEffect(() => {
@@ -40,6 +46,18 @@ export function EntryScreen({
   };
 
   const visible = mounted && !exiting;
+
+  if (editingProfile) {
+    return (
+      <RegisterScreen
+        onComplete={() => setEditingProfile(false)}
+        editMode
+        initialName={account?.name}
+        initialAvatar={account?.avatar}
+        onSave={(name, avatar) => { editProfile(name, avatar); setEditingProfile(false); }}
+      />
+    );
+  }
 
   return (
     <div
@@ -152,6 +170,33 @@ export function EntryScreen({
             </p>
           </div>
         </div>
+
+        {/* Account badge */}
+        {account && (
+          <div
+            className="w-full max-w-sm"
+            style={{ opacity: mounted ? 1 : 0, transition: 'opacity 0.55s 0.18s ease-out' }}
+          >
+            <div className="flex items-center justify-between bg-jawwib-surface rounded-2xl px-4 py-2.5 border border-jawwib-border">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl">{account.avatar}</span>
+                <div>
+                  <p className="font-black text-sm text-jawwib-text leading-none">{account.name}</p>
+                  <p className="text-[10px] text-jawwib-text-dim mt-0.5">
+                    {account.stats.gamesPlayed} {account.stats.gamesPlayed === 1 ? 'لعبة' : 'ألعاب'} ·{' '}
+                    {account.stats.wins} {account.stats.wins === 1 ? 'فوز' : 'انتصار'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setEditingProfile(true)}
+                className="text-xs text-jawwib-text-dim hover:text-jawwib-gold transition-colors px-2 py-1 rounded-lg tap-target"
+              >
+                ✏️ تعديل
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* CTA + toggles */}
         <div

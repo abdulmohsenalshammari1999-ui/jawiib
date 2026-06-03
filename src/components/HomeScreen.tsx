@@ -5,14 +5,16 @@ import type { CategoryId } from '@/lib/types';
 interface HomeScreenProps {
   onCreateRoom: (name: string, isTrial: boolean, cats?: CategoryId[], mode?: 'ffa' | 'teams') => void;
   onJoinRoom: (name: string, code: string) => void;
+  accountName?: string;
+  accountAvatar?: string;
 }
 
 type View = 'main' | 'create' | 'join';
 type GameMode = 'ffa' | 'teams';
 
-export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
+export function HomeScreen({ onCreateRoom, onJoinRoom, accountName, accountAvatar }: HomeScreenProps) {
   const [view, setView]               = useState<View>('main');
-  const [playerName, setPlayerName]   = useState('');
+  const [playerName, setPlayerName]   = useState(accountName ?? '');
   const [roomCode, setRoomCode]       = useState('');
   const [gameMode, setGameMode]       = useState<GameMode>('teams');
   const [selectedCats, setSelectedCats] = useState<CategoryId[]>(categories.map((c) => c.id));
@@ -178,15 +180,20 @@ export function HomeScreen({ onCreateRoom, onJoinRoom }: HomeScreenProps) {
         {/* Name */}
         <div className="mb-4">
           <label className="block text-xs text-jawwib-text-dim mb-1">اسمك</label>
-          <input
-            type="text"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
-            placeholder="ادخل اسمك..."
-            className="w-full px-4 py-3 rounded-xl"
-            maxLength={20}
-            autoFocus
-          />
+          <div className="flex items-center gap-2">
+            {accountAvatar && (
+              <span className="text-2xl shrink-0">{accountAvatar}</span>
+            )}
+            <input
+              type="text"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              placeholder="ادخل اسمك..."
+              className="flex-1 px-4 py-3 rounded-xl"
+              maxLength={20}
+              autoFocus
+            />
+          </div>
         </div>
 
         {/* Mode */}

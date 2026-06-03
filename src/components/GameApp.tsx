@@ -3,6 +3,7 @@ import { useGameStore } from '@/store/gameStore';
 import { useRoomStore } from '@/store/roomStore';
 import { useSabotageStore } from '@/store/sabotageStore';
 import { useUIStore } from '@/store/uiStore';
+import { useAccountStore } from '@/store/accountStore';
 import { useHostMessage } from '@/hooks/useHostMessage';
 import { useCategoryDraft } from '@/hooks/useCategoryDraft';
 import { useQuestionFlow } from '@/hooks/useQuestionFlow';
@@ -29,6 +30,7 @@ import { TeamSetupScreen } from './TeamSetupScreen';
 import { FeedbackModal } from './FeedbackModal';
 import type { GameContext } from './FeedbackModal';
 import { EntryScreen } from './EntryScreen';
+import { RegisterScreen } from './RegisterScreen';
 import { GameLoadingScreen } from './GameLoadingScreen';
 import { MysteryBoxOverlay } from './game/MysteryBoxOverlay';
 import { TeamWeaponInventory } from './game/TeamWeaponInventory';
@@ -85,6 +87,9 @@ export function GameApp() {
   const toggleSound   = useUIStore((s) => s.toggleSound);
   const toggleMusic   = useUIStore((s) => s.toggleMusic);
   const toggleTvMode  = useUIStore((s) => s.toggleTvMode);
+
+  const account       = useAccountStore((s) => s.account);
+  const recordGame    = useAccountStore((s) => s.recordGame);
 
   const hasBomb   = localPlayerId ? activeEffects.some((e) => e.type === 'bomb'   && e.targetPlayerId === localPlayerId) : false;
   const hasDouble = localPlayerId ? activeEffects.some((e) => e.type === 'double' && e.fromPlayerId   === localPlayerId) : false;
@@ -237,16 +242,32 @@ export function GameApp() {
     prevTimer.current = t;
   }, [game?.timer, game?.phase]);
 
-  // Winner fanfare + persist seen questions
+  // Winner fanfare + persist seen questions + record account stats
   useEffect(() => {
     if (game?.phase === 'finished' && prevPhase.current !== 'finished') {
       setTimeout(() => audio.playWinner(), 400);
       audio.stopTeamBGM();
       audio.stopBGM();
       globalPool.persistAndReset();
+
+      // Record game result to account stats
+      if (account && localPlayerId) {
+        const myPlayer = game.room.players.find((p) => p.id === localPlayerId);
+        const myPoints = myPlayer?.score ?? 0;
+        let won = false;
+        if (mode === 'teams' && game.teamMembership && game.teamScores) {
+          const myTeam = game.teamMembership.alpha.includes(localPlayerId) ? 'alpha' : 'beta';
+          const oppTeam = myTeam === 'alpha' ? 'beta' : 'alpha';
+          won = (game.teamScores[myTeam] ?? 0) > (game.teamScores[oppTeam] ?? 0);
+        } else {
+          const sorted = [...game.room.players].sort((a, b) => b.score - a.score);
+          won = sorted[0]?.id === localPlayerId;
+        }
+        recordGame(won, myPoints);
+      }
     }
     prevPhase.current = game?.phase;
-  }, [game?.phase]);
+  }, [game?.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Team BGM: switch loops on active team change ───────────────────────────
   useEffect(() => {
@@ -446,6 +467,11 @@ export function GameApp() {
     </div>
   );
 
+  // ── Registration gate — shown once when no account exists ────────────────────
+  if (!account) {
+    return <RegisterScreen onComplete={() => {}} />;
+  }
+
   // ── Entry screen ──────────────────────────────────────────────────────────────
   if (showEntry) {
     return (
@@ -455,6 +481,7 @@ export function GameApp() {
         musicEnabled={musicEnabled}
         onToggleSound={toggleSound}
         onToggleMusic={toggleMusic}
+        account={account}
       />
     );
   }
@@ -479,6 +506,8 @@ export function GameApp() {
       <HomeScreen
         onCreateRoom={(name, isTrial, cats, gm) => handleCreateRoom(name, isTrial, cats, gm)}
         onJoinRoom={(name, code) => handleJoinRoom(name, code)}
+        accountName={account?.name}
+        accountAvatar={account?.avatar}
       />
     );
   }

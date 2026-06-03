@@ -159,32 +159,28 @@ code {
 /* ══════════════════════════════════════════════════════════════════════
    TEAM TURN THEME SYSTEM
    Apply data-active-team="alpha" or data-active-team="beta" on the
-   .game-wrapper div.  A fixed ::before overlay fades smoothly between
-   the two team auras, giving the whole screen a cinematic tint shift.
+   .game-wrapper div.  The entire background canvas shifts color plus a
+   rich layered gradient overlay creates a distinctive team identity.
    ══════════════════════════════════════════════════════════════════════ */
 
-/* ── New keyframes for team transitions ─────────────────────────────── */
-@keyframes team-alpha-in {
-  0%   { opacity: 0; transform: scale(1.04); }
-  100% { opacity: 1; transform: scale(1); }
-}
-@keyframes team-beta-in {
-  0%   { opacity: 0; transform: scale(1.04); }
-  100% { opacity: 1; transform: scale(1); }
-}
 @keyframes turn-banner-pop {
   0%   { opacity: 0; transform: translateY(-16px) scale(0.9); }
   60%  { opacity: 1; transform: translateY(4px) scale(1.03); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
-@keyframes aura-pulse-blue {
-  0%, 100% { opacity: 0.55; }
-  50%       { opacity: 0.75; }
+
+/* البحر — Gulf sea breathing */
+@keyframes ocean-breathe {
+  0%, 100% { opacity: 0.82; filter: brightness(1); }
+  40%       { opacity: 1.00; filter: brightness(1.04); }
 }
-@keyframes aura-pulse-red {
-  0%, 100% { opacity: 0.55; }
-  50%       { opacity: 0.80; }
+
+/* البر — desert heat shimmer */
+@keyframes desert-breathe {
+  0%, 100% { opacity: 0.78; filter: brightness(1); }
+  45%       { opacity: 1.00; filter: brightness(1.05); }
 }
+
 @keyframes timer-glow-blue {
   0%, 100% { filter: drop-shadow(0 0 0px rgba(59,130,246,0)); }
   50%       { filter: drop-shadow(0 0 12px rgba(59,130,246,0.55)); }
@@ -203,44 +199,87 @@ code {
   position: relative;
   min-height: 100dvh;
   overflow-x: hidden;
+  transition: background-color 0.9s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Ambient background layer (sits behind all content) */
+/* Gradient overlay layer — fixed so it covers the whole viewport */
 .game-wrapper::before {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  transition: background 0.85s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background 0.9s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.9s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 0;
 }
 
-/* Content above the background layer */
+/* Content always above the overlay */
 .game-wrapper > * {
   position: relative;
   z-index: 1;
 }
 
-/* ── Alpha (Blue / البحر) — cool Gulf-night aura ─────────────────────── */
+/* ──────────────────────────────────────────────────────────────────────
+   البحر  (Alpha / Blue)  —  Kuwait Gulf Ocean
+   Background shifts to a clear sea-blue tint; overlay pours in deep
+   cobalt and aqua from every edge like light refracting through water.
+   ────────────────────────────────────────────────────────────────────── */
+.game-wrapper[data-active-team="alpha"] {
+  background-color: #C5DAEE; /* Gulf sea in midday sun */
+}
+
 .game-wrapper[data-active-team="alpha"]::before {
   opacity: 1;
   background:
-    radial-gradient(ellipse 90% 55% at 15% -5%,  rgba(29,78,216,0.13) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 45% at 85% 105%, rgba(29,78,216,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 35% at 50% 50%,  rgba(59,130,246,0.04) 0%, transparent 70%);
-  animation: aura-pulse-blue 4s ease-in-out infinite;
+    /* Sky-blue sweep from top */
+    radial-gradient(ellipse 140% 75% at 50% -15%,  rgba(29,78,216,0.55)  0%, transparent 58%),
+    /* Deep cobalt from left edge */
+    radial-gradient(ellipse 75% 65% at -10% 55%,   rgba(14,51,145,0.42)  0%, transparent 55%),
+    /* Midnight blue from right edge */
+    radial-gradient(ellipse 75% 65% at 110% 55%,   rgba(29,78,216,0.38)  0%, transparent 55%),
+    /* Aqua-teal glow rising from bottom — like seafloor light */
+    radial-gradient(ellipse 110% 55% at 50% 120%,  rgba(56,189,248,0.32) 0%, transparent 52%),
+    /* Central atmospheric haze */
+    radial-gradient(ellipse 60% 50% at 50% 45%,    rgba(59,130,246,0.14) 0%, transparent 70%),
+    /* Horizontal wave lines texture */
+    repeating-linear-gradient(
+      180deg,
+      transparent 0px, transparent 22px,
+      rgba(29,78,216,0.055) 22px, rgba(29,78,216,0.055) 24px
+    );
+  animation: ocean-breathe 5s ease-in-out infinite;
 }
 
-/* ── Beta (Red / البر) — warm desert-sunset aura ────────────────────── */
+/* ──────────────────────────────────────────────────────────────────────
+   البر   (Beta / Red)   —  Arabian Desert
+   Background shifts to warm terracotta; overlay floods in deep crimson
+   and amber from above and below like a desert sunset.
+   ────────────────────────────────────────────────────────────────────── */
+.game-wrapper[data-active-team="beta"] {
+  background-color: #EFD0B4; /* Desert sand at golden hour */
+}
+
 .game-wrapper[data-active-team="beta"]::before {
   opacity: 1;
   background:
-    radial-gradient(ellipse 90% 55% at 85% -5%,  rgba(185,28,28,0.14) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 45% at 15% 105%, rgba(185,28,28,0.09) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 35% at 50% 50%,  rgba(220,38,38,0.05) 0%, transparent 70%);
-  animation: aura-pulse-red 3.5s ease-in-out infinite;
+    /* Crimson sweep from top — like blazing noon sky */
+    radial-gradient(ellipse 140% 75% at 50% -15%,  rgba(185,28,28,0.58)  0%, transparent 58%),
+    /* Deep burgundy from right edge */
+    radial-gradient(ellipse 75% 65% at 110% 55%,   rgba(120,20,20,0.44)  0%, transparent 55%),
+    /* Terracotta from left edge */
+    radial-gradient(ellipse 75% 65% at -10% 55%,   rgba(185,28,28,0.38)  0%, transparent 55%),
+    /* Amber glow rising from bottom — heat from the sand */
+    radial-gradient(ellipse 110% 55% at 50% 120%,  rgba(251,146,60,0.38) 0%, transparent 52%),
+    /* Central heat haze */
+    radial-gradient(ellipse 60% 50% at 50% 45%,    rgba(220,38,38,0.16)  0%, transparent 70%),
+    /* Diagonal dune ridge texture */
+    repeating-linear-gradient(
+      152deg,
+      transparent 0px, transparent 30px,
+      rgba(185,28,28,0.05) 30px, rgba(185,28,28,0.05) 32px
+    );
+  animation: desert-breathe 4.5s ease-in-out infinite;
 }
 
 /* ── Vignette for question phase — extra drama ───────────────────────── */

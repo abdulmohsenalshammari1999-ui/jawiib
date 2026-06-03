@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import type { Question } from '@/lib/types';
 import { TimerBar } from './game/TimerBar';
 import { ImageMedia, AudioMedia, VideoMedia } from './game/MediaRenderer';
+import { CATEGORY_CONTEXT_IMAGES } from '@/lib/categoryMedia';
 
 interface QuestionCardProps {
   question: Question;
@@ -74,6 +75,8 @@ export function QuestionCard({
   const typeInfo = TYPE_LABELS[qType];
   const isActuallyDisabled = disabled || lockPhase;
   const ptColor = POINT_COLORS[question.points] ?? '#C8880A';
+  // Show a contextual background image for the category when no explicit mediaUrl
+  const contextMedia = !question.mediaUrl ? (CATEGORY_CONTEXT_IMAGES[question.category] ?? null) : null;
 
   const handleAnswer = (displayIdx: number) => {
     if (selected !== null || isActuallyDisabled) return;
@@ -174,6 +177,35 @@ export function QuestionCard({
         {/* ── Teaser (shown only before answer) ────────────────────────── */}
         {question.teaser && selected === null && (
           <div className="teaser-text mb-3">{question.teaser}</div>
+        )}
+
+        {/* ── Category contextual image (shown when no explicit mediaUrl) ── */}
+        {contextMedia && (
+          <div
+            className="relative w-full rounded-xl overflow-hidden mb-4"
+            style={{ height: '150px' }}
+          >
+            <img
+              src={contextMedia.url}
+              alt={contextMedia.alt}
+              className="w-full h-full object-cover"
+              style={{ objectPosition: contextMedia.position ?? 'center' }}
+              loading="lazy"
+              onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none'; }}
+            />
+            {/* Fade into the white card at bottom */}
+            <div
+              className="absolute inset-0"
+              style={{ background: 'linear-gradient(to bottom, transparent 30%, rgba(255,255,255,0.97) 100%)' }}
+            />
+            {/* Alt text caption bottom-left */}
+            <span
+              className="absolute bottom-1.5 right-2 text-[9px] font-bold opacity-40"
+              style={{ color: '#1A1208' }}
+            >
+              {contextMedia.alt}
+            </span>
+          </div>
         )}
 
         {/* ── Media section ─────────────────────────────────────────────── */}

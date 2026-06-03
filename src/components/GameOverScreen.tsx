@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { Player } from '@/lib/types';
+import { ShareCard } from './ShareCard';
 
 interface TeamResult {
   name: string;
@@ -316,6 +317,7 @@ export function GameOverScreen({
   const confetti = useConfetti();
   const [showConfetti, setShowConfetti] = useState(false);
   const [copiedPlatform, setCopiedPlatform] = useState<Platform | null>(null);
+  const [showShareCard, setShowShareCard] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setShowConfetti(true), 200);
@@ -361,6 +363,22 @@ export function GameOverScreen({
 
   return (
     <div className="animate-fade-in min-h-screen flex items-center justify-center p-4">
+      {showShareCard && (
+        <ShareCard
+          winnerName={winnerTeam?.name ?? winner?.name ?? ''}
+          winnerEmoji={winnerTeam?.emoji ?? winner?.avatar ?? '🏆'}
+          winnerScore={winnerTeam?.score ?? winner?.score ?? 0}
+          loserName={loserTeam?.name}
+          loserEmoji={loserTeam?.emoji}
+          loserScore={loserTeam?.score}
+          mvpName={sorted[0]?.name}
+          mvpAvatar={sorted[0]?.avatar}
+          isTeams={mode === 'teams'}
+          isTie={isTie}
+          onClose={() => setShowShareCard(false)}
+        />
+      )}
+
       {/* Confetti */}
       {showConfetti &&
         confetti.map((c) => (
@@ -513,6 +531,18 @@ export function GameOverScreen({
             <p className="text-xs font-bold text-jawwib-text-dim mb-3 text-center">
               📣 شارك النتيجة مع أصحابك
             </p>
+            {/* Postable card button */}
+            <button
+              onClick={() => setShowShareCard(true)}
+              className="w-full py-3.5 rounded-2xl font-black text-sm mb-3 tap-target transition-all active:scale-95"
+              style={{
+                background: 'linear-gradient(135deg, #B07D1A22, #D4A94A18)',
+                border: '1.5px solid rgba(176,125,26,0.45)',
+                color: '#D4A94A',
+              }}
+            >
+              📸 كارد للنشر على سناب وانستغرام
+            </button>
             <div className="flex gap-2">
               <ShareButton
                 platform="whatsapp"

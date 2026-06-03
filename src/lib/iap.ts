@@ -57,6 +57,9 @@ let _rcReady = false;
 async function initRC(): Promise<typeof import('@revenuecat/purchases-capacitor')> {
   const rc = await import('@revenuecat/purchases-capacitor');
   if (!_rcReady && APP_CONFIG.revenueCatApiKey) {
+    // appUserID omitted → RevenueCat generates an anonymous ID.
+    // We never call Purchases.collectDeviceIdentifiers() so IDFA is never
+    // requested, keeping us free of the ATT prompt requirement.
     await rc.Purchases.configure({ apiKey: APP_CONFIG.revenueCatApiKey });
     _rcReady = true;
   }

@@ -312,8 +312,11 @@ export function GameApp() {
   }, [game?.phase, musicEnabled, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Callbacks ─────────────────────────────────────────────────────────────────
-  // Payment is active only when at least one payment channel is configured
-  const paymentConfigured = !!(APP_CONFIG.supportWhatsApp || import.meta.env['VITE_PAYMENT_URL']);
+  // Payment is active only on web builds with a payment channel configured.
+  // On native (ios/android), IAP is handled by purchaseGame() directly — this
+  // flag stays false so the external-URL paths are dead code Vite can eliminate.
+  const paymentConfigured = APP_CONFIG.platform === 'web' &&
+    !!(APP_CONFIG.supportWhatsApp || import.meta.env['VITE_PAYMENT_URL']);
 
   const handleCreateRoom = useCallback(
     (name: string, isTrial: boolean, cats?: CategoryId[], gameMode?: 'ffa' | 'teams') => {

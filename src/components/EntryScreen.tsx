@@ -275,6 +275,13 @@ export function EntryScreen({
 
       <div className="sadu-accent w-full" />
 
+      {/* Privacy policy link — required for App Store submission */}
+      <p className="text-center text-[10px] text-jawwib-text-dim/40 py-3">
+        <a href="/privacy" className="hover:text-jawwib-text-dim transition-colors">
+          سياسة الخصوصية · Privacy Policy
+        </a>
+      </p>
+
       {showHowTo && (
         <HowToPlayModal
           onClose={() => {

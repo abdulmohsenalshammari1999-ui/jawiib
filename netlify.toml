@@ -34,7 +34,7 @@
     # - style-src unsafe-inline required: React inline style props
     # - Google Fonts loaded via preconnect links in <head>
     # - frame-ancestors 'none' enforces no-iframe for CSP-aware browsers
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'none'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.partykit.dev wss://*.partykit.dev https://api.qrserver.com; worker-src 'none'; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
 
 # ── SPA fallback — all unmatched paths serve index.html ──────────────────────
 [[redirects]]

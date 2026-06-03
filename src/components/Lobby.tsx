@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { categories } from '@/lib/categories';
+import { InviteCard } from './cards/InviteCard';
 import type { CategoryId } from '@/lib/types';
 
 interface Player {
@@ -21,6 +22,13 @@ interface LobbyProps {
   isHost: boolean;
   qrUrl: string;
   mode?: 'ffa' | 'teams';
+  hostName?: string;
+  alphaTeamName?: string;
+  alphaTeamEmoji?: string;
+  betaTeamName?: string;
+  betaTeamEmoji?: string;
+  onlinePlayers?: number;
+  isOnline?: boolean;
 }
 
 export function Lobby({
@@ -35,8 +43,16 @@ export function Lobby({
   isHost,
   qrUrl,
   mode = 'ffa',
+  hostName = 'المضيف',
+  alphaTeamName,
+  alphaTeamEmoji,
+  betaTeamName,
+  betaTeamEmoji,
+  onlinePlayers = 1,
+  isOnline = false,
 }: LobbyProps) {
   const [copied, setCopied] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
 
   const handleCopy = async () => {
     try {
@@ -50,9 +66,30 @@ export function Lobby({
 
   return (
     <div className="animate-fade-in max-w-md mx-auto space-y-4">
+
+      {/* ── Invite card overlay ──────────────────────────────────────────────── */}
+      {showInvite && (
+        <InviteCard
+          roomCode={roomCode}
+          hostName={hostName}
+          mode={mode}
+          alphaTeam={alphaTeamName ? { name: alphaTeamName, emoji: alphaTeamEmoji ?? '🔵', color: '#1D4ED8' } : undefined}
+          betaTeam={betaTeamName ? { name: betaTeamName, emoji: betaTeamEmoji ?? '🔴', color: '#B91C1C' } : undefined}
+          onClose={() => setShowInvite(false)}
+        />
+      )}
+
       {/* Room Code */}
       <div className="game-card p-5 text-center">
-        <p className="text-jawwib-text-dim text-xs mb-2">شارك الكود مع أصدقائك</p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-jawwib-text-dim text-xs">شارك الكود مع أصدقائك</p>
+          {isOnline && (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-green-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              {onlinePlayers} متصل
+            </span>
+          )}
+        </div>
         <div className="flex items-center justify-center gap-3 mb-3">
           <span className="text-3xl font-black tracking-[0.25em] text-gold-gradient">{roomCode}</span>
           <button
@@ -62,6 +99,18 @@ export function Lobby({
             {copied ? '✓ تم' : '📋'}
           </button>
         </div>
+        {/* Invite Card button */}
+        <button
+          onClick={() => setShowInvite(true)}
+          className="w-full py-2.5 mb-3 rounded-xl font-black text-sm transition-all"
+          style={{
+            background: 'linear-gradient(135deg, rgba(176,125,26,0.15), rgba(212,169,74,0.1))',
+            border: '1.5px solid rgba(176,125,26,0.4)',
+            color: '#D4A94A',
+          }}
+        >
+          🎴 كارد دعوة جاهز للمشاركة
+        </button>
         {/* QR */}
         <div className="flex justify-center">
           <div className="bg-white p-2 rounded-xl inline-block">

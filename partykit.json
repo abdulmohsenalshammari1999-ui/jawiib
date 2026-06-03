@@ -1,0 +1,8 @@
+{
+  "name": "jawib-game",
+  "main": "party/server.ts",
+  "compatibilityDate": "2024-09-23",
+  "parties": {
+    "main": "party/server.ts"
+  }
+}

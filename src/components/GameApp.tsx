@@ -12,6 +12,7 @@ import { globalPool } from '@/engine/questionPool';
 import { initCsvContent } from '@/lib/contentRegistry';
 import { applySeasonalBodyClass, APP_CONFIG } from '@/lib/appConfig';
 import { hapticSuccess, hapticError, hapticSelection } from '@/lib/haptics';
+import { useMultiplayer } from '@/hooks/useMultiplayer';
 import type { CategoryId, TeamId } from '@/lib/types';
 import { categories as ALL_CATS } from '@/lib/categories';
 import { HomeScreen } from './HomeScreen';
@@ -103,6 +104,11 @@ export function GameApp() {
   useHostMessage();
   const qflow = useQuestionFlow();
   const draft  = useCategoryDraft();
+
+  // Multiplayer role: host if this device created the room, guest otherwise
+  const isHost      = !game || game.room.players[0]?.id === localPlayerId;
+  const mpRole      = !game ? 'offline' as const : isHost ? 'host' as const : 'guest' as const;
+  const mp          = useMultiplayer(game?.room.code, localPlayerId ?? undefined, mpRole);
 
   // ── Local state ───────────────────────────────────────────────────────────────
   const [subView, setSubView]           = useState<SubView>('lobby');
@@ -765,6 +771,13 @@ export function GameApp() {
           isHost={isHost}
           qrUrl={qrUrl}
           mode={mode}
+          hostName={game.room.players.find((p) => p.id === localPlayerId)?.name ?? 'المضيف'}
+          alphaTeamName={mode === 'teams' ? teams.alpha.name : undefined}
+          alphaTeamEmoji={mode === 'teams' ? (teams.alpha as any).emoji : undefined}
+          betaTeamName={mode === 'teams' ? teams.beta.name : undefined}
+          betaTeamEmoji={mode === 'teams' ? (teams.beta as any).emoji : undefined}
+          onlinePlayers={mp.onlinePlayers}
+          isOnline={mp.isOnline}
         />
       </div>
     );

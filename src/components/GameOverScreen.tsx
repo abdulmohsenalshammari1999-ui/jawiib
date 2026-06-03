@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { Player } from '@/lib/types';
 import { APP_CONFIG } from '@/lib/appConfig';
-import { ShareCard } from './ShareCard';
+import { ResultCard } from './cards/ResultCard';
 
 interface TeamResult {
   name: string;
@@ -364,17 +364,17 @@ export function GameOverScreen({
   return (
     <div className="animate-fade-in min-h-screen flex items-center justify-center p-4">
       {showShareCard && (
-        <ShareCard
-          winnerName={winnerTeam?.name ?? winner?.name ?? ''}
-          winnerEmoji={winnerTeam?.emoji ?? winner?.avatar ?? '🏆'}
-          winnerScore={winnerTeam?.score ?? winner?.score ?? 0}
-          loserName={loserTeam?.name}
-          loserEmoji={loserTeam?.emoji}
-          loserScore={loserTeam?.score}
+        <ResultCard
+          winnerTeam={winnerTeam ? { name: winnerTeam.name, score: winnerTeam.score, emoji: winnerTeam.emoji, color: winnerTeam.color } : undefined}
+          loserTeam={loserTeam ? { name: loserTeam.name, score: loserTeam.score, emoji: loserTeam.emoji, color: loserTeam.color } : undefined}
+          winnerName={winner?.name}
+          winnerEmoji={winner?.avatar ?? '🏆'}
+          winnerScore={winner?.score ?? 0}
           mvpName={sorted[0]?.name}
           mvpAvatar={sorted[0]?.avatar}
           isTeams={mode === 'teams'}
           isTie={isTie}
+          mode={mode}
           onClose={() => setShowShareCard(false)}
         />
       )}

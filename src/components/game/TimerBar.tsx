@@ -2,36 +2,44 @@ interface TimerBarProps {
   time: number;
   maxTime: number;
   compact?: boolean;
+  teamColor?: string;
 }
 
-export function TimerBar({ time, maxTime, compact = false }: TimerBarProps) {
-  const pct    = Math.max(0, (time / maxTime) * 100);
-  const isLow  = time <= 5;
-  const isMed  = time <= 9 && time > 5;
+export function TimerBar({ time, maxTime, compact = false, teamColor }: TimerBarProps) {
+  const pct   = Math.max(0, (time / maxTime) * 100);
+  const isLow = time <= 5;
+  const isMed = time <= 9 && time > 5;
 
-  const barColor = isLow
+  // Team color overrides the default gold when a team is active
+  const activeColor = isLow
+    ? '#B91C1C'
+    : isMed
+    ? '#CA8A04'
+    : (teamColor ?? '#C8880A');
+
+  const barClass = isLow
     ? 'from-jawwib-red to-red-400'
     : isMed
     ? 'from-yellow-500 to-yellow-400'
-    : 'from-jawwib-gold to-jawwib-gold-light';
+    : '';
 
   if (compact) {
     return (
       <div className="flex items-center gap-2">
-        <div className="flex-1 h-2 bg-jawwib-border rounded-full overflow-hidden">
+        <div className="flex-1 h-2 bg-jawwib-border rounded-full overflow-hidden min-w-[60px]">
           <div
-            className={`h-full rounded-full bg-gradient-to-l ${barColor} transition-all duration-1000 ease-linear`}
-            style={{ width: `${pct}%` }}
+            className={`h-full rounded-full transition-all duration-1000 ease-linear ${barClass}`}
+            style={{
+              width: `${pct}%`,
+              background: barClass ? undefined : `linear-gradient(to left, ${activeColor}, ${activeColor}99)`,
+            }}
           />
         </div>
         <span
-          className={`text-sm font-bold tabular-nums w-5 text-left ${
-            isLow
-              ? 'text-jawwib-red animate-tick-pulse'
-              : isMed
-              ? 'text-yellow-600'
-              : 'text-jawwib-gold'
+          className={`timer-display text-sm font-black tabular-nums w-5 text-left ${
+            isLow ? 'text-jawwib-red animate-tick-pulse' : isMed ? 'text-yellow-600' : ''
           }`}
+          style={!isLow && !isMed && teamColor ? { color: teamColor } : undefined}
         >
           {time}
         </span>
@@ -39,37 +47,29 @@ export function TimerBar({ time, maxTime, compact = false }: TimerBarProps) {
     );
   }
 
-  const strokeColor = isLow ? '#B91C1C' : isMed ? '#CA8A04' : '#C8880A';
   const circumference = 2 * Math.PI * 34;
 
   return (
     <div className="flex flex-col items-center gap-1">
       <div className="relative w-20 h-20">
         <svg width="80" height="80" className="-rotate-90">
-          {/* Track */}
           <circle cx="40" cy="40" r="34" fill="none" stroke="#E5CFA0" strokeWidth="5" />
-          {/* Progress */}
           <circle
-            cx="40"
-            cy="40"
-            r="34"
+            cx="40" cy="40" r="34"
             fill="none"
-            stroke={strokeColor}
+            stroke={activeColor}
             strokeWidth="5"
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={circumference * (1 - pct / 100)}
-            style={{ transition: 'stroke-dashoffset 1s linear' }}
+            style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.4s ease' }}
           />
         </svg>
         <span
-          className={`absolute inset-0 flex items-center justify-center text-2xl font-black ${
-            isLow
-              ? 'text-jawwib-red animate-tick-pulse'
-              : isMed
-              ? 'text-yellow-600 animate-shake'
-              : 'text-jawwib-gold'
+          className={`timer-display absolute inset-0 flex items-center justify-center font-black ${
+            isLow ? 'text-jawwib-red animate-tick-pulse' : isMed ? 'text-yellow-600 animate-shake' : ''
           }`}
+          style={!isLow && !isMed ? { color: activeColor } : undefined}
         >
           {time}
         </span>

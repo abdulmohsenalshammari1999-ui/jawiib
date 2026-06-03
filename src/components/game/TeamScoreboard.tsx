@@ -48,7 +48,6 @@ export function TeamScoreboard({
     const gap          = Math.abs(alphaScore - betaScore);
     const isCloseGame  = gap <= 200 && (alphaScore > 0 || betaScore > 0);
 
-    // Last Stand eligibility: losing team trailing by 400+, one-time only
     const alphaCanLastStand = !alphaLeads && gap >= 400 && !lastStandUsed['alpha'] && !!onActivateLastStand;
     const betaCanLastStand  =  alphaLeads && gap >= 400 && !lastStandUsed['beta']  && !!onActivateLastStand;
 
@@ -63,7 +62,7 @@ export function TeamScoreboard({
 
     return (
       <div className="game-card p-4">
-        {/* Gap indicator */}
+        {/* Gap / rivalry indicator */}
         {isCloseGame && (
           <div className="text-center mb-2">
             <span className="text-[10px] font-bold text-jawwib-gold bg-jawwib-gold/10 px-2 py-0.5 rounded-full animate-rivalry-flash">
@@ -74,63 +73,99 @@ export function TeamScoreboard({
         {gap >= 400 && !isCloseGame && (
           <div className="text-center mb-2">
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-              alphaLeads
-                ? 'text-jawwib-red bg-jawwib-red/10'
-                : 'text-jawwib-blue bg-jawwib-blue/10'
+              alphaLeads ? 'text-jawwib-red bg-jawwib-red/10' : 'text-jawwib-blue bg-jawwib-blue/10'
             }`}>
               💪 {alphaLeads ? teams.beta.name : teams.alpha.name} يحارب للعودة!
             </span>
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="grid grid-cols-2 gap-2.5 mb-3">
           {/* Alpha team */}
           <div
-            className={`rounded-xl p-3 border-2 transition-all ${
+            className={`rounded-xl p-3 border-2 transition-all duration-500 ${
               activeTeam === 'alpha'
-                ? 'border-jawwib-blue animate-team-pulse-blue'
+                ? 'team-panel-active-alpha animate-team-pulse-blue'
                 : alphaLeads
                 ? 'border-blue-300/60 bg-blue-50/60'
                 : 'border-jawwib-border bg-jawwib-surface'
             }`}
           >
-            <div className="flex items-center gap-1 mb-1">
+            <div className="flex items-center gap-1.5 mb-1">
               <span className="text-base">🌊</span>
-              <span className="text-jawwib-blue font-bold text-xs truncate">{teams.alpha.name}</span>
+              <span className="font-bold text-xs truncate text-jawwib-blue">{teams.alpha.name}</span>
               {alphaLeads && gap > 0 && <span className="text-jawwib-gold text-xs mr-auto">👑</span>}
+              {activeTeam === 'alpha' && (
+                <span
+                  className="text-[9px] font-black px-1.5 py-0.5 rounded-full mr-auto"
+                  style={{ background: 'rgba(29,78,216,0.15)', color: '#1D4ED8' }}
+                >
+                  دورهم
+                </span>
+              )}
             </div>
-            <p className="text-2xl font-black text-jawwib-blue tabular-nums">{alphaScore}</p>
-            {activeTeam === 'alpha' && (
-              <p className="text-[10px] text-jawwib-blue mt-0.5 opacity-70">دورهم الآن</p>
-            )}
+            <p className="score-display text-2xl font-black text-jawwib-blue tabular-nums">{alphaScore}</p>
+            <div className="flex flex-wrap gap-0.5 mt-1">
+              {alphaPlayers.map((p) => (
+                <span
+                  key={p.id}
+                  className={`text-[10px] px-1 py-0.5 rounded ${
+                    p.id === activePlayerId
+                      ? 'bg-jawwib-blue/20 text-jawwib-blue font-bold'
+                      : 'bg-jawwib-surface text-jawwib-text-dim'
+                  }`}
+                >
+                  {p.avatar}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* Beta team */}
           <div
-            className={`rounded-xl p-3 border-2 transition-all ${
+            className={`rounded-xl p-3 border-2 transition-all duration-500 ${
               activeTeam === 'beta'
-                ? 'border-jawwib-red animate-team-pulse-red'
+                ? 'team-panel-active-beta animate-team-pulse-red'
                 : !alphaLeads
                 ? 'border-red-300/60 bg-red-50/60'
                 : 'border-jawwib-border bg-jawwib-surface'
             }`}
           >
-            <div className="flex items-center gap-1 mb-1">
+            <div className="flex items-center gap-1.5 mb-1">
               <span className="text-base">🐪</span>
-              <span className="text-jawwib-red font-bold text-xs truncate">{teams.beta.name}</span>
+              <span className="font-bold text-xs truncate text-jawwib-red">{teams.beta.name}</span>
               {!alphaLeads && gap > 0 && <span className="text-jawwib-gold text-xs mr-auto">👑</span>}
+              {activeTeam === 'beta' && (
+                <span
+                  className="text-[9px] font-black px-1.5 py-0.5 rounded-full mr-auto"
+                  style={{ background: 'rgba(185,28,28,0.15)', color: '#B91C1C' }}
+                >
+                  دورهم
+                </span>
+              )}
             </div>
-            <p className="text-2xl font-black text-jawwib-red tabular-nums">{betaScore}</p>
-            {activeTeam === 'beta' && (
-              <p className="text-[10px] text-jawwib-red mt-0.5 opacity-70">دورهم الآن</p>
-            )}
+            <p className="score-display text-2xl font-black text-jawwib-red tabular-nums">{betaScore}</p>
+            <div className="flex flex-wrap gap-0.5 mt-1">
+              {betaPlayers.map((p) => (
+                <span
+                  key={p.id}
+                  className={`text-[10px] px-1 py-0.5 rounded ${
+                    p.id === activePlayerId
+                      ? 'bg-jawwib-red/20 text-jawwib-red font-bold'
+                      : 'bg-jawwib-surface text-jawwib-text-dim'
+                  }`}
+                >
+                  {p.avatar}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Gap bar */}
+        {/* Momentum bar */}
         {(alphaScore > 0 || betaScore > 0) && (
           <div className="mb-3">
-            <div className="h-1.5 rounded-full bg-jawwib-border overflow-hidden">
+            <div className="h-2 rounded-full bg-jawwib-border overflow-hidden">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{
@@ -140,9 +175,9 @@ export function TeamScoreboard({
               />
             </div>
             <div className="flex justify-between text-[9px] text-jawwib-text-dim mt-0.5">
-              <span>{teams.alpha.name}</span>
-              {gap > 0 && <span>فارق {gap}</span>}
-              <span>{teams.beta.name}</span>
+              <span className="text-jawwib-blue font-bold">{teams.alpha.name}</span>
+              {gap > 0 && <span className="font-bold">فارق {gap}</span>}
+              <span className="text-jawwib-red font-bold">{teams.beta.name}</span>
             </div>
           </div>
         )}
@@ -165,28 +200,28 @@ export function TeamScoreboard({
           </button>
         )}
 
-        {/* Individual players */}
+        {/* Individual player list */}
         <div className="space-y-1">
           {[
-            ...alphaPlayers.map((p) => ({ ...p, teamColor: '#1D4ED8', teamBg: 'bg-blue-50' })),
-            ...betaPlayers.map((p)  => ({ ...p, teamColor: '#B91C1C', teamBg: 'bg-red-50' })),
+            ...alphaPlayers.map((p) => ({ ...p, teamColor: '#1D4ED8', teamBg: 'bg-blue-50/80' })),
+            ...betaPlayers.map((p)  => ({ ...p, teamColor: '#B91C1C', teamBg: 'bg-red-50/80' })),
           ]
             .sort((a, b) => b.score - a.score)
             .map((player) => (
               <div
                 key={player.id}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-sm transition-all ${
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg transition-all ${
                   player.id === activePlayerId
                     ? 'bg-jawwib-gold/12 border border-jawwib-gold/30'
                     : player.teamBg
                 }`}
               >
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm">{player.avatar}</span>
+                  <span className="text-base">{player.avatar}</span>
                   <span className="font-bold text-xs">{player.name}</span>
                   {player.streak > 0 && streakIndicator(player.streak)}
                 </div>
-                <span className="font-black text-sm tabular-nums" style={{ color: player.teamColor }}>
+                <span className="score-display font-black text-sm tabular-nums" style={{ color: player.teamColor }}>
                   {player.score}
                 </span>
               </div>
@@ -228,7 +263,7 @@ export function TeamScoreboard({
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-jawwib-gold font-black tabular-nums">{player.score}</span>
+                <span className="score-display text-jawwib-gold font-black tabular-nums">{player.score}</span>
                 {isLeading && <span className="text-xs">👑</span>}
               </div>
             </div>

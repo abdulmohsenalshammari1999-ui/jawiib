@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Cairo:wght@700;800;900&display=swap');
 @import "tailwindcss" source("../");
 
 @theme {
@@ -21,10 +21,18 @@
 
 body {
   @apply m-0 bg-jawwib-bg text-jawwib-text;
-  font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: 'Tajawal', 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   direction: rtl;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+/* ── Heading / score numbers use Cairo for maximum legibility ─────────── */
+.font-display {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-weight: 900;
 }
 
 code {
@@ -148,6 +156,172 @@ code {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   TEAM TURN THEME SYSTEM
+   Apply data-active-team="alpha" or data-active-team="beta" on the
+   .game-wrapper div.  A fixed ::before overlay fades smoothly between
+   the two team auras, giving the whole screen a cinematic tint shift.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── New keyframes for team transitions ─────────────────────────────── */
+@keyframes team-alpha-in {
+  0%   { opacity: 0; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes team-beta-in {
+  0%   { opacity: 0; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes turn-banner-pop {
+  0%   { opacity: 0; transform: translateY(-16px) scale(0.9); }
+  60%  { opacity: 1; transform: translateY(4px) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes aura-pulse-blue {
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 0.75; }
+}
+@keyframes aura-pulse-red {
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 0.80; }
+}
+@keyframes timer-glow-blue {
+  0%, 100% { filter: drop-shadow(0 0 0px rgba(59,130,246,0)); }
+  50%       { filter: drop-shadow(0 0 12px rgba(59,130,246,0.55)); }
+}
+@keyframes timer-glow-red {
+  0%, 100% { filter: drop-shadow(0 0 0px rgba(239,68,68,0)); }
+  50%       { filter: drop-shadow(0 0 12px rgba(239,68,68,0.55)); }
+}
+@keyframes suspense-vignette {
+  0%, 100% { opacity: 0.12; }
+  50%       { opacity: 0.22; }
+}
+
+/* ── Base wrapper ────────────────────────────────────────────────────── */
+.game-wrapper {
+  position: relative;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* Ambient background layer (sits behind all content) */
+.game-wrapper::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: background 0.85s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+}
+
+/* Content above the background layer */
+.game-wrapper > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Alpha (Blue / البحر) — cool Gulf-night aura ─────────────────────── */
+.game-wrapper[data-active-team="alpha"]::before {
+  opacity: 1;
+  background:
+    radial-gradient(ellipse 90% 55% at 15% -5%,  rgba(29,78,216,0.13) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 45% at 85% 105%, rgba(29,78,216,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 35% at 50% 50%,  rgba(59,130,246,0.04) 0%, transparent 70%);
+  animation: aura-pulse-blue 4s ease-in-out infinite;
+}
+
+/* ── Beta (Red / البر) — warm desert-sunset aura ────────────────────── */
+.game-wrapper[data-active-team="beta"]::before {
+  opacity: 1;
+  background:
+    radial-gradient(ellipse 90% 55% at 85% -5%,  rgba(185,28,28,0.14) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 45% at 15% 105%, rgba(185,28,28,0.09) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 35% at 50% 50%,  rgba(220,38,38,0.05) 0%, transparent 70%);
+  animation: aura-pulse-red 3.5s ease-in-out infinite;
+}
+
+/* ── Vignette for question phase — extra drama ───────────────────────── */
+.game-wrapper.phase-question::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.18) 100%);
+  animation: suspense-vignette 3s ease-in-out infinite;
+}
+
+/* ── Turn banner animation ───────────────────────────────────────────── */
+.turn-banner-enter { animation: turn-banner-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* ── Team-colored timer glow ─────────────────────────────────────────── */
+.timer-team-alpha { animation: timer-glow-blue 2s ease-in-out infinite; }
+.timer-team-beta  { animation: timer-glow-red  2s ease-in-out infinite; }
+
+/* ── Active team panel highlight ─────────────────────────────────────── */
+.team-panel-active-alpha {
+  background: linear-gradient(135deg, rgba(29,78,216,0.08) 0%, rgba(59,130,246,0.04) 100%) !important;
+  border-color: rgba(29,78,216,0.45) !important;
+  box-shadow: 0 0 20px rgba(29,78,216,0.15), inset 0 0 12px rgba(29,78,216,0.05);
+}
+.team-panel-active-beta {
+  background: linear-gradient(135deg, rgba(185,28,28,0.08) 0%, rgba(239,68,68,0.04) 100%) !important;
+  border-color: rgba(185,28,28,0.45) !important;
+  box-shadow: 0 0 20px rgba(185,28,28,0.15), inset 0 0 12px rgba(185,28,28,0.05);
+}
+
+/* ── Board cell hover: team-tinted ───────────────────────────────────── */
+.game-wrapper[data-active-team="alpha"] .board-cell:hover:not(.answered) {
+  --cell-hover-color: #1D4ED8;
+  --cell-glow-color: rgba(29,78,216,0.30);
+  border-color: #1D4ED8;
+}
+.game-wrapper[data-active-team="beta"] .board-cell:hover:not(.answered) {
+  --cell-hover-color: #B91C1C;
+  --cell-glow-color: rgba(185,28,28,0.30);
+  border-color: #B91C1C;
+}
+
+/* ── Answer option hover: team-tinted ───────────────────────────────── */
+.game-wrapper[data-active-team="alpha"] .answer-option:hover:not(:disabled) {
+  border-color: #1D4ED8 !important;
+  background: rgba(29,78,216,0.06) !important;
+}
+.game-wrapper[data-active-team="beta"] .answer-option:hover:not(:disabled) {
+  border-color: #B91C1C !important;
+  background: rgba(185,28,28,0.06) !important;
+}
+
+/* ── Volume slider styling ───────────────────────────────────────────── */
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: #C9A87A;
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #B07D1A;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(176,125,26,0.4);
+}
+.volume-slider::-moz-range-thumb {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: none;
+  background: #B07D1A;
+  cursor: pointer;
+}
+
 /* ── Utility classes ───────────────────────────────────────────────── */
 
 .animate-fade-in        { animation: fadeIn       0.4s ease-out; }
@@ -166,6 +340,7 @@ code {
 .animate-score-reveal   { animation: score-reveal 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
 .animate-rivalry-flash  { animation: rivalry-flash 1.2s ease-in-out infinite; }
 .animate-evidence-reveal { animation: evidence-reveal 0.45s ease-out 0.35s both; }
+.animate-turn-banner    { animation: turn-banner-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
 .score-popup {
   animation: score-fly 1.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
@@ -447,17 +622,13 @@ input:focus, textarea:focus {
    ACCESSIBILITY & READABILITY UPGRADES
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Larger base text for readability ─────────────────────────────────── */
-body {
-  font-size: 16px;
-  line-height: 1.6;
-}
-
 /* ── Answer option — larger tap area, stronger contrast ──────────────── */
 .answer-option {
-  min-height: 56px;
-  font-size: 15px;
-  line-height: 1.4;
+  min-height: 58px;
+  font-size: 15.5px;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
   transition: transform 0.15s, border-color 0.15s, background 0.15s;
 }
 .answer-option:hover:not(:disabled) {
@@ -466,11 +637,60 @@ body {
   background: #FBF8EE !important;
 }
 .answer-option:active:not(:disabled) {
-  transform: scale(0.98);
+  transform: scale(0.97);
+}
+
+/* ── Question text: large, readable, centered ────────────────────────── */
+.question-text {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-size: clamp(17px, 4vw, 22px);
+  font-weight: 800;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  color: #1A1208;
+}
+
+/* ── Score numbers — Cairo for crisp Arabic numerals ─────────────────── */
+.score-display {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+/* ── Category label / tier badge ─────────────────────────────────────── */
+.category-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Host / referee message — readable at arm's length ───────────────── */
+.host-message-text {
+  font-size: clamp(13.5px, 3vw, 15px);
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* ── Timer text — large enough to see from across the room ───────────── */
+.timer-display {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-size: clamp(22px, 5vw, 30px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Correct / wrong answer messages ─────────────────────────────────── */
+.result-heading {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-size: clamp(20px, 5vw, 26px);
+  font-weight: 900;
+  line-height: 1.3;
 }
 
 /* ── Timer bar — high-contrast warning states ─────────────────────────── */
-.timer-critical {        /* < 25% time */
+.timer-critical {
   background: linear-gradient(90deg, #B91C1C, #EF4444) !important;
   animation: timer-pulse 0.5s ease-in-out infinite;
 }
@@ -479,28 +699,26 @@ body {
   50%       { opacity: 0.75; }
 }
 
-/* ── High-contrast mode (prefers-contrast: more) ─────────────────────── */
+/* ── High-contrast mode ───────────────────────────────────────────────── */
 @media (prefers-contrast: more) {
   body {
     --color-jawwib-border: #7A5020;
     --color-jawwib-text-dim: #5A4020;
   }
-  .game-card {
-    border-width: 2px;
-    border-color: #7A5020;
-  }
-  .answer-option {
-    border-width: 2px !important;
-  }
+  .game-card   { border-width: 2px; border-color: #7A5020; }
+  .answer-option { border-width: 2.5px !important; }
+  .question-text { font-size: clamp(19px, 4.5vw, 24px); }
 }
 
-/* ── Reduced motion ────────────────────────────────────────────────────── */
+/* ── Reduced motion ───────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  /* Keep team wrapper background transitions slightly longer to not feel broken */
+  .game-wrapper::before { transition-duration: 0.1ms !important; }
 }
 
 /* ── Color-blind friendly focus rings ─────────────────────────────────── */
@@ -512,14 +730,55 @@ a:focus-visible {
 }
 
 /* ── Large-screen readable typography ────────────────────────────────── */
-@media (min-width: 768px) {
+@media (min-width: 640px) {
   .answer-option { font-size: 16px; min-height: 60px; }
 }
+@media (min-width: 768px) {
+  .answer-option { font-size: 17px; min-height: 62px; }
+}
 @media (min-width: 1024px) {
-  .answer-option { font-size: 17px; min-height: 64px; }
+  .answer-option { font-size: 18px; min-height: 66px; }
   body { font-size: 17px; }
 }
 
 /* ── Media card zoom cursor ────────────────────────────────────────────── */
 .cursor-zoom-in  { cursor: zoom-in; }
 .cursor-zoom-out { cursor: zoom-out; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   QUESTION TYPE STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Guess question (person/place/object) ─────────────────────────────── */
+.question-type-guess {
+  background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
+  border: 1.5px solid rgba(21,128,61,0.25);
+  border-radius: 1rem;
+}
+
+/* ── Scene question (what happened?) ─────────────────────────────────── */
+.question-type-scene {
+  background: linear-gradient(135deg, #FFF7ED, #FFEDD5);
+  border: 1.5px solid rgba(234,88,12,0.22);
+  border-radius: 1rem;
+}
+
+/* ── Identify question (sound/voice/song) ─────────────────────────────── */
+.question-type-identify {
+  background: linear-gradient(135deg, #F5F3FF, #EDE9FE);
+  border: 1.5px solid rgba(109,40,217,0.22);
+  border-radius: 1rem;
+}
+
+/* ── Teaser text ──────────────────────────────────────────────────────── */
+.teaser-text {
+  font-size: 13px;
+  font-style: italic;
+  color: #7A6040;
+  text-align: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(176,125,26,0.07);
+  border: 1px solid rgba(176,125,26,0.18);
+  line-height: 1.5;
+}

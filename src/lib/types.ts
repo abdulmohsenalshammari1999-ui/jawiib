@@ -64,7 +64,16 @@ export type CategoryId =
   | 'riddles_ar';
 
 // ── Question media type ───────────────────────────────────────────────────────
-export type QuestionType = 'text' | 'image' | 'audio' | 'video' | 'math' | 'riddle';
+export type QuestionType =
+  | 'text'
+  | 'image'
+  | 'audio'
+  | 'video'
+  | 'math'
+  | 'riddle'
+  | 'guess'      // "خمّن من/ماذا/أين" — identify a person / place / object
+  | 'scene'      // "ماذا حدث في هذا المشهد؟" — video/image scene question
+  | 'identify';  // "عرّف هذا الصوت/الأغنية/الصوت" — sound/voice identification
 
 export interface Question {
   id: string;
@@ -77,7 +86,11 @@ export interface Question {
   // Multimedia
   type?: QuestionType;        // defaults to 'text'
   mediaUrl?: string;          // image / audio / video URL
+  mediaAlt?: string;          // accessible description of the media
   mediaDuration?: number;     // seconds — relevant for audio/video clips
+  // Display helpers
+  teaser?: string;            // shown before question is answered (e.g. "هل تعرف هذا الوجه؟")
+  tags?: string[];            // optional taxonomy tags for filtering
   // Educational reveal content
   explanation?: string;       // why this answer is correct
   funFact?: string;           // interesting related fact

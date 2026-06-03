@@ -15,6 +15,7 @@ interface QuestionCardProps {
   hasDouble?: boolean;
   scrambledOptions?: string[] | null;
   teamColor?: string;
+  teamId?: 'alpha' | 'beta';
 }
 
 const OPTION_LABELS = ['أ', 'ب', 'ج', 'د'];
@@ -28,13 +29,15 @@ const POINT_COLORS: Record<number, string> = {
   600: '#6D28D9',
 };
 
-// Human-friendly question type labels
-const TYPE_LABELS: Record<string, { icon: string; label: string; bg: string }> = {
-  image:  { icon: '🖼️',  label: 'سؤال صوري',      bg: '#0369A120' },
-  audio:  { icon: '🎵',  label: 'سؤال صوتي',      bg: '#7C3AED20' },
-  video:  { icon: '🎬',  label: 'سؤال مرئي',      bg: '#B9182020' },
-  math:   { icon: '🔢',  label: 'تحدي رياضي',      bg: '#1D4ED820' },
-  riddle: { icon: '🧩',  label: 'لغز وأحجية',      bg: '#B07D1A20' },
+const TYPE_LABELS: Record<string, { icon: string; label: string; bg: string; textColor?: string }> = {
+  image:    { icon: '🖼️',  label: 'سؤال صوري',     bg: '#0369A120', textColor: '#0369A1' },
+  audio:    { icon: '🎵',  label: 'سؤال صوتي',     bg: '#7C3AED20', textColor: '#7C3AED' },
+  video:    { icon: '🎬',  label: 'سؤال مرئي',     bg: '#B9182020', textColor: '#B91820' },
+  math:     { icon: '🔢',  label: 'تحدي رياضي',    bg: '#1D4ED820', textColor: '#1D4ED8' },
+  riddle:   { icon: '🧩',  label: 'لغز وأحجية',    bg: '#B07D1A20', textColor: '#B07D1A' },
+  guess:    { icon: '🎭',  label: 'خمّن من/ماذا',  bg: '#15803D18', textColor: '#15803D' },
+  scene:    { icon: '🎞️', label: 'ماذا حدث هنا؟', bg: '#EA580C18', textColor: '#EA580C' },
+  identify: { icon: '👂',  label: 'عرّف الصوت',    bg: '#6D28D918', textColor: '#6D28D9' },
 };
 
 export function QuestionCard({
@@ -47,6 +50,7 @@ export function QuestionCard({
   hasDouble = false,
   scrambledOptions,
   teamColor,
+  teamId,
   suppressCorrectReveal = false,
 }: QuestionCardProps) {
   const [selected, setSelected]   = useState<number | null>(null);
@@ -80,7 +84,6 @@ export function QuestionCard({
       trueIdx = question.options.indexOf(opt);
     }
     if (suppressCorrectReveal) {
-      // In teams mode: skip the reveal animation so steal team never sees correct answer
       setTimeout(() => onAnswer(trueIdx), 300);
     } else {
       setTimeout(() => {
@@ -116,7 +119,7 @@ export function QuestionCard({
       {hasBomb && (
         <div className="mb-3 px-4 py-2.5 rounded-xl bg-orange-50 border border-orange-300 flex items-center gap-2 animate-sabotage">
           <span className="text-orange-500 text-xl">💣</span>
-          <span className="text-orange-600 text-sm font-bold">قنبلة! إجابة خاطئة = −150 إضافية</span>
+          <span className="text-orange-700 text-sm font-bold">قنبلة! إجابة خاطئة = −150 إضافية</span>
         </div>
       )}
       {hasDouble && (
@@ -135,29 +138,30 @@ export function QuestionCard({
       {/* ── Main card ───────────────────────────────────────────────────── */}
       <div
         className="game-card p-5 transition-all"
-        style={teamColor ? { borderColor: `${teamColor}25` } : undefined}
+        style={teamColor ? { borderColor: `${teamColor}30`, boxShadow: `0 4px 24px ${teamColor}14` } : undefined}
       >
         {/* Header row */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between mb-4 gap-2">
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
             <span
-              className="font-black text-xl tabular-nums leading-none"
+              className="score-display font-black text-2xl tabular-nums leading-none shrink-0"
               style={{ color: ptColor }}
             >
               {question.points}
             </span>
-            <span className="text-jawwib-text-dim text-xs font-medium">نقطة</span>
-            {/* Question type badge */}
+            <span className="text-jawwib-text-dim text-xs font-bold shrink-0">نقطة</span>
             {typeInfo && (
               <span
-                className="text-[10px] font-black px-2 py-0.5 rounded-full"
-                style={{ background: typeInfo.bg, color: ptColor }}
+                className="category-label px-2.5 py-0.5 rounded-full shrink-0"
+                style={{ background: typeInfo.bg, color: typeInfo.textColor ?? ptColor }}
               >
                 {typeInfo.icon} {typeInfo.label}
               </span>
             )}
           </div>
-          <TimerBar time={timer} maxTime={maxTimer} compact />
+          <div className={`shrink-0 ${teamId === 'alpha' ? 'timer-team-alpha' : teamId === 'beta' ? 'timer-team-beta' : ''}`}>
+            <TimerBar time={timer} maxTime={maxTimer} compact teamColor={teamColor} />
+          </div>
         </div>
 
         {/* Ready indicator */}
@@ -167,41 +171,46 @@ export function QuestionCard({
           </div>
         )}
 
+        {/* ── Teaser (shown only before answer) ────────────────────────── */}
+        {question.teaser && selected === null && (
+          <div className="teaser-text mb-3">{question.teaser}</div>
+        )}
+
         {/* ── Media section ─────────────────────────────────────────────── */}
-        {question.mediaUrl && qType === 'image' && (
+        {question.mediaUrl && (qType === 'image' || qType === 'guess') && (
           <div className="mb-4">
-            <ImageMedia src={question.mediaUrl} alt={question.text} />
+            <ImageMedia src={question.mediaUrl} alt={question.mediaAlt ?? question.text} />
           </div>
         )}
-        {question.mediaUrl && qType === 'audio' && (
+        {question.mediaUrl && qType === 'scene' && !question.mediaUrl.match(/\.(mp4|webm|ogg)$/i) && (
+          <div className="mb-4">
+            <ImageMedia src={question.mediaUrl} alt={question.mediaAlt ?? question.text} />
+          </div>
+        )}
+        {question.mediaUrl && (qType === 'audio' || qType === 'identify') && (
           <div className="mb-4">
             <AudioMedia
               src={question.mediaUrl}
               duration={question.mediaDuration}
-              label="🎵 استمع جيداً ثم أجب"
+              label={qType === 'identify' ? '👂 استمع واعرف من هو / ما هو' : '🎵 استمع جيداً ثم أجب'}
             />
           </div>
         )}
-        {question.mediaUrl && qType === 'video' && (
+        {question.mediaUrl && (qType === 'video' || (qType === 'scene' && question.mediaUrl.match(/\.(mp4|webm|ogg)$/i))) && (
           <div className="mb-4">
-            <VideoMedia src={question.mediaUrl} />
+            <VideoMedia src={question.mediaUrl} caption={question.mediaAlt} />
           </div>
         )}
 
         {/* ── Math mode ─────────────────────────────────────────────────── */}
         {qType === 'math' && (
           <div
-            className="mb-4 rounded-2xl p-4 text-center border"
-            style={{
-              background: 'linear-gradient(135deg,#EFF6FF,#DBEAFE)',
-              borderColor: '#1D4ED840',
-            }}
+            className="mb-5 rounded-2xl p-5 text-center border"
+            style={{ background: 'linear-gradient(135deg,#EFF6FF,#DBEAFE)', borderColor: '#1D4ED825' }}
           >
-            <p className="text-[10px] font-black text-blue-500 mb-1 tracking-widest uppercase">
-              تحدي رياضي
-            </p>
+            <p className="category-label text-blue-500 mb-2 tracking-widest">🔢 تحدي رياضي</p>
             <p
-              className="font-black text-2xl text-blue-700 leading-relaxed"
+              className="font-display text-2xl sm:text-3xl text-blue-700 leading-relaxed"
               dir="ltr"
               style={{ fontVariantNumeric: 'tabular-nums' }}
             >
@@ -213,44 +222,64 @@ export function QuestionCard({
         {/* ── Riddle mode ───────────────────────────────────────────────── */}
         {qType === 'riddle' && (
           <div
-            className="mb-4 rounded-2xl p-4 text-center border"
-            style={{
-              background: 'linear-gradient(135deg,#FEF3C7,#FDE68A20)',
-              borderColor: '#B07D1A40',
-            }}
+            className="mb-5 rounded-2xl p-4 text-center border"
+            style={{ background: 'linear-gradient(135deg,#FEF3C7,#FDE68A18)', borderColor: '#B07D1A30' }}
           >
-            <p className="text-[10px] font-black text-jawwib-gold mb-2 tracking-widest">
-              🧩 لغز واحجية
-            </p>
-            <p className="font-bold text-lg text-jawwib-text leading-relaxed">
-              {question.text}
-            </p>
+            <p className="category-label text-jawwib-gold mb-2 tracking-widest">🧩 لغز واحجية</p>
+            <p className="question-text font-bold text-jawwib-text leading-relaxed">{question.text}</p>
+          </div>
+        )}
+
+        {/* ── Guess mode — identify person / place / object ─────────────── */}
+        {qType === 'guess' && (
+          <div className="question-type-guess p-4 mb-4 text-center">
+            <p className="category-label text-green-700 mb-2 tracking-widest">🎭 خمّن من / ماذا / أين</p>
+            <p className="question-text text-jawwib-text leading-relaxed">{question.text}</p>
+          </div>
+        )}
+
+        {/* ── Scene mode — "what happened here?" ───────────────────────── */}
+        {qType === 'scene' && (
+          <div className="question-type-scene p-4 mb-4 text-center">
+            <p className="category-label text-orange-600 mb-2 tracking-widest">🎞️ ماذا حدث في هذا المشهد؟</p>
+            <p className="question-text text-jawwib-text leading-relaxed">{question.text}</p>
+          </div>
+        )}
+
+        {/* ── Identify mode — sound / voice / song recognition ──────────── */}
+        {qType === 'identify' && (
+          <div className="question-type-identify p-4 mb-4 text-center">
+            <p className="category-label text-purple-700 mb-2 tracking-widest">👂 عرّف هذا الصوت / الأغنية</p>
+            <p className="question-text text-jawwib-text leading-relaxed">{question.text}</p>
           </div>
         )}
 
         {/* ── Standard question text ────────────────────────────────────── */}
-        {qType !== 'math' && qType !== 'riddle' && (
-          <h2 className="text-lg sm:text-xl font-bold text-center mb-5 leading-relaxed px-1">
+        {qType !== 'math' && qType !== 'riddle' && qType !== 'guess' && qType !== 'scene' && qType !== 'identify' && (
+          <h2 className="question-text text-center mb-5 px-1">
             {question.text}
           </h2>
         )}
 
         {/* ── Answer options ─────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {displayOptions.map((option, idx) => (
             <button
               key={idx}
               onClick={() => handleAnswer(idx)}
               disabled={selected !== null || isActuallyDisabled}
               aria-label={`الخيار ${OPTION_LABELS[idx]}: ${option}`}
-              className={`p-4 rounded-xl border-2 text-right font-bold text-base transition-all leading-snug ${optionStyle(idx)}`}
+              className={`p-4 rounded-xl border-2 text-right transition-all leading-snug flex items-center ${optionStyle(idx)}`}
             >
-              <span className="text-jawwib-text-dim ml-2 text-sm font-normal">
+              <span
+                className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-black ml-2.5 shrink-0"
+                style={{ background: 'rgba(176,125,26,0.12)', color: '#B07D1A' }}
+              >
                 {OPTION_LABELS[idx]}
               </span>
-              {option}
+              <span className="font-bold text-sm sm:text-base flex-1">{option}</span>
               {revealed && idx === question.correctIndex && (
-                <span className="mr-2 text-jawwib-green text-base">✓</span>
+                <span className="mr-2 text-jawwib-green text-base shrink-0">✓</span>
               )}
             </button>
           ))}

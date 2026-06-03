@@ -8,6 +8,7 @@
  */
 import type { Question, CategoryId, Evidence } from './types';
 import { ALL_EXPANDED_QUESTIONS } from './questionsExpanded';
+import { MEDIA_SAMPLE_QUESTIONS } from './questionsMediaSamples';
 
 // Evidence cards shown after answer reveal for selected questions.
 // Key = question id (category-tier-index).
@@ -1028,6 +1029,7 @@ for (const q of questions) {
 
 // Merge expanded questions (31 new categories, 558 questions)
 questions.push(...ALL_EXPANDED_QUESTIONS);
+questions.push(...MEDIA_SAMPLE_QUESTIONS);
 
 export function getQuestionsByCategory(category: CategoryId): Question[] {
   return questions.filter((q) => q.category === category);

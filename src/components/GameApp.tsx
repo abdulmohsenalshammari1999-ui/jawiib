@@ -35,6 +35,15 @@ import { TeamWeaponInventory } from './game/TeamWeaponInventory';
 
 type SubView = 'setup' | 'lobby' | 'teams' | 'draft';
 
+// ── Team colors ───────────────────────────────────────────────────────────────
+const ALPHA_COLOR = '#1D4ED8';
+const BETA_COLOR  = '#B91C1C';
+function teamColor(id: TeamId | null | undefined): string | null {
+  if (id === 'alpha') return ALPHA_COLOR;
+  if (id === 'beta')  return BETA_COLOR;
+  return null;
+}
+
 export function GameApp() {
   // ── Store slices ──────────────────────────────────────────────────────────────
   const game             = useGameStore((s) => s.game);
@@ -93,8 +102,11 @@ export function GameApp() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [picksPerTeam, setPicksPerTeam] = useState(3);
   const [showEntry, setShowEntry]       = useState(true);
-  const [scorePopup, setScorePopup]   = useState<{ points: number; color?: string } | null>(null);
-  const [crowdVotes, setCrowdVotes]   = useState<{ correct: number; wrong: number }>({ correct: 0, wrong: 0 });
+  const [scorePopup, setScorePopup]     = useState<{ points: number; color?: string } | null>(null);
+  const [crowdVotes, setCrowdVotes]     = useState<{ correct: number; wrong: number }>({ correct: 0, wrong: 0 });
+  const [volume, setVolume]             = useState(0.85);
+  const [showVolume, setShowVolume]     = useState(false);
+
   const prevLastAnswer    = useRef(game?.lastAnswer);
   const prevPhase         = useRef(game?.phase);
   const prevTimer         = useRef(game?.timer ?? 0);
@@ -105,6 +117,11 @@ export function GameApp() {
     initCsvContent().catch(() => {});
     applySeasonalBodyClass();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep audio volume in sync
+  useEffect(() => { audio.setVolume(volume); }, [volume]);
+  useEffect(() => { audio.setSound(soundEnabled); }, [soundEnabled]);
+  useEffect(() => { audio.setMusic(musicEnabled); }, [musicEnabled]);
 
   // Reset crowd votes on each new question
   useEffect(() => {
@@ -162,20 +179,40 @@ export function GameApp() {
   useEffect(() => {
     if (game?.phase === 'finished' && prevPhase.current !== 'finished') {
       setTimeout(() => audio.playWinner(), 400);
-      // Persist drawn question IDs to localStorage so they're deprioritised next session
+      audio.stopTeamBGM();
+      audio.stopBGM();
       globalPool.persistAndReset();
     }
     prevPhase.current = game?.phase;
   }, [game?.phase]);
 
-  // Turn-change sound (only fires on actual team switch, not initial mount)
+  // ── Team BGM: switch loops on active team change ───────────────────────────
   useEffect(() => {
     const prev = prevActiveTeamId.current;
-    if (prev && game?.activeTeamId && prev !== game.activeTeamId && game.phase === 'board') {
-      audio.playTurnChange();
+    const next = game?.activeTeamId;
+
+    if (prev !== next) {
+      if (prev && next && game?.phase === 'board' && mode === 'teams') {
+        audio.playTurnChange();
+      }
+      if (next && mode === 'teams' && game?.phase === 'board') {
+        if (musicEnabled) audio.playTeamBGM(next);
+      }
     }
-    prevActiveTeamId.current = game?.activeTeamId;
-  }, [game?.activeTeamId]);
+    prevActiveTeamId.current = next;
+  }, [game?.activeTeamId, game?.phase, mode, musicEnabled]);
+
+  // Also start team BGM when entering question/steal phase for the active team
+  useEffect(() => {
+    if (!game || mode !== 'teams') return;
+    const tid = game.activeTeamId ?? (game.phase === 'steal' ? game.stealOpponentTeamId : null);
+    if ((game.phase === 'question' || game.phase === 'steal') && tid && musicEnabled) {
+      audio.playTeamBGM(tid);
+    }
+    if (game.phase === 'board' && !game.activeTeamId) {
+      audio.stopTeamBGM();
+    }
+  }, [game?.phase, musicEnabled, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Callbacks ─────────────────────────────────────────────────────────────────
   const handleCreateRoom = useCallback(
@@ -218,9 +255,7 @@ export function GameApp() {
     setSubView('lobby');
   }, [draft.selectedCategories, updateCategories]);
 
-  const handleStartGame = useCallback(() => {
-    setShowIntro(true);
-  }, []);
+  const handleStartGame = useCallback(() => { setShowIntro(true); }, []);
 
   const handleIntroDone = useCallback(() => {
     setShowIntro(false);
@@ -252,8 +287,8 @@ export function GameApp() {
   })();
 
   const activeTeamColor = mode === 'teams' && game?.activeTeamId
-    ? game.activeTeamId === 'alpha' ? '#1D4ED8' : '#B91C1C'
-    : localTeamId === 'alpha' ? '#1D4ED8' : localTeamId === 'beta' ? '#B91C1C' : null;
+    ? teamColor(game.activeTeamId)
+    : localTeamId === 'alpha' ? ALPHA_COLOR : localTeamId === 'beta' ? BETA_COLOR : null;
 
   const winnerTeamData = (() => {
     if (!game || mode !== 'teams' || !teamData) return null;
@@ -267,18 +302,71 @@ export function GameApp() {
     };
   })();
 
-  // ── Mystery Box overlay (mounted over result / board phases) ─────────────────
+  // ── Mystery Box overlay ───────────────────────────────────────────────────────
   const MysteryBox = game?.pendingWeapon && mode === 'teams' ? (
     <MysteryBoxOverlay
       teamId={game.pendingWeapon.teamId}
       teamName={teams[game.pendingWeapon.teamId]?.name ?? ''}
-      teamColor={game.pendingWeapon.teamId === 'alpha' ? '#1D4ED8' : '#B91C1C'}
+      teamColor={game.pendingWeapon.teamId === 'alpha' ? ALPHA_COLOR : BETA_COLOR}
       teamEmoji={(teams[game.pendingWeapon.teamId] as any)?.emoji}
       weapon={game.pendingWeapon.weapon}
       onCollect={dismissPendingWeapon}
       onActivate={(w) => activateWeaponFromBox(game.pendingWeapon!.teamId, w)}
     />
   ) : null;
+
+  // ── Audio controls bar ────────────────────────────────────────────────────────
+  const AudioControls = () => (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={toggleSound}
+        className={`text-sm px-2 py-1 rounded-lg border transition-all tap-target ${
+          soundEnabled
+            ? 'border-jawwib-gold/40 text-jawwib-gold bg-jawwib-gold/8'
+            : 'border-jawwib-border text-jawwib-text-dim opacity-50'
+        }`}
+        title={soundEnabled ? 'كتم الصوت' : 'تشغيل الصوت'}
+      >
+        {soundEnabled ? '🔊' : '🔇'}
+      </button>
+      <button
+        onClick={toggleMusic}
+        className={`text-sm px-2 py-1 rounded-lg border transition-all tap-target ${
+          musicEnabled
+            ? 'border-jawwib-gold/40 text-jawwib-gold bg-jawwib-gold/8'
+            : 'border-jawwib-border text-jawwib-text-dim opacity-50'
+        }`}
+        title={musicEnabled ? 'إيقاف الموسيقى' : 'تشغيل الموسيقى'}
+      >
+        {musicEnabled ? '🎵' : '🔕'}
+      </button>
+      {/* Volume control */}
+      <div className="relative">
+        <button
+          onClick={() => setShowVolume((v) => !v)}
+          className="text-sm px-2 py-1 rounded-lg border border-jawwib-border text-jawwib-text-dim hover:text-jawwib-gold hover:border-jawwib-gold/40 transition-all tap-target"
+          title="مستوى الصوت"
+        >
+          🎚️
+        </button>
+        {showVolume && (
+          <div className="absolute left-0 top-full mt-1 p-2 bg-white rounded-xl border border-jawwib-border shadow-lg z-50 flex items-center gap-2 min-w-[120px]">
+            <span className="text-xs text-jawwib-text-dim shrink-0">🔉</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              className="volume-slider flex-1"
+            />
+            <span className="text-xs text-jawwib-text-dim shrink-0">{Math.round(volume * 100)}%</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   // ── Entry screen ──────────────────────────────────────────────────────────────
   if (showEntry) {
@@ -306,34 +394,6 @@ export function GameApp() {
       />
     );
   }
-
-  // ── Sound/Music toggle bar ────────────────────────────────────────────────────
-  const AudioControls = () => (
-    <div className="flex items-center gap-1">
-      <button
-        onClick={toggleSound}
-        className={`text-sm px-2 py-1 rounded-lg border transition-all ${
-          soundEnabled
-            ? 'border-jawwib-gold/40 text-jawwib-gold bg-jawwib-gold/8'
-            : 'border-jawwib-border text-jawwib-text-dim opacity-50'
-        }`}
-        title={soundEnabled ? 'كتم الصوت' : 'تشغيل الصوت'}
-      >
-        {soundEnabled ? '🔊' : '🔇'}
-      </button>
-      <button
-        onClick={toggleMusic}
-        className={`text-sm px-2 py-1 rounded-lg border transition-all ${
-          musicEnabled
-            ? 'border-jawwib-gold/40 text-jawwib-gold bg-jawwib-gold/8'
-            : 'border-jawwib-border text-jawwib-text-dim opacity-50'
-        }`}
-        title={musicEnabled ? 'إيقاف الموسيقى' : 'تشغيل الموسيقى'}
-      >
-        {musicEnabled ? '🎵' : '🔕'}
-      </button>
-    </div>
-  );
 
   // ── Guard: no game ────────────────────────────────────────────────────────────
   if (!game) {
@@ -396,7 +456,6 @@ export function GameApp() {
       : `https://jawwib.netlify.app/join/${game.room.code}`;
     const isHost = game.room.hostId === localPlayerId;
 
-    // Team naming step (teams mode only)
     if (subView === 'setup' && mode === 'teams') {
       return (
         <TeamSetupScreen
@@ -534,7 +593,7 @@ export function GameApp() {
     return (
       <div className="min-h-screen p-4">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-2xl font-black text-gold-gradient">جاوب</h1>
+          <h1 className="text-2xl font-black text-gold-gradient font-display">جاوب</h1>
           <AudioControls />
         </div>
         <HostBubble message={game.hostMessage} />
@@ -560,7 +619,6 @@ export function GameApp() {
     const isSteal   = game.phase === 'steal';
     const stealTeam = isSteal && game.stealOpponentTeamId;
 
-    // In steal phase, the "active player" is whichever local player belongs to the steal team
     const ap = isSteal
       ? (game.stealOpponentTeamId && game.teamMembership
           ? game.room.players.find((p) => game.teamMembership![game.stealOpponentTeamId!]?.includes(p.id))
@@ -572,124 +630,135 @@ export function GameApp() {
       : game.activeTeamId ?? (ap && teamData
           ? teamData.alpha.playerIds.includes(ap.id) ? 'alpha' : 'beta'
           : null);
-    const apTeamColor = apTeamId === 'alpha' ? '#1D4ED8' : apTeamId === 'beta' ? '#B91C1C' : null;
+    const apTeamColor = teamColor(apTeamId);
 
     const totalCells = game.board.reduce((a, r) => a + r.length, 0);
     const isFinalQ   = !isSteal && (game.room.isTrial
       ? game.room.answeredQuestions.length >= 8
       : answeredCount >= totalCells - 1);
 
-    // In steal phase, any player on the device can answer — the store attributes
-    // points to the correct steal-team player automatically (single-device model).
     const canAnswer = isSteal ? (localPlayerId != null) : qflow.canAnswer;
 
     const stealTeamName = stealTeam === 'alpha' ? (teamData?.alpha.name ?? 'الفريق الأزرق') : (teamData?.beta.name ?? 'الفريق الأحمر');
     const stealEmoji    = stealTeam === 'alpha' ? (teamData?.alpha.emoji ?? '🔵') : (teamData?.beta.emoji ?? '🔴');
 
     return (
-      <div className="min-h-screen p-4 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <HostBubble message={game.hostMessage} compact />
-          <AudioControls />
-        </div>
-
-        {/* Phase indicator */}
-        {isSteal ? (
-          <div
-            className="animate-bounce-in rounded-2xl px-4 py-3 text-center border-2"
-            style={{
-              background: 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.08))',
-              borderColor: '#7C3AED',
-              boxShadow: '0 0 24px rgba(124,58,237,0.25)',
-            }}
-          >
-            <p className="text-2xl mb-0.5">🏴‍☠️</p>
-            <p className="font-black text-base" style={{ color: apTeamColor ?? '#7C3AED' }}>
-              {stealEmoji} {stealTeamName}
-            </p>
-            <p className="text-xs font-bold text-jawwib-text-dim mt-0.5">
-              فرصة السرقة! أجيبوا صح تكسبون النقاط
-            </p>
+      <div
+        className={`game-wrapper phase-question`}
+        data-active-team={apTeamId ?? undefined}
+      >
+        <div className="min-h-screen p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <HostBubble message={game.hostMessage} compact />
+            <AudioControls />
           </div>
-        ) : isFinalQ ? (
-          <div className="text-center animate-final-flare">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black text-white"
-              style={{ background: 'linear-gradient(135deg,#B07D1A,#D4A94A)' }}>
-              ⚡ السؤال الأخير!
-            </span>
-          </div>
-        ) : null}
 
-        {ap && (
-          <div
-            className="flex items-center justify-center gap-2 py-2 rounded-xl border text-sm font-bold"
-            style={{
-              borderColor: apTeamColor ? `${apTeamColor}40` : '#C8880A30',
-              background:  apTeamColor ? `${apTeamColor}0A` : 'transparent',
-              color:       apTeamColor ?? '#C8880A',
-            }}
-          >
-            <span>{ap.avatar}</span>
-            <span>{isSteal ? `سرقة: ${ap.name}` : `دور ${ap.name}`}</span>
-            {!canAnswer && (
-              <span className="text-jawwib-text-dim text-xs font-normal">(شاهد)</span>
-            )}
-          </div>
-        )}
-
-        <div className="flex-1 flex items-center justify-center">
-          <QuestionCard
-            key={`${game.currentQuestion.id}-${game.phase}`}
-            question={game.currentQuestion}
-            timer={game.timer}
-            maxTimer={30}
-            onAnswer={(idx) => {
-              if (!canAnswer) return;
-              if (localPlayerId) answerQuestion(localPlayerId, idx);
-            }}
-            disabled={!canAnswer}
-            hasBomb={hasBomb}
-            hasDouble={hasDouble}
-            scrambledOptions={isSteal ? null : scrambledOptions}
-            teamColor={apTeamColor ?? undefined}
-            suppressCorrectReveal={!isSteal && mode === 'teams'}
-          />
-        </div>
-
-        {/* Crowd prediction — only on main question turn */}
-        {!isSteal && (
-          <div className="game-card p-3 animate-crowd-hype">
-            <p className="text-center text-xs font-bold text-jawwib-text-dim mb-2">
-              🙋 الجمهور يتوقع — ماذا سيجيب؟
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setCrowdVotes((v) => ({ ...v, correct: v.correct + 1 }))}
-                className="py-3 rounded-xl border-2 border-jawwib-green/40 bg-jawwib-green/8 text-jawwib-green font-black text-sm tap-target"
-              >
-                صح ✅ {crowdVotes.correct > 0 && <span className="text-xs opacity-70">({crowdVotes.correct})</span>}
-              </button>
-              <button
-                onClick={() => setCrowdVotes((v) => ({ ...v, wrong: v.wrong + 1 }))}
-                className="py-3 rounded-xl border-2 border-jawwib-red/40 bg-jawwib-red/8 text-jawwib-red font-black text-sm tap-target"
-              >
-                غلط ❌ {crowdVotes.wrong > 0 && <span className="text-xs opacity-70">({crowdVotes.wrong})</span>}
-              </button>
+          {/* Phase indicator */}
+          {isSteal ? (
+            <div
+              className="animate-turn-banner rounded-2xl px-4 py-3 text-center border-2"
+              style={{
+                background: apTeamColor
+                  ? `linear-gradient(135deg, ${apTeamColor}14, ${apTeamColor}08)`
+                  : 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.08))',
+                borderColor: apTeamColor ?? '#7C3AED',
+                boxShadow: `0 0 28px ${apTeamColor ?? '#7C3AED'}30`,
+              }}
+            >
+              <p className="text-2xl mb-0.5">🏴‍☠️</p>
+              <p className="font-black text-lg" style={{ color: apTeamColor ?? '#7C3AED' }}>
+                {stealEmoji} {stealTeamName}
+              </p>
+              <p className="text-xs font-bold text-jawwib-text-dim mt-0.5">
+                فرصة السرقة! أجيبوا صح تكسبون النقاط
+              </p>
             </div>
+          ) : isFinalQ ? (
+            <div className="text-center animate-final-flare">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black text-white"
+                style={{ background: 'linear-gradient(135deg,#B07D1A,#D4A94A)' }}>
+                ⚡ السؤال الأخير!
+              </span>
+            </div>
+          ) : null}
+
+          {/* Active player / team banner */}
+          {ap && (
+            <div
+              className="animate-turn-banner flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-bold"
+              style={{
+                borderColor: apTeamColor ? `${apTeamColor}40` : '#C8880A30',
+                background:  apTeamColor ? `${apTeamColor}0C` : 'transparent',
+                color:       apTeamColor ?? '#C8880A',
+              }}
+            >
+              <span className="text-lg">{ap.avatar}</span>
+              <span>{isSteal ? `سرقة: ${ap.name}` : `دور ${ap.name}`}</span>
+              {apTeamId && teamData && (
+                <span className="text-xs opacity-70">
+                  {apTeamId === 'alpha' ? `(${teamData.alpha.name})` : `(${teamData.beta.name})`}
+                </span>
+              )}
+              {!canAnswer && (
+                <span className="text-jawwib-text-dim text-xs font-normal">(شاهد)</span>
+              )}
+            </div>
+          )}
+
+          <div className="flex-1 flex items-center justify-center">
+            <QuestionCard
+              key={`${game.currentQuestion.id}-${game.phase}`}
+              question={game.currentQuestion}
+              timer={game.timer}
+              maxTimer={30}
+              onAnswer={(idx) => {
+                if (!canAnswer) return;
+                if (localPlayerId) answerQuestion(localPlayerId, idx);
+              }}
+              disabled={!canAnswer}
+              hasBomb={hasBomb}
+              hasDouble={hasDouble}
+              scrambledOptions={isSteal ? null : scrambledOptions}
+              teamColor={apTeamColor ?? undefined}
+              teamId={apTeamId ?? undefined}
+              suppressCorrectReveal={!isSteal && mode === 'teams'}
+            />
           </div>
-        )}
 
-        <EffectToast lastResult={lastResult} />
+          {/* Crowd prediction */}
+          {!isSteal && (
+            <div className="game-card p-3 animate-crowd-hype">
+              <p className="text-center text-xs font-bold text-jawwib-text-dim mb-2">
+                🙋 الجمهور يتوقع — ماذا سيجيب؟
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setCrowdVotes((v) => ({ ...v, correct: v.correct + 1 }))}
+                  className="py-3 rounded-xl border-2 border-jawwib-green/40 bg-jawwib-green/8 text-jawwib-green font-black text-sm tap-target"
+                >
+                  صح ✅ {crowdVotes.correct > 0 && <span className="text-xs opacity-70">({crowdVotes.correct})</span>}
+                </button>
+                <button
+                  onClick={() => setCrowdVotes((v) => ({ ...v, wrong: v.wrong + 1 }))}
+                  className="py-3 rounded-xl border-2 border-jawwib-red/40 bg-jawwib-red/8 text-jawwib-red font-black text-sm tap-target"
+                >
+                  غلط ❌ {crowdVotes.wrong > 0 && <span className="text-xs opacity-70">({crowdVotes.wrong})</span>}
+                </button>
+              </div>
+            </div>
+          )}
 
-        {/* Host / referee skip button — during steal phase only */}
-        {isSteal && isHostPlayer && (
-          <button
-            onClick={() => skipSteal()}
-            className="w-full py-2.5 rounded-xl border border-jawwib-border text-jawwib-text-dim text-xs font-bold hover:border-jawwib-red/50 hover:text-jawwib-red transition-all tap-target"
-          >
-            ⏭️ تجاوز السرقة — انتقل للسؤال الجاي
-          </button>
-        )}
+          <EffectToast lastResult={lastResult} />
+
+          {isSteal && isHostPlayer && (
+            <button
+              onClick={() => skipSteal()}
+              className="w-full py-2.5 rounded-xl border border-jawwib-border text-jawwib-text-dim text-xs font-bold hover:border-jawwib-red/50 hover:text-jawwib-red transition-all tap-target"
+            >
+              ⏭️ تجاوز السرقة — انتقل للسؤال الجاي
+            </button>
+          )}
+        </div>
       </div>
     );
   }
@@ -697,12 +766,11 @@ export function GameApp() {
   // ── Phase: result ─────────────────────────────────────────────────────────────
   if (game.phase === 'result' && game.lastAnswer && game.currentQuestion) {
     const respPlayer = game.room.players.find((p) => p.id === game.lastAnswer?.playerId);
-    // Use stored teamId if available (reliable in single-device); fall back to playerIds lookup
     const respTeamId: TeamId | null = game.lastAnswer.teamId
       ?? (respPlayer && teamData
           ? teamData.alpha.playerIds.includes(respPlayer.id) ? 'alpha' : 'beta'
           : null);
-    const tColor = respTeamId === 'alpha' ? '#1D4ED8' : respTeamId === 'beta' ? '#B91C1C' : null;
+    const tColor = teamColor(respTeamId);
     const tEmoji = respTeamId === 'alpha' ? (teamData?.alpha.emoji ?? '🔵') : respTeamId === 'beta' ? (teamData?.beta.emoji ?? '🔴') : undefined;
     const totalCells = game.board.reduce((a, r) => a + r.length, 0);
     const isFinalQ   = game.room.isTrial
@@ -710,7 +778,7 @@ export function GameApp() {
       : answeredCount >= totalCells;
     const respStreak = respPlayer?.streak ?? 0;
     return (
-      <>
+      <div className="game-wrapper" data-active-team={respTeamId ?? undefined}>
         {MysteryBox}
         {scorePopup && <ScorePopup points={scorePopup.points} color={scorePopup.color} />}
         <div className="min-h-screen p-4 bg-jawwib-bg" />
@@ -727,7 +795,7 @@ export function GameApp() {
           crowdVotes={crowdVotes}
           playerStreak={respStreak}
         />
-      </>
+      </div>
     );
   }
 
@@ -736,112 +804,114 @@ export function GameApp() {
   const ap = game.activePlayer ? game.room.players.find((p) => p.id === game.activePlayer) : null;
   const boardActiveTeamId = mode === 'teams' ? game.activeTeamId : null;
   const apTeamColor = boardActiveTeamId
-    ? boardActiveTeamId === 'alpha' ? '#1D4ED8' : '#B91C1C'
+    ? teamColor(boardActiveTeamId)
     : ap && teamData
-    ? teamData.alpha.playerIds.includes(ap.id) ? '#1D4ED8' : '#B91C1C'
+    ? teamData.alpha.playerIds.includes(ap.id) ? ALPHA_COLOR : BETA_COLOR
     : null;
-  // In single-device teams mode the host manages both teams — always their turn
   const isMyTurn = mode === 'teams' ? true : ap?.id === localPlayerId;
 
   return (
-    <div className="min-h-screen p-4">
-      {MysteryBox}
-      {scorePopup && <ScorePopup points={scorePopup.points} color={scorePopup.color} />}
+    <div className="game-wrapper" data-active-team={boardActiveTeamId ?? undefined}>
+      <div className="min-h-screen p-4">
+        {MysteryBox}
+        {scorePopup && <ScorePopup points={scorePopup.points} color={scorePopup.color} />}
 
-      <div className="flex items-center justify-between mb-3">
-        <h1 className="text-xl font-black text-gold-gradient">جاوب</h1>
-        <div className="flex items-center gap-3">
-          <AudioControls />
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-jawwib-text-dim">كود:</span>
-            <span className="text-sm font-bold text-jawwib-gold tracking-wider">{game.room.code}</span>
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="font-display text-xl font-black text-gold-gradient">جاوب</h1>
+          <div className="flex items-center gap-3">
+            <AudioControls />
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-jawwib-text-dim">كود:</span>
+              <span className="text-sm font-bold text-jawwib-gold tracking-wider">{game.room.code}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <HostBubble message={game.hostMessage} compact />
+        <HostBubble message={game.hostMessage} compact />
 
-      {(boardActiveTeamId || ap) && (
-        <div
-          className="mb-3 px-4 py-2.5 rounded-xl text-center text-sm border-2 transition-all"
-          style={{
-            borderColor: apTeamColor ? `${apTeamColor}35` : '#C8880A25',
-            background:  apTeamColor ? `${apTeamColor}08` : '#C8880A05',
-          }}
-        >
-          <span className="text-jawwib-text-dim">دور: </span>
-          {boardActiveTeamId && teamData ? (
-            <span className="font-bold" style={{ color: apTeamColor ?? '#C8880A' }}>
-              {(teamData[boardActiveTeamId] as any).emoji ?? (boardActiveTeamId === 'alpha' ? '🔵' : '🔴')}{' '}
-              {teamData[boardActiveTeamId].name}
+        {/* Active team turn banner */}
+        {(boardActiveTeamId || ap) && (
+          <div
+            className="mb-3 px-4 py-3 rounded-xl text-center border-2 transition-all duration-500 animate-turn-banner"
+            style={{
+              borderColor: apTeamColor ? `${apTeamColor}40` : '#C8880A25',
+              background:  apTeamColor ? `${apTeamColor}0A` : '#C8880A05',
+            }}
+          >
+            <span className="text-jawwib-text-dim text-sm">دور: </span>
+            {boardActiveTeamId && teamData ? (
+              <span className="font-black text-base" style={{ color: apTeamColor ?? '#C8880A' }}>
+                {(teamData[boardActiveTeamId] as any).emoji ?? (boardActiveTeamId === 'alpha' ? '🌊' : '🐪')}{' '}
+                {teamData[boardActiveTeamId].name}
+              </span>
+            ) : ap ? (
+              <span className="font-black text-base" style={{ color: apTeamColor ?? '#C8880A' }}>
+                {ap.avatar} {ap.name}
+              </span>
+            ) : null}
+            <span className="mr-2 text-xs opacity-60" style={{ color: apTeamColor ?? '#C8880A' }}>
+              (اختر سؤالًا)
             </span>
-          ) : ap ? (
-            <span className="font-bold" style={{ color: apTeamColor ?? '#C8880A' }}>
-              {ap.avatar} {ap.name}
-            </span>
-          ) : null}
-          <span className="mr-2 text-xs" style={{ color: apTeamColor ?? '#C8880A' }}>
-            (اختر سؤالًا)
-          </span>
+          </div>
+        )}
+
+        <div className="mb-4 overflow-x-auto">
+          <GameBoard
+            board={game.board}
+            categories={game.room.categories}
+            onSelectQuestion={handleSelectQuestion}
+            isTrial={game.room.isTrial}
+            answeredCount={answeredCount}
+            activeTeamColor={activeTeamColor}
+            isMyTurn={isMyTurn}
+            forcedCategoryId={
+              boardActiveTeamId && game.forcedCategory?.targetTeamId === boardActiveTeamId
+                ? game.forcedCategory.categoryId
+                : undefined
+            }
+          />
         </div>
-      )}
 
-      <div className="mb-4 overflow-x-auto">
-        <GameBoard
-          board={game.board}
-          categories={game.room.categories}
-          onSelectQuestion={handleSelectQuestion}
-          isTrial={game.room.isTrial}
-          answeredCount={answeredCount}
-          activeTeamColor={activeTeamColor}
-          isMyTurn={isMyTurn}
-          forcedCategoryId={
-            boardActiveTeamId && game.forcedCategory?.targetTeamId === boardActiveTeamId
-              ? game.forcedCategory.categoryId
-              : undefined
-          }
-        />
-      </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <TeamScoreboard
+            players={game.room.players}
+            teams={teamData}
+            activePlayerId={game.activePlayer}
+            activeTeamId={game.activeTeamId}
+            teamScores={game.teamScores}
+            mode={mode}
+            lastStandUsed={game.lastStandUsed}
+            onActivateLastStand={activateLastStand}
+          />
+          {!game.room.isTrial && localPlayerId && opponents.length > 0 && (
+            <SabotageControls
+              localPlayerId={localPlayerId}
+              opponents={opponents}
+              phase={game.phase}
+            />
+          )}
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <TeamScoreboard
-          players={game.room.players}
-          teams={teamData}
-          activePlayerId={game.activePlayer}
-          activeTeamId={game.activeTeamId}
-          teamScores={game.teamScores}
-          mode={mode}
-          lastStandUsed={game.lastStandUsed}
-          onActivateLastStand={activateLastStand}
-        />
-        {!game.room.isTrial && localPlayerId && opponents.length > 0 && (
-          <SabotageControls
-            localPlayerId={localPlayerId}
-            opponents={opponents}
+        {mode === 'teams' && game.activeTeamId && (
+          <TeamWeaponInventory
+            localTeamId={game.activeTeamId}
+            teamWeapons={game.teamWeapons}
+            activeTeamId={game.activeTeamId}
             phase={game.phase}
+            forcedCategory={game.forcedCategory}
+            activeImmunity={game.activeImmunity}
+            activeBomb={game.activeBomb}
+            boardCategories={game.room.categories}
           />
         )}
+
+        {game.room.isTrial && answeredCount >= 6 && (
+          <div className="mt-4 p-4 rounded-xl bg-jawwib-gold/10 border border-jawwib-gold/30 text-center">
+            <p className="text-jawwib-gold font-bold mb-2">🔓 عجبتك؟ افتح النسخة الكاملة</p>
+            <button onClick={() => setShowPayment(true)} className="btn-gold text-sm px-6 py-2">ترقية 4 د.ك</button>
+          </div>
+        )}
       </div>
-
-      {mode === 'teams' && game.activeTeamId && (
-        <TeamWeaponInventory
-          localTeamId={game.activeTeamId}
-          teamWeapons={game.teamWeapons}
-          activeTeamId={game.activeTeamId}
-          phase={game.phase}
-          forcedCategory={game.forcedCategory}
-          activeImmunity={game.activeImmunity}
-          activeBomb={game.activeBomb}
-          boardCategories={game.room.categories}
-        />
-      )}
-
-      {game.room.isTrial && answeredCount >= 6 && (
-        <div className="mt-4 p-4 rounded-xl bg-jawwib-gold/10 border border-jawwib-gold/30 text-center">
-          <p className="text-jawwib-gold font-bold mb-2">🔓 عجبتك؟ افتح النسخة الكاملة</p>
-          <button onClick={() => setShowPayment(true)} className="btn-gold text-sm px-6 py-2">ترقية 4 د.ك</button>
-        </div>
-      )}
     </div>
   );
 }

@@ -29,9 +29,6 @@
     # Disable browser features not used by the app
     Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), bluetooth=(), interest-cohort=()"
 
-    # Remove server fingerprint header
-    X-Powered-By = ""
-
     # Content Security Policy
     # - script-src unsafe-inline required: TanStack Start injects inline hydration scripts
     # - style-src unsafe-inline required: React inline style props
@@ -45,15 +42,8 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# ── Manifest and service workers — short cache ───────────────────────────────
+# ── Manifest — short cache ────────────────────────────────────────────────────
 [[headers]]
   for = "/manifest.json"
   [headers.values]
     Cache-Control = "public, max-age=3600"
-
-# ── Block direct access to any leftover CSV paths ────────────────────────────
-[[redirects]]
-  from = "/questions.csv"
-  to = "/404"
-  status = 404
-  force = true

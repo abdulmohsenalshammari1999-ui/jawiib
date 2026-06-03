@@ -2,8 +2,7 @@
  * Content registry — merges built-in questions with CSV-loaded content.
  * Call initCsvContent() once at app startup (safe to call multiple times).
  */
-import { parseCsvContent, loadCsvContent } from './csvLoader';
-import { getQuestionsCSV } from '@/serverFunctions/questions';
+import { loadCsvContent } from './csvLoader';
 import { questions } from './questions';
 import { categories } from './categories';
 import { globalPool } from '@/engine/questionPool';
@@ -14,19 +13,7 @@ export async function initCsvContent(url?: string): Promise<void> {
   if (_initialized) return;
   _initialized = true;
 
-  let result;
-
-  // External URL override (VITE_QUESTIONS_CSV_URL or explicit arg) keeps original fetch path
-  if (url || import.meta.env['VITE_QUESTIONS_CSV_URL']) {
-    result = await loadCsvContent(url);
-  } else {
-    // Default: load via server function — CSV is never a public static asset
-    const raw = await getQuestionsCSV().catch(() => '');
-    result = raw
-      ? parseCsvContent(raw)
-      : { questions: [], categories: [], errors: [], skipped: 0, loaded: 0 };
-  }
-
+  const result = await loadCsvContent(url);
   if (result.loaded === 0) return;
 
   // Merge questions: skip duplicates by ID

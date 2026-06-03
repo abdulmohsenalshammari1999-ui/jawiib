@@ -20,30 +20,21 @@ const config = defineConfig({
     // Never emit source maps in production
     sourcemap: false,
 
-    // Terser for aggressive minification + obfuscation
     minify: 'terser',
     terserOptions: {
       compress: {
-        // Strip all console output from production bundle
         drop_console: true,
         drop_debugger: true,
-        // Extra passes improve obfuscation
         passes: 2,
-        // Remove dead code
         dead_code: true,
-        // Collapse single-use variables
-        collapse_vars: true,
       },
       mangle: {
-        // Rename local variables to short names
+        // Safe: rename local variables only — do NOT mangle properties.
+        // Property mangling with regex: /^_/ would rename _-prefixed internal
+        // fields used by TanStack Router/Start and break the runtime.
         toplevel: false,
-        // Mangle properties beginning with _ (private convention)
-        properties: {
-          regex: /^_/,
-        },
       },
       format: {
-        // Remove all comments from output
         comments: false,
       },
     },

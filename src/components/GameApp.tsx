@@ -136,10 +136,14 @@ export function GameApp() {
   const prevTimer         = useRef(game?.timer ?? 0);
   const prevActiveTeamId  = useRef(game?.activeTeamId);
 
-  // Load CSV questions + apply seasonal theme
+  // Load CSV questions + apply seasonal theme + init IAP on native
   useEffect(() => {
     initCsvContent().catch(() => {});
     applySeasonalBodyClass();
+    // Warm up RevenueCat on native so the first price fetch is instant
+    if (APP_CONFIG.platform !== 'web' && APP_CONFIG.revenueCatApiKey) {
+      import('@/lib/iap').then(({ fetchProductInfo }) => fetchProductInfo()).catch(() => {});
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep audio volume in sync

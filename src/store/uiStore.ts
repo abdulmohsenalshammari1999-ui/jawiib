@@ -12,6 +12,7 @@ interface UIState {
   connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
   soundEnabled: boolean;
   musicEnabled: boolean;
+  tvMode: boolean;
   openModal: (modal: Modal) => void;
   closeModal: () => void;
   addToast: (message: string, type?: Toast['type'], ttl?: number) => void;
@@ -20,6 +21,7 @@ interface UIState {
   setConnectionStatus: (status: UIState['connectionStatus']) => void;
   toggleSound: () => void;
   toggleMusic: () => void;
+  toggleTvMode: () => void;
 }
 
 export const useUIStore = create<UIState>()((set, get) => ({
@@ -30,6 +32,7 @@ export const useUIStore = create<UIState>()((set, get) => ({
   connectionStatus: 'disconnected',
   soundEnabled: true,
   musicEnabled: false,
+  tvMode: false,
 
   openModal: (modal) => set({ activeModal: modal }),
   closeModal: () => set({ activeModal: null }),
@@ -59,4 +62,6 @@ export const useUIStore = create<UIState>()((set, get) => ({
     if (next) audio.startBGM('low');
     else audio.stopBGM();
   },
+
+  toggleTvMode: () => set({ tvMode: !get().tvMode }),
 }));

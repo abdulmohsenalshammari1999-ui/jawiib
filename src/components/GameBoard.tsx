@@ -10,6 +10,7 @@ interface GameBoardProps {
   activeTeamColor?: string | null;
   isMyTurn?: boolean;
   forcedCategoryId?: CategoryId;
+  tvMode?: boolean;
 }
 
 const TIER_POINTS = [100, 200, 300, 400, 500, 600] as const;
@@ -32,15 +33,18 @@ export function GameBoard({
   activeTeamColor,
   isMyTurn = true,
   forcedCategoryId,
+  tvMode = false,
 }: GameBoardProps) {
   const trialLimit = 9;
+  const catColWidth = tvMode ? '130px' : '100px';
+  const gridCols = `${catColWidth} repeat(6, 1fr)`;
 
   return (
     <div className="animate-fade-in w-full">
       {/* Point column headers */}
       <div
         className="grid gap-1.5 mb-2 px-1"
-        style={{ gridTemplateColumns: '100px repeat(6, 1fr)' }}
+        style={{ gridTemplateColumns: gridCols }}
       >
         <div />
         {TIER_POINTS.map((pts) => (
@@ -64,12 +68,12 @@ export function GameBoard({
               className={`grid gap-1.5 items-center rounded-lg transition-all ${
                 forcedCategoryId === cat.id ? 'bg-jawwib-purple/8 ring-1 ring-jawwib-purple/30' : ''
               }`}
-              style={{ gridTemplateColumns: '100px repeat(6, 1fr)' }}
+              style={{ gridTemplateColumns: gridCols }}
             >
               {/* Category label */}
-              <div className="flex items-center gap-1 px-1 min-w-0">
-                <span className="text-sm shrink-0">{cat.icon}</span>
-                <span className={`text-[11px] font-bold truncate leading-tight ${
+              <div className="board-category-col flex items-center gap-1 px-1 min-w-0">
+                <span className={`shrink-0 ${tvMode ? 'text-base' : 'text-sm'}`}>{cat.icon}</span>
+                <span className={`font-bold truncate leading-tight ${tvMode ? 'text-xs' : 'text-[11px]'} ${
                   forcedCategoryId === cat.id ? 'text-jawwib-purple' : 'text-jawwib-text-dim'
                 }`}>{cat.name}</span>
                 {forcedCategoryId === cat.id && <span className="text-[9px] text-jawwib-purple font-black shrink-0">🎯</span>}
@@ -88,7 +92,7 @@ export function GameBoard({
                     key={`${rowIndex}-${colIndex}`}
                     onClick={() => canClick && onSelectQuestion(cell.questionId)}
                     disabled={cell.answered || isLocked || isForcedOut || !isMyTurn}
-                    className={`board-cell flex items-center justify-center py-2.5 min-h-[44px] text-center relative ${
+                    className={`board-cell flex items-center justify-center py-2.5 text-center relative ${tvMode ? 'min-h-[56px]' : 'min-h-[44px]'} ${
                       cell.answered ? 'answered' : ''
                     } ${isLocked || isForcedOut ? '!opacity-20 cursor-not-allowed' : ''} ${
                       !isMyTurn && !cell.answered ? 'cursor-default opacity-60' : ''

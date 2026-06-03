@@ -78,10 +78,12 @@ export function GameApp() {
   const lastResult    = useSabotageStore((s) => s.lastResult);
   const scrambles     = useSabotageStore((s) => s.scrambles);
 
-  const soundEnabled = useUIStore((s) => s.soundEnabled);
-  const musicEnabled = useUIStore((s) => s.musicEnabled);
-  const toggleSound  = useUIStore((s) => s.toggleSound);
-  const toggleMusic  = useUIStore((s) => s.toggleMusic);
+  const soundEnabled  = useUIStore((s) => s.soundEnabled);
+  const musicEnabled  = useUIStore((s) => s.musicEnabled);
+  const tvMode        = useUIStore((s) => s.tvMode);
+  const toggleSound   = useUIStore((s) => s.toggleSound);
+  const toggleMusic   = useUIStore((s) => s.toggleMusic);
+  const toggleTvMode  = useUIStore((s) => s.toggleTvMode);
 
   const hasBomb   = localPlayerId ? activeEffects.some((e) => e.type === 'bomb'   && e.targetPlayerId === localPlayerId) : false;
   const hasDouble = localPlayerId ? activeEffects.some((e) => e.type === 'double' && e.fromPlayerId   === localPlayerId) : false;
@@ -122,6 +124,12 @@ export function GameApp() {
   useEffect(() => { audio.setVolume(volume); }, [volume]);
   useEffect(() => { audio.setSound(soundEnabled); }, [soundEnabled]);
   useEffect(() => { audio.setMusic(musicEnabled); }, [musicEnabled]);
+
+  // Sync TV mode to <html> so CSS rules apply globally across all phases
+  useEffect(() => {
+    document.documentElement.setAttribute('data-tv', tvMode ? 'true' : 'false');
+    return () => { document.documentElement.removeAttribute('data-tv'); };
+  }, [tvMode]);
 
   // Reset crowd votes on each new question
   useEffect(() => {
@@ -365,6 +373,18 @@ export function GameApp() {
           </div>
         )}
       </div>
+      {/* TV mode toggle */}
+      <button
+        onClick={toggleTvMode}
+        className={`text-sm px-2 py-1 rounded-lg border transition-all tap-target ${
+          tvMode
+            ? 'border-jawwib-gold/40 text-jawwib-gold bg-jawwib-gold/8'
+            : 'border-jawwib-border text-jawwib-text-dim opacity-50'
+        }`}
+        title={tvMode ? 'إيقاف وضع التلفزيون' : 'وضع التلفزيون'}
+      >
+        📺
+      </button>
     </div>
   );
 
@@ -865,6 +885,7 @@ export function GameApp() {
             answeredCount={answeredCount}
             activeTeamColor={activeTeamColor}
             isMyTurn={isMyTurn}
+            tvMode={tvMode}
             forcedCategoryId={
               boardActiveTeamId && game.forcedCategory?.targetTeamId === boardActiveTeamId
                 ? game.forcedCategory.categoryId

@@ -1,7 +1,10 @@
 /**
- * Media question bank — image, audio, map, guess, identify, scene, math, riddle.
+ * Media question bank — image, audio, map, guess, identify, ordering, math, riddle.
  * All image/audio URLs point to Wikipedia Commons (CC-licensed, globally cached CDN).
  * To add your own assets: host on Cloudinary / S3 / /public/media/ and use those URLs.
+ *
+ * IMPORTANT: all questions use core categories (culture, gulf, sport, science, history,
+ * music, geo, kuwait_history) so they appear in every quick game.
  */
 
 import type { Question } from './types';
@@ -12,28 +15,28 @@ function qs(q: Partial<Question> & Pick<Question, 'id' | 'category' | 'tier' | '
 
 export const MEDIA_SAMPLE_QUESTIONS: Question[] = [
 
-  // ── LANDMARKS — image / guess ─────────────────────────────────────────────
+  // ── IMAGE / GUESS — landmarks ─────────────────────────────────────────────
 
   qs({
     id: 'media-img-kuwait-towers',
-    category: 'kuwait_history',
+    category: 'kuwait_history',   // core category — always in rotation
     tier: 2,
     points: 200,
     type: 'image',
-    text: 'ما اسم هذا المعلم الكويتي البارز الظاهر في الصورة؟',
+    text: 'ما اسم هذا المعلم الكويتي الظاهر في الصورة؟',
     mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Kuwait_Towers.jpg/800px-Kuwait_Towers.jpg',
-    mediaAlt: 'أبراج الكويت الثلاثة على شاطئ الخليج العربي',
+    mediaAlt: 'أبراج الكويت على شاطئ الخليج',
     options: ['أبراج الكويت', 'برج القرين', 'قصر السيف', 'بيت لوتان'],
     correctIndex: 0,
-    teaser: 'معلم وطني يُطلّ على الخليج — هل تعرفه؟',
-    explanation: 'أبراج الكويت ثلاثة أبراج على شاطئ الخليج، أُنجزت عام 1979 وصمّمها مكتب VBB السويدي، تضم مطعماً دوّاراً على 82م.',
-    funFact: 'البرج الرئيسي يحتوي على خزانَي مياه سعتهما 4500 و3000 متر مكعب.',
+    teaser: 'معلم وطني يُطلّ على الخليج',
+    explanation: 'أبراج الكويت أُنجزت 1979، صمّمها مكتب VBB السويدي، تضم مطعماً دوّاراً على ارتفاع 82م.',
+    funFact: 'البرج الرئيسي يحتوي على خزانَي مياه سعتهما 4500 و3000 م³.',
     tags: ['كويت', 'معالم', 'معمار'],
   }),
 
   qs({
     id: 'media-img-burj-khalifa',
-    category: 'geo',
+    category: 'gulf',             // core category
     tier: 2,
     points: 200,
     type: 'guess',
@@ -42,34 +45,34 @@ export const MEDIA_SAMPLE_QUESTIONS: Question[] = [
     mediaAlt: 'برج خليفة في دبي',
     options: ['دبي', 'أبوظبي', 'الدوحة', 'الرياض'],
     correctIndex: 0,
-    teaser: 'الأطول في العالم — أين هو؟',
-    explanation: 'برج خليفة في دبي، ارتفاعه 828 متراً، أطول مبنى في العالم منذ افتتاحه عام 2010.',
-    funFact: 'يضم برج خليفة 163 طابقاً وبنِيَ خلال 6 سنوات باستخدام أكثر من 330,000 متر مكعب من الخرسانة.',
-    tags: ['إمارات', 'عمارة', 'عالم'],
+    teaser: 'الأطول في العالم — أين يقع؟',
+    explanation: 'برج خليفة في دبي، ارتفاعه 828م، أطول مبنى في العالم منذ 2010.',
+    funFact: 'يضم 163 طابقاً وبُني خلال 6 سنوات باستخدام أكثر من 330,000 م³ من الخرسانة.',
+    tags: ['إمارات', 'عمارة', 'خليج'],
   }),
 
   qs({
     id: 'media-img-empire-state',
-    category: 'geo',
+    category: 'culture',          // core category
     tier: 1,
     points: 100,
     type: 'guess',
-    text: 'ما اسم هذا المبنى الشهير المُلتقَط من الجو؟',
+    text: 'ما اسم هذا المبنى الشهير الملتقط من الجو؟',
     mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Empire_State_Building_%28aerial_view%29.jpg/400px-Empire_State_Building_%28aerial_view%29.jpg',
-    mediaAlt: 'مبنى إمباير ستيت من الجو في نيويورك',
-    options: ['مبنى إمباير ستيت', 'برج إيفل', 'مبنى كرايسلر', 'مركز ون وورلد تريد'],
+    mediaAlt: 'مبنى إمباير ستيت من الجو',
+    options: ['مبنى إمباير ستيت', 'مبنى كرايسلر', 'مركز تجارة عالمي', 'برج إيفل'],
     correctIndex: 0,
-    teaser: 'واحد من أشهر مباني القرن العشرين — هل تعرفه؟',
-    explanation: 'مبنى إمباير ستيت في مانهاتن، ارتفاعه 443م، كان الأطول في العالم من 1931 إلى 1970.',
-    funFact: 'يستقطب مبنى إمباير ستيت أكثر من 3.5 مليون زائر سنوياً للمراصد في الطابقَين 86 و102.',
+    teaser: 'واحد من أشهر مباني القرن العشرين',
+    explanation: 'إمباير ستيت في مانهاتن، ارتفاعه 443م، كان الأطول في العالم 1931–1970.',
+    funFact: 'يستقطب أكثر من 3.5 مليون زائر سنوياً للمراصد في الطابقَين 86 و102.',
     tags: ['جغرافيا', 'عالم', 'مباني'],
   }),
 
-  // ── FLAGS — image ─────────────────────────────────────────────────────────
+  // ── IMAGE — flags ─────────────────────────────────────────────────────────
 
   qs({
     id: 'media-flag-kuwait',
-    category: 'kuwait_history',
+    category: 'kuwait_history',   // core
     tier: 1,
     points: 100,
     type: 'image',
@@ -78,121 +81,87 @@ export const MEDIA_SAMPLE_QUESTIONS: Question[] = [
     mediaAlt: 'علم الكويت — أخضر أبيض أحمر مع مثلث أسود',
     options: ['الكويت', 'الأردن', 'فلسطين', 'العراق'],
     correctIndex: 0,
-    teaser: 'علم خليجي مميز — هل تعرف صاحبه؟',
-    explanation: 'علم الكويت ثلاثة ألوان أفقية (أخضر، أبيض، أحمر) مع مثلث أسود على الجانب الأيسر. اعتُمد عام 1961.',
-    funFact: 'المثلث الأسود في علم الكويت فريد بين أعلام دول الخليج.',
-    tags: ['كويت', 'أعلام', 'خليج'],
+    teaser: 'علم خليجي مميز — من صاحبه؟',
+    explanation: 'علم الكويت ثلاثة ألوان (أخضر، أبيض، أحمر) مع مثلث أسود، اعتُمد عام 1961.',
+    funFact: 'المثلث الأسود في علم الكويت فريد بين دول الخليج.',
+    tags: ['كويت', 'أعلام'],
   }),
 
   qs({
-    id: 'media-flag-gcc',
-    category: 'gcc_football',
-    tier: 2,
-    points: 200,
+    id: 'media-flag-saudi',
+    category: 'gulf',             // core
+    tier: 1,
+    points: 100,
     type: 'image',
-    text: 'علم أي دولة خليجية هذا؟',
+    text: 'علم أي دولة هذا؟',
     mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Flag_of_Saudi_Arabia.svg/640px-Flag_of_Saudi_Arabia.svg.png',
-    mediaAlt: 'علم المملكة العربية السعودية — أخضر مع السيف والشهادة',
+    mediaAlt: 'علم المملكة العربية السعودية',
     options: ['المملكة العربية السعودية', 'باكستان', 'إيران', 'الإمارات'],
     correctIndex: 0,
-    teaser: 'علم أخضر بسيف — لأي دولة؟',
-    explanation: 'علم المملكة العربية السعودية يحمل الشهادة (لا إله إلا الله محمد رسول الله) وسيفاً أخضر على خلفية خضراء.',
-    funFact: 'علم المملكة هو الوحيد في العالم الذي يصعب عكسه بسبب الكتابة العربية.',
+    teaser: 'علم أخضر بسيف وشهادة',
+    explanation: 'علم السعودية يحمل الشهادة وسيفاً على خلفية خضراء.',
+    funFact: 'علم السعودية هو الوحيد في العالم الذي يصعب عكسه بسبب الكتابة العربية.',
     tags: ['سعودية', 'أعلام', 'خليج'],
   }),
 
   qs({
     id: 'media-flag-qatar',
-    category: 'gcc_football',
+    category: 'sport',            // core — فيه مونديال قطر
     tier: 1,
     points: 100,
     type: 'image',
-    text: 'هذا العلم ذو اللون البني والأبيض المُسنَّن — لأي دولة ينتمي؟',
+    text: 'العلم الأبيض والكستنائي المُسنَّن — لأي دولة؟',
     mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Flag_of_Qatar.svg/640px-Flag_of_Qatar.svg.png',
-    mediaAlt: 'علم قطر — أبيض وكستنائي مع حافة مُسنَّنة',
+    mediaAlt: 'علم قطر',
     options: ['قطر', 'البحرين', 'المغرب', 'موريتانيا'],
     correctIndex: 0,
     teaser: 'أبيض وكستنائي — من صاحبه؟',
-    explanation: 'علم قطر يتميز باللون الكستنائي (المارون الداكن) وحافته المُسنَّنة الـ 9 تمثل قطر بوصفها الدولة التاسعة المنضمة للهدنة مع بريطانيا عام 1916.',
-    funFact: 'قطر هي الدولة الوحيدة في العالم ذات علم عرضه أكبر من طوله (نسبة 11:28).',
-    tags: ['قطر', 'أعلام', 'خليج'],
+    explanation: 'علم قطر الكستنائي والأبيض المُسنَّن — الدولة التاسعة في الهدنة مع بريطانيا 1916.',
+    funFact: 'قطر الدولة الوحيدة ذات علم عرضه أكبر من طوله (نسبة 11:28).',
+    tags: ['قطر', 'أعلام'],
   }),
 
-  // ── MAPS — map type ───────────────────────────────────────────────────────
+  // ── MAP ───────────────────────────────────────────────────────────────────
 
   qs({
-    id: 'media-map-arabian-peninsula',
-    category: 'geo',
+    id: 'media-map-kuwait',
+    category: 'geo',              // core
     tier: 2,
     points: 200,
     type: 'map',
-    text: 'انظر لهذه الخريطة — ما الدولة المُلوَّنة بالأحمر في شبه الجزيرة العربية؟',
+    text: 'الدولة المُلوَّنة على هذه الخريطة — ما اسمها؟',
     mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Kuwait_in_its_region.svg/640px-Kuwait_in_its_region.svg.png',
-    mediaAlt: 'خريطة الخليج العربي مع تمييز الكويت باللون الأحمر',
+    mediaAlt: 'خريطة الخليج مع تمييز الكويت',
     options: ['الكويت', 'البحرين', 'قطر', 'عُمان'],
     correctIndex: 0,
-    teaser: 'دولة خليجية صغيرة مُلوَّنة على الخريطة — ما اسمها؟',
-    explanation: 'الكويت تقع في الزاوية الشمالية الغربية للخليج العربي، تحدّها العراق شمالاً والمملكة العربية السعودية جنوباً.',
-    funFact: 'مساحة الكويت 17,818 كم² — أصغر قليلاً من مساحة ولاية نيوجيرسي الأمريكية.',
+    teaser: 'دولة خليجية مُلوَّنة على الخريطة',
+    explanation: 'الكويت تقع شمال غرب الخليج، تحدّها العراق شمالاً والسعودية جنوباً.',
+    funFact: 'مساحة الكويت 17,818 كم² — أصغر من ولاية نيوجيرسي.',
     tags: ['جغرافيا', 'خليج', 'خرائط'],
   }),
 
-  // ── AUDIO — audio / identify ──────────────────────────────────────────────
+  // ── AUDIO — identify animals ──────────────────────────────────────────────
 
   qs({
     id: 'media-audio-lion',
-    category: 'animals',
+    category: 'science',          // core
     tier: 1,
     points: 100,
     type: 'identify',
-    text: 'من خلال هذا الصوت — ما اسم هذا الحيوان؟',
+    text: 'استمع لهذا الصوت — ما اسم هذا الحيوان؟',
     mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/7/73/Lion_waiting_in_Namibia.ogg',
     mediaDuration: 5,
     options: ['الأسد', 'النمر', 'الفهد', 'الضبع'],
     correctIndex: 0,
-    teaser: 'ملك الغابة — هل تعرف صوته؟',
-    explanation: 'زئير الأسد يمكن سماعه من مسافة 8 كيلومترات، ويستخدمه للتواصل مع قطيعه وإعلان حدوده.',
-    funFact: 'الأسود الأفريقية هي الوحيدة بين الفصيلة التي تعيش في مجموعات تُسمى "فخراً".',
-    tags: ['حيوانات', 'أصوات', 'أفريقيا'],
-  }),
-
-  qs({
-    id: 'media-audio-beethoven',
-    category: 'music',
-    tier: 3,
-    points: 300,
-    type: 'audio',
-    text: 'استمع لهذه السوناتا الكلاسيكية الشهيرة — من مؤلّفها؟',
-    mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Beethoven_-_Moonlight_Sonata_Op._27_No._2.ogg',
-    mediaDuration: 8,
-    options: ['بيتهوفن', 'موزارت', 'شوبان', 'باخ'],
-    correctIndex: 0,
-    teaser: 'أشهر سوناتا في تاريخ الموسيقى الكلاسيكية — من كتبها؟',
-    explanation: 'سوناتة ضوء القمر (Op. 27 No. 2) كتبها بيتهوفن عام 1801 وأهداها لطالبته غيوليتا غيشياردي.',
-    funFact: 'لودفيغ فان بيتهوفن كان يعاني من الصمم التدريجي حين ألّف كثيراً من أعظم أعماله.',
-    tags: ['موسيقى', 'كلاسيكي', 'غرب'],
-  }),
-
-  qs({
-    id: 'media-audio-bach-toccata',
-    category: 'music',
-    tier: 3,
-    points: 300,
-    type: 'audio',
-    text: 'استمع — من مؤلف هذه المقطوعة الكلاسيكية الشهيرة للأرغن؟',
-    mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Bach_toccata_fugue_d_minor.ogg',
-    mediaDuration: 10,
-    options: ['باخ', 'هاندل', 'ليست', 'فيفالدي'],
-    correctIndex: 0,
-    teaser: 'مقطوعة بالأرغن لا يُنساها أحد — من كتبها؟',
-    explanation: 'توكاتا وفوغة في ري الصغير (BWV 565) لـ يوهان سيباستيان باخ، كُتبت حوالي 1704 وهي من أشهر أعمال الأرغن في العالم.',
-    funFact: 'باخ أنجب 20 طفلاً وكتب أكثر من 1000 قطعة موسيقية طوال حياته.',
-    tags: ['موسيقى', 'كلاسيكي', 'أرغن'],
+    teaser: 'ملك الغابة — هل تعرف زئيره؟',
+    explanation: 'زئير الأسد يُسمع من 8 كيلومترات.',
+    funFact: 'مجموعات الأسود تُسمى "فخراً" وتضم 10–40 فرداً.',
+    tags: ['حيوانات', 'أصوات'],
   }),
 
   qs({
     id: 'media-audio-cuckoo',
-    category: 'animals',
+    category: 'science',          // core
     tier: 1,
     points: 100,
     type: 'identify',
@@ -201,17 +170,85 @@ export const MEDIA_SAMPLE_QUESTIONS: Question[] = [
     mediaDuration: 6,
     options: ['الوقواق', 'الببغاء', 'الحمام', 'البلبل'],
     correctIndex: 0,
-    teaser: 'صوت طائر يعرفه الجميع — ما اسمه؟',
-    explanation: 'الوقواق (Cuckoo) يُعدّ من أشهر أصوات الطبيعة في العالم، وسمّيت ساعة الكوكو نسبةً لصوته.',
-    funFact: 'الوقواق يضع بيضه في أعشاش طيور أخرى وتتكفّل بتربية صغاره بدلاً منه.',
+    teaser: 'صوت طائر يعرفه الجميع',
+    explanation: 'الوقواق (Cuckoo) — سُمّيت ساعة الكوكو نسبةً لصوته.',
+    funFact: 'الوقواق يضع بيضه في أعشاش طيور أخرى لتتكفّل بتربية صغاره.',
     tags: ['حيوانات', 'طيور', 'أصوات'],
   }),
 
-  // ── MATH ─────────────────────────────────────────────────────────────────
+  // ── AUDIO — music ─────────────────────────────────────────────────────────
+
+  qs({
+    id: 'media-audio-beethoven',
+    category: 'music',            // core
+    tier: 3,
+    points: 300,
+    type: 'audio',
+    text: 'استمع لهذه السوناتا الكلاسيكية — من مؤلّفها؟',
+    mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/a/ac/Beethoven_-_Moonlight_Sonata_Op._27_No._2.ogg',
+    mediaDuration: 8,
+    options: ['بيتهوفن', 'موزارت', 'شوبان', 'باخ'],
+    correctIndex: 0,
+    teaser: 'أشهر سوناتا في تاريخ الموسيقى الكلاسيكية',
+    explanation: 'سوناتة ضوء القمر (Op. 27 No. 2) كتبها بيتهوفن 1801.',
+    funFact: 'بيتهوفن كان يعاني من الصمم التدريجي حين ألّف كثيراً من أعظم أعماله.',
+    tags: ['موسيقى', 'كلاسيكي'],
+  }),
+
+  qs({
+    id: 'media-audio-bach',
+    category: 'music',            // core
+    tier: 3,
+    points: 300,
+    type: 'audio',
+    text: 'استمع — من مؤلف هذه المقطوعة الشهيرة للأرغن؟',
+    mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/b/b3/Bach_toccata_fugue_d_minor.ogg',
+    mediaDuration: 10,
+    options: ['باخ', 'هاندل', 'ليست', 'فيفالدي'],
+    correctIndex: 0,
+    teaser: 'مقطوعة بالأرغن لا تُنسى',
+    explanation: 'توكاتا وفوغة في ري الصغير (BWV 565) ليوهان سيباستيان باخ، كُتبت ~1704.',
+    funFact: 'باخ أنجب 20 طفلاً وكتب أكثر من 1000 قطعة موسيقية.',
+    tags: ['موسيقى', 'كلاسيكي', 'أرغن'],
+  }),
+
+  // ── ORDERING ─────────────────────────────────────────────────────────────
+
+  qs({
+    id: 'media-ordering-planets',
+    category: 'science',          // core
+    tier: 2,
+    points: 200,
+    type: 'ordering',
+    text: 'رتّب الكواكب من الأقرب للشمس إلى الأبعد',
+    options: ['المريخ', 'الزهرة', 'زحل', 'المشتري'],
+    correctIndex: 0,
+    correctOrder: [1, 0, 3, 2],  // Zuhara, Mars, Jupiter, Saturn
+    explanation: 'الترتيب: عطارد ← الزهرة ← الأرض ← المريخ ← المشتري ← زحل…',
+    funFact: 'المجموعة الشمسية تضم 8 كواكب بعد إعادة تصنيف بلوتو عام 2006.',
+    tags: ['علوم', 'فضاء'],
+  }),
+
+  qs({
+    id: 'media-ordering-wc-scorers',
+    category: 'sport',            // core
+    tier: 2,
+    points: 200,
+    type: 'ordering',
+    text: 'رتّب المهاجمين من الأكثر تسجيلاً في كأس العالم إلى الأقل (حتى 2022)',
+    options: ['رونالدو (8)', 'كلوزه (16)', 'فونتين (13)', 'بيلي (12)'],
+    correctIndex: 0,
+    correctOrder: [1, 2, 3, 0],  // Klose 16, Fontaine 13, Pele 12, Ronaldo 8
+    explanation: 'كلوزه 16 هدف > فونتين 13 > بيلي 12 > رونالدو 8',
+    funFact: 'ميروسلاف كلوزه سجّل أهدافه في 4 نسخ متتالية من 1998 إلى 2014.',
+    tags: ['رياضة', 'كأس العالم'],
+  }),
+
+  // ── MATH & RIDDLE ─────────────────────────────────────────────────────────
 
   qs({
     id: 'media-math-1',
-    category: 'math_logic',
+    category: 'science',          // core
     tier: 1,
     points: 100,
     type: 'math',
@@ -219,51 +256,49 @@ export const MEDIA_SAMPLE_QUESTIONS: Question[] = [
     options: ['45', '40', '50', '48'],
     correctIndex: 0,
     explanation: '12×5=60، 60−18=42، 42+3=45',
-    funFact: 'ترتيب العمليات: الضرب والقسمة أولاً، ثم الجمع والطرح من اليسار لليمين.',
+    funFact: 'الضرب والقسمة يسبقان الجمع والطرح — قاعدة أولوية العمليات.',
     tags: ['رياضيات'],
   }),
 
   qs({
-    id: 'media-math-2',
-    category: 'math_logic',
-    tier: 4,
-    points: 400,
+    id: 'media-math-hard',
+    category: 'science',          // core — will land in 600pt hard bucket
+    tier: 5,
+    points: 500,
     type: 'math',
     text: '∛216 + √49 − 2² = ?',
     options: ['9', '10', '11', '8'],
     correctIndex: 0,
-    explanation: '∛216=6، √49=7، 2²=4. إذن: 6+7−4=9',
-    funFact: '216=6³ وهو حجم مكعب ضلعه 6 وحدات.',
+    explanation: '∛216=6، √49=7، 2²=4 → 6+7−4=9',
+    funFact: '216=6³ — حجم مكعب ضلعه 6 وحدات.',
     tags: ['رياضيات', 'جذور'],
   }),
 
-  // ── RIDDLES ───────────────────────────────────────────────────────────────
-
   qs({
     id: 'media-riddle-1',
-    category: 'riddles_ar',
+    category: 'culture',          // core
     tier: 2,
     points: 200,
     type: 'riddle',
     text: 'له أسنان لكنه لا يأكل، وله رأس لكنه لا يفكّر. ما هو؟',
     options: ['المشط', 'المفتاح', 'المسمار', 'المطرقة'],
     correctIndex: 0,
-    explanation: 'المشط له "أسنان" بلاستيكية و"رأس" علوي لكنه لا يأكل ولا يفكّر.',
+    explanation: 'المشط له "أسنان" و"رأس" لكنه لا يأكل ولا يفكّر.',
     funFact: 'أقدم مشط وُجد في تركيا يعود إلى 5000 سنة مصنوع من العظام.',
-    tags: ['لغز', 'ألغاز'],
+    tags: ['لغز', 'ثقافة'],
   }),
 
   qs({
     id: 'media-riddle-2',
-    category: 'riddles_ar',
+    category: 'history',          // core
     tier: 3,
     points: 300,
     type: 'riddle',
     text: 'أنا صندوق بلا مسمار ولا ذهب، لكن فيّ كنزٌ ذهبي. ما أنا؟',
     options: ['البيضة', 'الصدفة', 'التمر', 'الرمّان'],
     correctIndex: 0,
-    explanation: 'البيضة — قشرة صلبة بلا مسمار ولا ذهب، لكن الصفار (الكنز الذهبي) بداخلها.',
-    funFact: 'قشرة البيضة مكوّنة من 95% كربونات الكالسيوم وهي أقوى مما تبدو عليه.',
+    explanation: 'البيضة — قشرة صلبة بلا ذهب، لكن الصفار الذهبي بداخلها.',
+    funFact: 'قشرة البيضة مكوّنة من 95% كربونات الكالسيوم.',
     tags: ['لغز', 'ألغاز'],
   }),
 

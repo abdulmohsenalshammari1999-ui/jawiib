@@ -74,7 +74,8 @@ export type QuestionType =
   | 'guess'      // "خمّن من/ماذا/أين" — identify a person / place / object
   | 'scene'      // "ماذا حدث في هذا المشهد؟" — video/image scene question
   | 'identify'   // "عرّف هذا الصوت/الأغنية/الصوت" — sound/voice identification
-  | 'ordering';  // "رتّب" — drag/tap items into the correct order
+  | 'ordering'   // "رتّب" — drag/tap items into the correct order
+  | 'map';       // "خريطة" — image of a map, zoom-tap to read it
 
 export interface Question {
   id: string;

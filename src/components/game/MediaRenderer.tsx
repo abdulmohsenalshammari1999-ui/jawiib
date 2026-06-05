@@ -71,6 +71,7 @@ export function AudioMedia({ src, duration, autoPlay = false, label }: AudioMedi
   const [progress, setProgress] = useState(0);
   const [total, setTotal]       = useState(duration ?? 0);
   const [loaded, setLoaded]     = useState(false);
+  const [tick, setTick]         = useState(0);
 
   useEffect(() => {
     const el = audioRef.current;
@@ -88,6 +89,12 @@ export function AudioMedia({ src, duration, autoPlay = false, label }: AudioMedi
       el.removeEventListener('ended', onEnd);
     };
   }, [src, autoPlay, duration]);
+
+  useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(() => setTick((t) => t + 1), 80);
+    return () => clearInterval(id);
+  }, [playing]);
 
   const toggle = () => {
     const el = audioRef.current;
@@ -128,7 +135,7 @@ export function AudioMedia({ src, duration, autoPlay = false, label }: AudioMedi
             className="rounded-full transition-all duration-75"
             style={{
               width: '3px',
-              height: `${8 + Math.sin(i * 0.8 + (playing ? Date.now() / 200 : 0)) * 10 + 10}px`,
+              height: `${6 + Math.abs(Math.sin(i * 1.1 + tick * 0.45)) * 18 + (playing ? 2 : 0)}px`,
               background: i / 24 < pct / 100 ? '#B07D1A' : '#C9A87A',
             }}
           />

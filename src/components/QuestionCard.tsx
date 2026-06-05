@@ -37,6 +37,7 @@ const TYPE_LABELS: Record<string, { icon: string; label: string }> = {
   scene:    { icon: '🎞️', label: 'ماذا حدث هنا؟' },
   identify: { icon: '👂',  label: 'عرّف الصوت' },
   ordering: { icon: '🔢',  label: 'رتّب بالترتيب' },
+  map:      { icon: '🗺️', label: 'سؤال خريطة' },
 };
 
 // ── Ordering question sub-component ──────────────────────────────────────────
@@ -299,7 +300,7 @@ export function QuestionCard({
         )}
 
         {/* Media */}
-        {question.mediaUrl && (qType === 'image' || qType === 'guess' || qType === 'scene') && (
+        {question.mediaUrl && (qType === 'image' || qType === 'guess' || qType === 'scene' || qType === 'map') && (
           <div className="mb-4"><ImageMedia src={question.mediaUrl} alt={question.mediaAlt ?? question.text} /></div>
         )}
         {question.mediaUrl && (qType === 'audio' || qType === 'identify') && (

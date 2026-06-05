@@ -140,7 +140,7 @@ export function parseCsvContent(text: string): CsvLoadResult {
     const correctIndex = CORRECT_MAP[correctKey];
 
     // Multimedia fields
-    const VALID_TYPES = new Set<string>(['text','image','audio','video','math','riddle','guess','scene','identify','ordering']);
+    const VALID_TYPES = new Set<string>(['text','image','audio','video','math','riddle','guess','scene','identify','ordering','map']);
     const rawType = (row['question_type'] ?? 'text').toLowerCase().trim();
     const qType: QuestionType = VALID_TYPES.has(rawType) ? rawType as QuestionType : 'text';
 

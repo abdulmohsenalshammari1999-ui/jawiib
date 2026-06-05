@@ -66,10 +66,13 @@ function buildBoard(selectedCategories: CategoryId[]): GameBoardCell[][] {
   globalPool.reset();
   return selectedCategories.map((cat) => {
     const row: GameBoardCell[] = [];
-    for (const tier of [1, 2, 3, 4, 5, 6] as const) {
+    for (const tier of [1, 2, 3] as const) {
       const q = globalPool.draw(cat, tier);
-      if (q) row.push({ questionId: q.id, category: cat, tier, points: q.points as 100|200|300|400|500|600, answered: false });
+      if (q) row.push({ questionId: q.id, category: cat, tier, points: q.points as 100|200|300, answered: false });
     }
+    // Hard column: draw from merged tier 4/5/6 pool, always award 600 pts
+    const hardQ = globalPool.drawFromBuckets(cat, [4, 5, 6]);
+    if (hardQ) row.push({ questionId: hardQ.id, category: cat, tier: 4, points: 600, answered: false });
     return row;
   });
 }

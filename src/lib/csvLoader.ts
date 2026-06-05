@@ -33,7 +33,8 @@ export interface CsvLoadResult {
   loaded: number;
 }
 
-const VALID_POINTS = new Set([100, 200, 300, 400, 500, 600]);
+const VALID_POINTS = new Set([100, 200, 300, 600]);
+const POINTS_TO_TIER: Record<number, 1 | 2 | 3 | 4> = { 100: 1, 200: 2, 300: 3, 600: 4 };
 const CORRECT_MAP: Record<string, number> = { a: 0, b: 1, c: 2, d: 3 };
 
 function parseCsvLine(line: string): string[] {
@@ -108,7 +109,7 @@ export function parseCsvContent(text: string): CsvLoadResult {
 
     const points = parseInt(row['difficulty_points'] ?? '100', 10);
     if (!VALID_POINTS.has(points)) {
-      rowErrors.push({ row: rowNum, field: 'difficulty_points', message: 'يجب أن يكون 100 أو 200 أو 300 أو 400 أو 500 أو 600' });
+      rowErrors.push({ row: rowNum, field: 'difficulty_points', message: 'يجب أن يكون 100 أو 200 أو 300 أو 600' });
     }
 
     const correctKey = (row['correct_option'] ?? '').toLowerCase().trim();
@@ -123,7 +124,7 @@ export function parseCsvContent(text: string): CsvLoadResult {
     }
 
     csvIdx++;
-    const tier = (points / 100) as 1 | 2 | 3 | 4 | 5 | 6;
+    const tier = POINTS_TO_TIER[points] ?? 1;
     const categoryId = row['category_id'] as CategoryId;
 
     if (!categoryMap.has(categoryId)) {
@@ -175,7 +176,7 @@ export function parseCsvContent(text: string): CsvLoadResult {
       id: `${categoryId}-${tier}-csv${csvIdx}`,
       category: categoryId,
       tier,
-      points:      points as 100 | 200 | 300 | 400 | 500 | 600,
+      points:      points as 100 | 200 | 300 | 600,
       text:        row['question_ar'],
       options,
       correctIndex: qType === 'ordering' ? 0 : correctIndex,

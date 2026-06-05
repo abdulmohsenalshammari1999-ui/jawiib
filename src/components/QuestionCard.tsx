@@ -23,8 +23,7 @@ const POINT_COLORS: Record<number, { text: string; bg: string }> = {
   100: { text: '#15803D', bg: '#DCFCE7' },
   200: { text: '#0369A1', bg: '#DBEAFE' },
   300: { text: '#B45309', bg: '#FEF3C7' },
-  400: { text: '#C2410C', bg: '#FFEDD5' },
-  500: { text: '#B91C1C', bg: '#FEE2E2' },
+
   600: { text: '#6D28D9', bg: '#EDE9FE' },
 };
 

@@ -14,14 +14,12 @@ interface GameBoardProps {
   tvMode?: boolean;
 }
 
-const TIER_POINTS = [100, 200, 300, 400, 500, 600] as const;
+const TIER_POINTS = [100, 200, 300, 600] as const;
 
 const TIER_STYLES: Record<number, { text: string; glow: string }> = {
   100: { text: '#15803D', glow: 'rgba(21,128,61,0.25)' },
   200: { text: '#0369A1', glow: 'rgba(3,105,161,0.25)' },
   300: { text: '#C8880A', glow: 'rgba(200,136,10,0.25)' },
-  400: { text: '#B45309', glow: 'rgba(180,83,9,0.25)' },
-  500: { text: '#B91C1C', glow: 'rgba(185,28,28,0.25)' },
   600: { text: '#6D28D9', glow: 'rgba(109,40,217,0.3)' },
 };
 
@@ -38,7 +36,7 @@ export function GameBoard({
 }: GameBoardProps) {
   const trialLimit = TRIAL_QUESTION_LIMIT;
   const catColWidth = tvMode ? '130px' : '100px';
-  const gridCols = `${catColWidth} repeat(6, 1fr)`;
+  const gridCols = `${catColWidth} repeat(4, 1fr)`;
 
   return (
     <div className="animate-fade-in w-full">

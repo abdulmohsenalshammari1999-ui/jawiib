@@ -67,6 +67,23 @@ export class QuestionPool {
     }
   }
 
+  /** Draw one question from a merged set of tier buckets (used for the 600-pt hard column). */
+  drawFromBuckets(category: CategoryId, tiers: Tier[]): Question | null {
+    const seenIds = loadSeenIds();
+    const allBuckets = tiers.flatMap((t) => this._index.get(category)?.get(t) ?? []);
+    let q = allBuckets.find((x) => !this._used.has(x.id) && !seenIds.has(x.id)) ?? null;
+    if (!q) {
+      const unseen = allBuckets.filter((x) => !this._used.has(x.id));
+      if (unseen.length > 0) {
+        clearSeenForBucket(seenIds, unseen);
+        persistSeenIds(seenIds);
+        q = unseen[Math.floor(Math.random() * unseen.length)];
+      }
+    }
+    if (q) this._used.add(q.id);
+    return q;
+  }
+
   draw(category: CategoryId, tier: Tier): Question | null {
     const bucket = this._index.get(category)?.get(tier) ?? [];
     const seenIds = loadSeenIds();

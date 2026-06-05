@@ -254,8 +254,13 @@ export const useGameStore = create<GameStoreState>()(
     selectQuestion: (questionId) => {
       const { game } = get();
       if (!game || game.phase !== 'board') return;
-      const question = getQuestionById(questionId);
-      if (!question) return;
+      const rawQ = getQuestionById(questionId);
+      if (!rawQ) return;
+      // Use the board cell's display points (hard column overrides 400/500 → 600)
+      const cell = game.board.flat().find((c) => c.questionId === questionId);
+      const question = cell && cell.points !== rawQ.points
+        ? { ...rawQ, points: cell.points }
+        : rawQ;
 
       const sabStore = useSabotageStore.getState();
 

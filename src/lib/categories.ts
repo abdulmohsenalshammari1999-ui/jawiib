@@ -76,6 +76,11 @@ export const categories: Category[] = [
   // ── Challenge Modes ──────────────────────────────────────────────────────
   { id: 'math_logic',        name: 'رياضيات ومنطق',          icon: '🔢',  color: '#1E40AF' },
   { id: 'riddles_ar',        name: 'ألغاز وأحاجي',            icon: '🧩',  color: '#7C3AED' },
+
+  // ── Gulf & Kuwait Heritage ───────────────────────────────────────────────
+  { id: 'gulf_dialect',      name: 'كلمات خليجية',            icon: '🗣️',  color: '#B45309' },
+  { id: 'kuwait_tribes',     name: 'لجهات وقبايل',            icon: '🏕️',  color: '#92400E' },
+  { id: 'kuwait_old',        name: 'الكويت أول',              icon: '⚓',   color: '#0369A1' },
 ];
 
 export function getCategoryById(id: CategoryId): Category {

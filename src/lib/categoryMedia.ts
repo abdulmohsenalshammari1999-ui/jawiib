@@ -194,6 +194,22 @@ export const CATEGORY_CONTEXT_IMAGES: Partial<Record<CategoryId, CategoryMedia>>
     alt: 'التقنية والتكنولوجيا',
   },
 
+  // ── Gulf & Kuwait Heritage ─────────────────────────────────────────────────
+  gulf_dialect: {
+    url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Typical_Kuwaiti_Coffee_Pot_-_Dallah.jpg/640px-Typical_Kuwaiti_Coffee_Pot_-_Dallah.jpg',
+    alt: 'دلة القهوة العربية — رمز الضيافة الخليجية',
+  },
+  kuwait_tribes: {
+    url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Empty_Quarter.jpg/640px-Empty_Quarter.jpg',
+    alt: 'الصحراء العربية — موطن القبائل',
+    position: 'center',
+  },
+  kuwait_old: {
+    url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Kuwait_Towers.jpg/640px-Kuwait_Towers.jpg',
+    alt: 'الكويت القديمة',
+    position: 'center top',
+  },
+
   // ── Economy ────────────────────────────────────────────────────────────────
   economics: {
     url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Kuwait_Towers.jpg/640px-Kuwait_Towers.jpg',

@@ -61,7 +61,11 @@ export type CategoryId =
   | 'flags_maps'
   // ── Challenge Modes ──────────────────────────────────────────────────────
   | 'math_logic'
-  | 'riddles_ar';
+  | 'riddles_ar'
+  // ── Gulf & Kuwait Heritage ───────────────────────────────────────────────
+  | 'gulf_dialect'
+  | 'kuwait_tribes'
+  | 'kuwait_old';
 
 // ── Question media type ───────────────────────────────────────────────────────
 export type QuestionType =

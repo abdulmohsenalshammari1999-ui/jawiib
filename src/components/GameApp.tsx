@@ -31,7 +31,7 @@ import { CategoryDraftScreen } from './screens/CategoryDraftScreen';
 import { TeamSetupScreen } from './TeamSetupScreen';
 import { FeedbackModal } from './FeedbackModal';
 import type { GameContext } from './FeedbackModal';
-import { EntryScreen } from './EntryScreen';
+import { EntryScreen, type StartMode } from './EntryScreen';
 import { RegisterScreen } from './RegisterScreen';
 import { GameLoadingScreen } from './GameLoadingScreen';
 import { MysteryBoxOverlay } from './game/MysteryBoxOverlay';
@@ -392,6 +392,32 @@ export function GameApp() {
     [createRoom, setMode, initTeams, assignTeam, paymentConfigured]
   );
 
+  // Direct-start from the new compact EntryScreen — skips TeamSetup + CategoryDraft
+  const handleDirectStart = useCallback(
+    (name: string, startMode: StartMode) => {
+      setShowEntry(false);
+      if (startMode === 'quick') {
+        handleQuickPlay(name);
+        return;
+      }
+      const shuffled = [...ALL_CATS].sort(() => Math.random() - 0.5);
+      const cats = shuffled.slice(0, 6).map((c) => c.id) as CategoryId[];
+      if (!paymentConfigured) {
+        setMode(startMode);
+        const result = createRoom(name, false, cats);
+        if (startMode === 'teams') {
+          initTeams();
+          assignTeam(result.playerId, 'alpha');
+          // stay at subView='lobby' — no setup screen
+        }
+      } else {
+        setPendingFullGame({ name, cats, mode: startMode });
+        setShowPayment(true);
+      }
+    },
+    [handleQuickPlay, createRoom, setMode, initTeams, assignTeam, paymentConfigured]
+  );
+
   const handleDraftComplete = useCallback(() => {
     const cats = draft.selectedCategories as CategoryId[];
     if (cats.length >= 2) updateCategories(cats);
@@ -538,6 +564,7 @@ export function GameApp() {
     return (
       <EntryScreen
         onEnter={() => setShowEntry(false)}
+        onDirectStart={handleDirectStart}
         soundEnabled={soundEnabled}
         musicEnabled={musicEnabled}
         onToggleSound={toggleSound}

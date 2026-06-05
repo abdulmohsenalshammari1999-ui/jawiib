@@ -2,14 +2,12 @@ import { useState, useMemo, useEffect } from 'react';
 import type { Question } from '@/lib/types';
 import { TimerBar } from './game/TimerBar';
 import { ImageMedia, AudioMedia, VideoMedia } from './game/MediaRenderer';
-import { CATEGORY_CONTEXT_IMAGES } from '@/lib/categoryMedia';
 
 interface QuestionCardProps {
   question: Question;
   timer: number;
   maxTimer?: number;
   onAnswer: (index: number) => void;
-  /** In teams mode: suppress correct-answer green highlight so steal team can't see it */
   suppressCorrectReveal?: boolean;
   disabled?: boolean;
   hasBomb?: boolean;
@@ -21,26 +19,140 @@ interface QuestionCardProps {
 
 const OPTION_LABELS = ['أ', 'ب', 'ج', 'د'];
 
-const POINT_COLORS: Record<number, string> = {
-  100: '#15803D',
-  200: '#0369A1',
-  300: '#C8880A',
-  400: '#B45309',
-  500: '#B91C1C',
-  600: '#6D28D9',
+const POINT_COLORS: Record<number, { text: string; bg: string }> = {
+  100: { text: '#15803D', bg: '#DCFCE7' },
+  200: { text: '#0369A1', bg: '#DBEAFE' },
+  300: { text: '#B45309', bg: '#FEF3C7' },
+  400: { text: '#C2410C', bg: '#FFEDD5' },
+  500: { text: '#B91C1C', bg: '#FEE2E2' },
+  600: { text: '#6D28D9', bg: '#EDE9FE' },
 };
 
-const TYPE_LABELS: Record<string, { icon: string; label: string; bg: string; textColor?: string }> = {
-  image:    { icon: '🖼️',  label: 'سؤال صوري',     bg: '#0369A120', textColor: '#0369A1' },
-  audio:    { icon: '🎵',  label: 'سؤال صوتي',     bg: '#7C3AED20', textColor: '#7C3AED' },
-  video:    { icon: '🎬',  label: 'سؤال مرئي',     bg: '#B9182020', textColor: '#B91820' },
-  math:     { icon: '🔢',  label: 'تحدي رياضي',    bg: '#1D4ED820', textColor: '#1D4ED8' },
-  riddle:   { icon: '🧩',  label: 'لغز وأحجية',    bg: '#B07D1A20', textColor: '#B07D1A' },
-  guess:    { icon: '🎭',  label: 'خمّن من/ماذا',  bg: '#15803D18', textColor: '#15803D' },
-  scene:    { icon: '🎞️', label: 'ماذا حدث هنا؟', bg: '#EA580C18', textColor: '#EA580C' },
-  identify: { icon: '👂',  label: 'عرّف الصوت',    bg: '#6D28D918', textColor: '#6D28D9' },
+const TYPE_LABELS: Record<string, { icon: string; label: string }> = {
+  image:    { icon: '🖼️',  label: 'سؤال صوري' },
+  audio:    { icon: '🎵',  label: 'سؤال صوتي' },
+  video:    { icon: '🎬',  label: 'سؤال مرئي' },
+  math:     { icon: '🔢',  label: 'تحدي رياضي' },
+  riddle:   { icon: '🧩',  label: 'لغز وأحجية' },
+  guess:    { icon: '🎭',  label: 'خمّن من/ماذا' },
+  scene:    { icon: '🎞️', label: 'ماذا حدث هنا؟' },
+  identify: { icon: '👂',  label: 'عرّف الصوت' },
+  ordering: { icon: '🔢',  label: 'رتّب بالترتيب' },
 };
 
+// ── Ordering question sub-component ──────────────────────────────────────────
+function OrderingUI({
+  items,
+  correctOrder,
+  onResult,
+  disabled,
+}: {
+  items: string[];
+  correctOrder: number[];
+  onResult: (correct: boolean) => void;
+  disabled: boolean;
+}) {
+  const [order, setOrder] = useState<number[]>(() => {
+    const arr = items.map((_, i) => i);
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+
+  const swap = (a: number, b: number) => {
+    if (submitted || disabled) return;
+    setOrder((prev) => {
+      const n = [...prev];
+      [n[a], n[b]] = [n[b], n[a]];
+      return n;
+    });
+  };
+
+  const handleSubmit = () => {
+    if (submitted || disabled) return;
+    const correct = order.every((itemIdx, pos) => correctOrder[pos] === itemIdx);
+    setIsCorrect(correct);
+    setSubmitted(true);
+    setTimeout(() => onResult(correct), 400);
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-center text-xs text-gray-500 mb-3 font-bold">
+        رتّب العناصر بالضغط على ▲▼ ثم اضغط تأكيد
+      </p>
+      {order.map((itemIdx, pos) => {
+        const posCorrect = submitted && correctOrder[pos] === itemIdx;
+        return (
+          <div
+            key={itemIdx}
+            className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
+              !submitted
+                ? 'bg-gray-50 border-gray-200'
+                : posCorrect
+                ? 'bg-green-50 border-green-400'
+                : 'bg-red-50 border-red-400'
+            }`}
+          >
+            <span
+              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0"
+              style={{ background: '#FEF3C7', color: '#B07D1A' }}
+            >
+              {pos + 1}
+            </span>
+            <span className="flex-1 font-bold text-gray-900 text-sm sm:text-base leading-snug">
+              {items[itemIdx]}
+            </span>
+            {!submitted && !disabled && (
+              <div className="flex flex-col gap-0.5 shrink-0">
+                <button
+                  onClick={() => swap(pos, pos - 1)}
+                  disabled={pos === 0}
+                  className="w-7 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-800 hover:bg-gray-100 disabled:opacity-20 text-xs font-black transition-colors"
+                >
+                  ▲
+                </button>
+                <button
+                  onClick={() => swap(pos, pos + 1)}
+                  disabled={pos === order.length - 1}
+                  className="w-7 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-800 hover:bg-gray-100 disabled:opacity-20 text-xs font-black transition-colors"
+                >
+                  ▼
+                </button>
+              </div>
+            )}
+            {submitted && (
+              <span className={`text-lg shrink-0 ${posCorrect ? 'text-green-600' : 'text-red-500'}`}>
+                {posCorrect ? '✓' : '✗'}
+              </span>
+            )}
+          </div>
+        );
+      })}
+
+      {!submitted && !disabled && (
+        <button
+          onClick={handleSubmit}
+          className="w-full py-3.5 rounded-xl font-black text-white text-base mt-3 transition-all active:scale-95"
+          style={{ background: 'linear-gradient(135deg,#B07D1A,#D4A94A)', boxShadow: '0 4px 16px rgba(176,125,26,0.35)' }}
+        >
+          تأكيد الترتيب ✓
+        </button>
+      )}
+      {submitted && (
+        <div className={`text-center py-3 rounded-xl font-black text-base ${isCorrect ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+          {isCorrect ? '🎉 ترتيب صحيح!' : '❌ ترتيب خاطئ'}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export function QuestionCard({
   question,
   timer,
@@ -74,9 +186,7 @@ export function QuestionCard({
   const qType = question.type ?? 'text';
   const typeInfo = TYPE_LABELS[qType];
   const isActuallyDisabled = disabled || lockPhase;
-  const ptColor = POINT_COLORS[question.points] ?? '#C8880A';
-  // Show a contextual background image for the category when no explicit mediaUrl
-  const contextMedia = !question.mediaUrl ? (CATEGORY_CONTEXT_IMAGES[question.category] ?? null) : null;
+  const ptInfo = POINT_COLORS[question.points] ?? POINT_COLORS[300];
 
   const handleAnswer = (displayIdx: number) => {
     if (selected !== null || isActuallyDisabled) return;
@@ -96,69 +206,81 @@ export function QuestionCard({
     }
   };
 
+  const handleOrderingResult = (correct: boolean) => {
+    setSelected(0);
+    setRevealed(true);
+    setTimeout(
+      () => onAnswer(correct ? question.correctIndex : (question.correctIndex + 1) % Math.max(question.options.length, 2)),
+      400,
+    );
+  };
+
   const optionStyle = (idx: number): string => {
+    const base = 'p-4 rounded-xl border-2 text-right transition-all leading-snug flex items-center select-none';
     if (selected === null) {
       return isActuallyDisabled
-        ? 'border-jawwib-border bg-jawwib-surface opacity-40 cursor-not-allowed'
-        : 'answer-option border-jawwib-border bg-jawwib-card hover:border-jawwib-gold/60 hover:bg-jawwib-surface cursor-pointer';
+        ? `${base} border-gray-200 bg-gray-50 opacity-40 cursor-not-allowed`
+        : `${base} border-gray-200 bg-gray-50 hover:border-amber-400 hover:bg-amber-50 cursor-pointer active:scale-[0.97]`;
     }
     const isSelected = selected === idx;
     if (!revealed) {
       return isSelected
-        ? 'border-jawwib-gold bg-jawwib-gold/15 scale-[0.97] opacity-90'
-        : 'border-jawwib-border bg-jawwib-surface opacity-25';
+        ? `${base} border-amber-400 bg-amber-50 scale-[0.97]`
+        : `${base} border-gray-200 bg-gray-50 opacity-25`;
     }
     const isCorrect = idx === question.correctIndex;
-    if (isSelected && isCorrect)  return 'border-jawwib-green bg-jawwib-green/12 scale-[0.97]';
-    if (isSelected && !isCorrect) return 'border-jawwib-red bg-jawwib-red/12 scale-[0.97] animate-shake';
-    if (!isSelected && isCorrect) return 'border-jawwib-green bg-jawwib-green/8';
-    return 'border-jawwib-border bg-jawwib-surface opacity-20';
+    if (isSelected && isCorrect)  return `${base} border-green-500 bg-green-50`;
+    if (isSelected && !isCorrect) return `${base} border-red-500 bg-red-50 animate-shake`;
+    if (!isSelected && isCorrect) return `${base} border-green-400 bg-green-50`;
+    return `${base} border-gray-200 bg-gray-50 opacity-20`;
   };
 
   return (
     <div className={`max-w-2xl mx-auto w-full ${lockPhase ? 'animate-countdown-pop' : 'phase-enter'}`}>
 
-      {/* ── Effect banners ──────────────────────────────────────────────── */}
+      {/* ── Effect banners ─────────────────────────────────────────────────── */}
       {hasBomb && (
-        <div className="mb-3 px-4 py-2.5 rounded-xl bg-orange-50 border border-orange-300 flex items-center gap-2 animate-sabotage">
+        <div className="mb-3 px-4 py-2.5 rounded-xl bg-orange-50 border border-orange-300 flex items-center gap-2">
           <span className="text-orange-500 text-xl">💣</span>
           <span className="text-orange-700 text-sm font-bold">قنبلة! إجابة خاطئة = −150 إضافية</span>
         </div>
       )}
       {hasDouble && (
-        <div className="mb-3 px-4 py-2.5 rounded-xl bg-yellow-50 border border-yellow-300 flex items-center gap-2 animate-sabotage">
+        <div className="mb-3 px-4 py-2.5 rounded-xl bg-yellow-50 border border-yellow-300 flex items-center gap-2">
           <span className="text-yellow-600 text-xl">⚡</span>
           <span className="text-yellow-700 text-sm font-bold">رهان! صح = ضعف • خطأ = −75</span>
         </div>
       )}
       {scrambledOptions && (
-        <div className="mb-3 px-4 py-2 rounded-xl bg-jawwib-purple/8 border border-jawwib-purple/25 flex items-center gap-2">
-          <span className="text-jawwib-purple">🔀</span>
-          <span className="text-jawwib-purple text-xs font-bold">الخيارات مخلوطة</span>
+        <div className="mb-3 px-4 py-2 rounded-xl bg-purple-50 border border-purple-200 flex items-center gap-2">
+          <span className="text-purple-500">🔀</span>
+          <span className="text-purple-700 text-xs font-bold">الخيارات مخلوطة</span>
         </div>
       )}
 
-      {/* ── Main card ───────────────────────────────────────────────────── */}
+      {/* ── Main card — WHITE ───────────────────────────────────────────────── */}
       <div
-        className="game-card p-5 transition-all"
-        style={teamColor ? { borderColor: `${teamColor}30`, boxShadow: `0 4px 24px ${teamColor}14` } : undefined}
+        className="bg-white rounded-2xl p-5 sm:p-6 transition-all"
+        style={{
+          boxShadow: teamColor
+            ? `0 8px 40px ${teamColor}22, 0 2px 12px rgba(0,0,0,0.10)`
+            : '0 8px 40px rgba(0,0,0,0.14)',
+          border: teamColor ? `2px solid ${teamColor}28` : '2px solid rgba(0,0,0,0.05)',
+        }}
       >
-        {/* Header row */}
-        <div className="flex items-center justify-between mb-4 gap-2">
-          <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <span
-              className="score-display font-black text-2xl tabular-nums leading-none shrink-0"
-              style={{ color: ptColor }}
-            >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5 gap-3">
+          <div
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full shrink-0 flex-wrap"
+            style={{ background: ptInfo.bg }}
+          >
+            <span className="font-black text-2xl tabular-nums leading-none" style={{ color: ptInfo.text }}>
               {question.points}
             </span>
-            <span className="text-jawwib-text-dim text-xs font-bold shrink-0">نقطة</span>
+            <span className="text-xs font-bold" style={{ color: ptInfo.text }}>نقطة</span>
             {typeInfo && (
-              <span
-                className="category-label px-2.5 py-0.5 rounded-full shrink-0"
-                style={{ background: typeInfo.bg, color: typeInfo.textColor ?? ptColor }}
-              >
-                {typeInfo.icon} {typeInfo.label}
+              <span className="text-xs font-bold opacity-70" style={{ color: ptInfo.text }}>
+                · {typeInfo.icon} {typeInfo.label}
               </span>
             )}
           </div>
@@ -167,159 +289,93 @@ export function QuestionCard({
           </div>
         </div>
 
-        {/* Ready indicator */}
         {lockPhase && !disabled && (
           <div className="text-center mb-3">
-            <span className="text-jawwib-gold text-sm font-bold animate-pulse">استعد...</span>
+            <span className="text-amber-600 text-sm font-black animate-pulse">استعد...</span>
           </div>
         )}
 
-        {/* ── Teaser (shown only before answer) ────────────────────────── */}
         {question.teaser && selected === null && (
-          <div className="teaser-text mb-3">{question.teaser}</div>
+          <div className="text-center text-sm text-gray-500 italic mb-3">{question.teaser}</div>
         )}
 
-        {/* ── Category contextual image (shown when no explicit mediaUrl) ── */}
-        {contextMedia && (
-          <div
-            className="relative w-full rounded-xl overflow-hidden mb-4"
-            style={{ height: '150px' }}
-          >
-            <img
-              src={contextMedia.url}
-              alt={contextMedia.alt}
-              className="w-full h-full object-cover"
-              style={{ objectPosition: contextMedia.position ?? 'center' }}
-              loading="lazy"
-              onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none'; }}
-            />
-            {/* Fade into the white card at bottom */}
-            <div
-              className="absolute inset-0"
-              style={{ background: 'linear-gradient(to bottom, transparent 30%, rgba(255,255,255,0.97) 100%)' }}
-            />
-            {/* Alt text caption bottom-left */}
-            <span
-              className="absolute bottom-1.5 right-2 text-[9px] font-bold opacity-40"
-              style={{ color: '#1A1208' }}
-            >
-              {contextMedia.alt}
-            </span>
-          </div>
-        )}
-
-        {/* ── Media section ─────────────────────────────────────────────── */}
-        {question.mediaUrl && (qType === 'image' || qType === 'guess') && (
-          <div className="mb-4">
-            <ImageMedia src={question.mediaUrl} alt={question.mediaAlt ?? question.text} />
-          </div>
-        )}
-        {question.mediaUrl && qType === 'scene' && !question.mediaUrl.match(/\.(mp4|webm|ogg)$/i) && (
-          <div className="mb-4">
-            <ImageMedia src={question.mediaUrl} alt={question.mediaAlt ?? question.text} />
-          </div>
+        {/* Media */}
+        {question.mediaUrl && (qType === 'image' || qType === 'guess' || qType === 'scene') && (
+          <div className="mb-4"><ImageMedia src={question.mediaUrl} alt={question.mediaAlt ?? question.text} /></div>
         )}
         {question.mediaUrl && (qType === 'audio' || qType === 'identify') && (
           <div className="mb-4">
             <AudioMedia
               src={question.mediaUrl}
               duration={question.mediaDuration}
+              autoPlay
               label={qType === 'identify' ? '👂 استمع واعرف من هو / ما هو' : '🎵 استمع جيداً ثم أجب'}
             />
           </div>
         )}
-        {question.mediaUrl && (qType === 'video' || (qType === 'scene' && question.mediaUrl.match(/\.(mp4|webm|ogg)$/i))) && (
-          <div className="mb-4">
-            <VideoMedia src={question.mediaUrl} caption={question.mediaAlt} />
-          </div>
+        {question.mediaUrl && qType === 'video' && (
+          <div className="mb-4"><VideoMedia src={question.mediaUrl} caption={question.mediaAlt} /></div>
         )}
 
-        {/* ── Math mode ─────────────────────────────────────────────────── */}
-        {qType === 'math' && (
-          <div
-            className="mb-5 rounded-2xl p-5 text-center border"
-            style={{ background: 'linear-gradient(135deg,#EFF6FF,#DBEAFE)', borderColor: '#1D4ED825' }}
-          >
-            <p className="category-label text-blue-500 mb-2 tracking-widest">🔢 تحدي رياضي</p>
-            <p
-              className="font-display text-2xl sm:text-3xl text-blue-700 leading-relaxed"
-              dir="ltr"
-              style={{ fontVariantNumeric: 'tabular-nums' }}
-            >
-              {question.text}
-            </p>
+        {/* Question text */}
+        {qType === 'math' ? (
+          <div className="mb-5 rounded-2xl p-4 text-center bg-blue-50 border border-blue-200">
+            <p className="text-xs font-bold text-blue-500 mb-2 tracking-widest">🔢 تحدي رياضي</p>
+            <p className="font-display text-2xl sm:text-3xl text-blue-800 leading-relaxed" dir="ltr">{question.text}</p>
           </div>
-        )}
-
-        {/* ── Riddle mode ───────────────────────────────────────────────── */}
-        {qType === 'riddle' && (
-          <div
-            className="mb-5 rounded-2xl p-4 text-center border"
-            style={{ background: 'linear-gradient(135deg,#FEF3C7,#FDE68A18)', borderColor: '#B07D1A30' }}
-          >
-            <p className="category-label text-jawwib-gold mb-2 tracking-widest">🧩 لغز واحجية</p>
-            <p className="question-text font-bold text-jawwib-text leading-relaxed">{question.text}</p>
+        ) : qType === 'riddle' ? (
+          <div className="mb-5 rounded-2xl p-4 text-center bg-amber-50 border border-amber-200">
+            <p className="text-xs font-bold text-amber-600 mb-2 tracking-widest">🧩 لغز وأحجية</p>
+            <p className="text-xl font-black text-gray-900 leading-relaxed">{question.text}</p>
           </div>
-        )}
-
-        {/* ── Guess mode — identify person / place / object ─────────────── */}
-        {qType === 'guess' && (
-          <div className="question-type-guess p-4 mb-4 text-center">
-            <p className="category-label text-green-700 mb-2 tracking-widest">🎭 خمّن من / ماذا / أين</p>
-            <p className="question-text text-jawwib-text leading-relaxed">{question.text}</p>
+        ) : qType === 'ordering' ? (
+          <div className="mb-4 text-center">
+            <p className="text-lg sm:text-xl font-black text-gray-900 leading-snug">{question.text}</p>
           </div>
-        )}
-
-        {/* ── Scene mode — "what happened here?" ───────────────────────── */}
-        {qType === 'scene' && (
-          <div className="question-type-scene p-4 mb-4 text-center">
-            <p className="category-label text-orange-600 mb-2 tracking-widest">🎞️ ماذا حدث في هذا المشهد؟</p>
-            <p className="question-text text-jawwib-text leading-relaxed">{question.text}</p>
-          </div>
-        )}
-
-        {/* ── Identify mode — sound / voice / song recognition ──────────── */}
-        {qType === 'identify' && (
-          <div className="question-type-identify p-4 mb-4 text-center">
-            <p className="category-label text-purple-700 mb-2 tracking-widest">👂 عرّف هذا الصوت / الأغنية</p>
-            <p className="question-text text-jawwib-text leading-relaxed">{question.text}</p>
-          </div>
-        )}
-
-        {/* ── Standard question text ────────────────────────────────────── */}
-        {qType !== 'math' && qType !== 'riddle' && qType !== 'guess' && qType !== 'scene' && qType !== 'identify' && (
-          <h2 className="question-text text-center mb-5 px-1">
+        ) : (
+          <h2 className="text-xl sm:text-2xl font-black text-gray-900 text-center mb-5 px-1 leading-snug">
             {question.text}
           </h2>
         )}
 
-        {/* ── Answer options ─────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {displayOptions.map((option, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleAnswer(idx)}
-              disabled={selected !== null || isActuallyDisabled}
-              aria-label={`الخيار ${OPTION_LABELS[idx]}: ${option}`}
-              className={`p-4 rounded-xl border-2 text-right transition-all leading-snug flex items-center ${optionStyle(idx)}`}
-            >
-              <span
-                className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-black ml-2.5 shrink-0"
-                style={{ background: 'rgba(176,125,26,0.12)', color: '#B07D1A' }}
-              >
-                {OPTION_LABELS[idx]}
-              </span>
-              <span className="font-bold text-sm sm:text-base flex-1">{option}</span>
-              {revealed && idx === question.correctIndex && (
-                <span className="mr-2 text-jawwib-green text-base shrink-0">✓</span>
-              )}
-            </button>
-          ))}
-        </div>
+        {/* Ordering UI */}
+        {qType === 'ordering' && (
+          <OrderingUI
+            items={question.options}
+            correctOrder={question.correctOrder ?? question.options.map((_, i) => i)}
+            onResult={handleOrderingResult}
+            disabled={isActuallyDisabled}
+          />
+        )}
 
-        {/* Spectator label */}
-        {disabled && selected === null && !lockPhase && (
-          <p className="text-center text-jawwib-text-dim text-sm mt-4 font-medium">
+        {/* Standard options */}
+        {qType !== 'ordering' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {displayOptions.map((option, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleAnswer(idx)}
+                disabled={selected !== null || isActuallyDisabled}
+                aria-label={`الخيار ${OPTION_LABELS[idx]}: ${option}`}
+                className={optionStyle(idx)}
+              >
+                <span
+                  className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black ml-3 shrink-0"
+                  style={{ background: '#FEF3C7', color: '#B07D1A', border: '1.5px solid #F59E0B40' }}
+                >
+                  {OPTION_LABELS[idx]}
+                </span>
+                <span className="font-bold text-sm sm:text-base text-gray-900 flex-1 leading-snug">{option}</span>
+                {revealed && idx === question.correctIndex && (
+                  <span className="mr-2 text-green-600 text-base shrink-0 font-black">✓</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {disabled && selected === null && !lockPhase && qType !== 'ordering' && (
+          <p className="text-center text-gray-500 text-sm mt-4 font-medium">
             👁️ أنت تشاهد فقط — دور الفريق الآخر
           </p>
         )}

@@ -73,7 +73,8 @@ export type QuestionType =
   | 'riddle'
   | 'guess'      // "خمّن من/ماذا/أين" — identify a person / place / object
   | 'scene'      // "ماذا حدث في هذا المشهد؟" — video/image scene question
-  | 'identify';  // "عرّف هذا الصوت/الأغنية/الصوت" — sound/voice identification
+  | 'identify'   // "عرّف هذا الصوت/الأغنية/الصوت" — sound/voice identification
+  | 'ordering';  // "رتّب" — drag/tap items into the correct order
 
 export interface Question {
   id: string;
@@ -83,6 +84,8 @@ export interface Question {
   text: string;
   options: string[];
   correctIndex: number;
+  /** Ordering questions only: correct sequence as option indices e.g. [2,0,3,1] */
+  correctOrder?: number[];
   // Multimedia
   type?: QuestionType;        // defaults to 'text'
   mediaUrl?: string;          // image / audio / video URL

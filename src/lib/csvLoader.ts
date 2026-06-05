@@ -139,9 +139,16 @@ export function parseCsvContent(text: string): CsvLoadResult {
     const correctIndex = CORRECT_MAP[correctKey];
 
     // Multimedia fields
-    const VALID_TYPES = new Set<string>(['text','image','audio','video','math','riddle']);
+    const VALID_TYPES = new Set<string>(['text','image','audio','video','math','riddle','guess','scene','identify','ordering']);
     const rawType = (row['question_type'] ?? 'text').toLowerCase().trim();
     const qType: QuestionType = VALID_TYPES.has(rawType) ? rawType as QuestionType : 'text';
+
+    // Ordering question: parse correct_order column (e.g. "a,c,b,d" or "0,2,1,3")
+    let correctOrder: number[] | undefined;
+    if (qType === 'ordering' && row['correct_order']) {
+      const parts = row['correct_order'].split(',').map((s) => s.trim().toLowerCase());
+      correctOrder = parts.map((p) => (p in CORRECT_MAP ? CORRECT_MAP[p] : parseInt(p, 10)));
+    }
     const mediaUrl     = row['media_url']      || undefined;
     const mediaDurRaw  = parseInt(row['media_duration'] ?? '', 10);
     const mediaDuration = isNaN(mediaDurRaw) ? undefined : mediaDurRaw;
@@ -168,11 +175,12 @@ export function parseCsvContent(text: string): CsvLoadResult {
       id: `${categoryId}-${tier}-csv${csvIdx}`,
       category: categoryId,
       tier,
-      points:    points as 100 | 200 | 300 | 400 | 500 | 600,
-      text:      row['question_ar'],
+      points:      points as 100 | 200 | 300 | 400 | 500 | 600,
+      text:        row['question_ar'],
       options,
-      correctIndex,
-      type:      qType,
+      correctIndex: qType === 'ordering' ? 0 : correctIndex,
+      correctOrder,
+      type:        qType,
       mediaUrl,
       mediaDuration,
       explanation,

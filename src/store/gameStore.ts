@@ -1058,7 +1058,9 @@ export const useGameStore = create<GameStoreState>()(
     },
   }),
   {
-    name: 'jawib-v1',
+    name: 'jawib-v2',
+    version: 2,
+    migrate: () => ({ game: null, localPlayerId: null, answeredCount: 0 }),
     partialize: (state) => ({
       game: state.game,
       localPlayerId: state.localPlayerId,

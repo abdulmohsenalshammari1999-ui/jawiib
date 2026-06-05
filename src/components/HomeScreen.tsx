@@ -32,7 +32,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, accountName,
         <div className="text-center animate-bounce-in">
           <h1 className="text-8xl font-black text-gold-gradient leading-none">جاوب</h1>
           <div className="sadu-accent mx-auto mt-2 mb-1" style={{ maxWidth: 120 }} />
-          <p className="text-jawwib-text-dim text-sm">لعبة الثقافة العامة العربية</p>
+          <p className="text-jawwib-text-dim text-sm">لعب وتحدّى أصحابك 🎮</p>
           <div className="cultural-strip mt-2">
             🌴 🐪 ☕ 🦅 🌊
           </div>
@@ -96,7 +96,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, accountName,
             </button>
           )}
           <button onClick={() => setView('create')} className="btn-gold w-full text-xl py-4 mb-2">
-            🎮 أنشئ لعبة
+            🎮 كوّن لعبة
           </button>
           <button
             onClick={() => setView('join')}
@@ -122,7 +122,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, accountName,
         </div>
 
         <p className="text-jawwib-text-dim text-xs opacity-60">
-          ✨ 9 أسئلة تجريبية مجانية
+          ✨ ٩ أسئلة مجانية — جرّب الحين!
         </p>
       </div>
     );
@@ -139,7 +139,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, accountName,
           >
             ← رجوع
           </button>
-          <h2 className="text-2xl font-black text-gold-gradient mb-6 text-center">انضم للعبة</h2>
+          <h2 className="text-2xl font-black text-gold-gradient mb-6 text-center">انضم اللعبة</h2>
 
           <div className="space-y-4">
             <div>
@@ -232,7 +232,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, accountName,
         >
           ← رجوع
         </button>
-        <h2 className="text-2xl font-black text-gold-gradient mb-5 text-center">أنشئ لعبة جديدة</h2>
+        <h2 className="text-2xl font-black text-gold-gradient mb-5 text-center">كوّن لعبة جديدة</h2>
 
         {/* Name */}
         <div className="mb-4">
@@ -326,7 +326,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, accountName,
         )}
         {gameMode === 'teams' && (
           <div className="mb-5 p-3 rounded-xl border border-jawwib-gold/30 bg-jawwib-gold/5 text-center">
-            <p className="text-jawwib-gold text-xs font-bold">🎯 كل فريق سيختار فئاته في الجولة التالية</p>
+            <p className="text-jawwib-gold text-xs font-bold">🎯 كل فريق يختار فئاته في الدور الجاي</p>
           </div>
         )}
 
@@ -344,7 +344,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, accountName,
             disabled={!playerName.trim()}
             className="w-full py-3.5 text-base font-bold rounded-xl border-2 border-jawwib-border text-jawwib-text-dim hover:border-jawwib-gold hover:text-jawwib-gold transition-all"
           >
-            🆓 جرّب مجانًا — 9 أسئلة
+            🆓 جرّب مجاناً — ٩ أسئلة
           </button>
         </div>
       </div>

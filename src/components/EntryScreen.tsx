@@ -17,7 +17,7 @@ interface EntryScreenProps {
 const MODE_OPTIONS: { id: StartMode; icon: string; label: string; sub: string }[] = [
   { id: 'quick',  icon: '⚡', label: 'سريع',        sub: 'فئات عشوائية' },
   { id: 'teams',  icon: '🌊🐪', label: 'فرق',      sub: 'فريق ضد فريق' },
-  { id: 'ffa',    icon: '🏆', label: 'كل ضد الكل', sub: 'كل لاعب لنفسه' },
+  { id: 'ffa',    icon: '🏆', label: 'كل ضد الكل', sub: 'كل لاعب لحاله' },
 ];
 
 export function EntryScreen({
@@ -77,7 +77,7 @@ export function EntryScreen({
             جاوب
           </h1>
           <div className="sadu-accent mx-auto mt-2 max-w-[100px]" />
-          <p className="text-jawwib-text-dim text-xs mt-2">لعبة الثقافة العامة العربية</p>
+          <p className="text-jawwib-text-dim text-xs mt-2">لعب وتحدّى أصحابك 🎮</p>
         </div>
 
         {/* Player badge */}
@@ -101,7 +101,7 @@ export function EntryScreen({
 
         {/* Mode selector */}
         <div className="w-full max-w-xs">
-          <p className="text-[11px] text-jawwib-text-dim text-center mb-2 font-bold">وضع اللعب</p>
+          <p className="text-[11px] text-jawwib-text-dim text-center mb-2 font-bold">طريقة اللعب</p>
           <div className="grid grid-cols-3 gap-2">
             {MODE_OPTIONS.map((opt) => (
               <button
@@ -129,7 +129,7 @@ export function EntryScreen({
             onClick={handleStart}
             className="btn-gold w-full text-2xl py-5 font-black tap-target animate-pulse-gold"
           >
-            ابدأ الآن 🚀
+            ابدأ الحين 🚀
           </button>
 
           {/* Audio toggles */}

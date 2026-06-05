@@ -1,5 +1,6 @@
 import { getCategoryById } from '@/lib/categories';
 import { TRIAL_QUESTION_LIMIT } from '@/store/gameStore';
+import { CATEGORY_CONTEXT_IMAGES } from '@/lib/categoryMedia';
 import type { GameBoardCell, CategoryId } from '@/lib/types';
 
 interface GameBoardProps {
@@ -69,14 +70,45 @@ export function GameBoard({
               }`}
               style={{ gridTemplateColumns: gridCols }}
             >
-              {/* Category label */}
-              <div className="board-category-col flex items-center gap-1 px-1 min-w-0">
-                <span className={`shrink-0 ${tvMode ? 'text-base' : 'text-sm'}`}>{cat.icon}</span>
-                <span className={`font-bold truncate leading-tight ${tvMode ? 'text-xs' : 'text-[11px]'} ${
-                  forcedCategoryId === cat.id ? 'text-jawwib-purple' : 'text-jawwib-text-dim'
-                }`}>{cat.name}</span>
-                {forcedCategoryId === cat.id && <span className="text-[9px] text-jawwib-purple font-black shrink-0">🎯</span>}
-              </div>
+              {/* Category label — with image background when available */}
+              {(() => {
+                const catImg = CATEGORY_CONTEXT_IMAGES[cat.id];
+                return (
+                  <div
+                    className={`board-category-col relative overflow-hidden rounded-lg min-w-0 ${tvMode ? 'min-h-[56px]' : 'min-h-[44px]'} ${
+                      forcedCategoryId === cat.id ? 'ring-1 ring-jawwib-purple/60' : ''
+                    }`}
+                  >
+                    {catImg ? (
+                      <>
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            backgroundImage: `url(${catImg.url})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: catImg.position ?? 'center',
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/50 to-black/65" />
+                      </>
+                    ) : (
+                      <div className="absolute inset-0 bg-jawwib-surface" />
+                    )}
+                    <div className="relative z-10 flex flex-col items-center justify-center h-full w-full px-0.5 py-1 text-center">
+                      <span className={`leading-none ${tvMode ? 'text-sm' : 'text-xs'}`}>{cat.icon}</span>
+                      <span
+                        className={`font-bold leading-tight mt-0.5 line-clamp-2 ${tvMode ? 'text-[10px]' : 'text-[8.5px]'} ${
+                          catImg ? 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]' :
+                          forcedCategoryId === cat.id ? 'text-jawwib-purple' : 'text-jawwib-text-dim'
+                        }`}
+                      >
+                        {cat.name}
+                      </span>
+                      {forcedCategoryId === cat.id && <span className="text-[9px] text-jawwib-purple font-black mt-0.5">🎯</span>}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Cells */}
               {row.map((cell, colIndex) => {
@@ -131,7 +163,7 @@ export function GameBoard({
       {isTrial && (
         <div className="mt-3 p-2 rounded-xl bg-jawwib-gold/10 border border-jawwib-gold/20 text-center">
           <span className="text-jawwib-gold text-xs font-bold">
-            🔒 تجريبي: {answeredCount}/{trialLimit} سؤال
+            🔒 تجريبي: {answeredCount}/{trialLimit} أسئلة مجانية
           </span>
         </div>
       )}

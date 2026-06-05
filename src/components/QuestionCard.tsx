@@ -28,16 +28,16 @@ const POINT_COLORS: Record<number, { text: string; bg: string }> = {
 };
 
 const TYPE_LABELS: Record<string, { icon: string; label: string }> = {
-  image:    { icon: '🖼️',  label: 'سؤال صوري' },
-  audio:    { icon: '🎵',  label: 'سؤال صوتي' },
-  video:    { icon: '🎬',  label: 'سؤال مرئي' },
-  math:     { icon: '🔢',  label: 'تحدي رياضي' },
-  riddle:   { icon: '🧩',  label: 'لغز وأحجية' },
-  guess:    { icon: '🎭',  label: 'خمّن من/ماذا' },
-  scene:    { icon: '🎞️', label: 'ماذا حدث هنا؟' },
-  identify: { icon: '👂',  label: 'عرّف الصوت' },
-  ordering: { icon: '🔢',  label: 'رتّب بالترتيب' },
-  map:      { icon: '🗺️', label: 'سؤال خريطة' },
+  image:    { icon: '🖼️',  label: 'سؤال صورة' },
+  audio:    { icon: '🎵',  label: 'سؤال صوت' },
+  video:    { icon: '🎬',  label: 'فيديو' },
+  math:     { icon: '🔢',  label: 'رياضيات' },
+  riddle:   { icon: '🧩',  label: 'لغز' },
+  guess:    { icon: '🎭',  label: 'خمّن' },
+  scene:    { icon: '🎞️', label: 'وش جرى؟' },
+  identify: { icon: '👂',  label: 'عرّف' },
+  ordering: { icon: '🔢',  label: 'رتّب' },
+  map:      { icon: '🗺️', label: 'خريطة' },
 };
 
 // ── Ordering question sub-component ──────────────────────────────────────────
@@ -83,7 +83,7 @@ function OrderingUI({
   return (
     <div className="space-y-2">
       <p className="text-center text-xs text-gray-500 mb-3 font-bold">
-        رتّب العناصر بالضغط على ▲▼ ثم اضغط تأكيد
+        رتّب بـ ▲▼ وبعدين اضغط تأكيد
       </p>
       {order.map((itemIdx, pos) => {
         const posCorrect = submitted && correctOrder[pos] === itemIdx;
@@ -140,12 +140,12 @@ function OrderingUI({
           className="w-full py-3.5 rounded-xl font-black text-white text-base mt-3 transition-all active:scale-95"
           style={{ background: 'linear-gradient(135deg,#B07D1A,#D4A94A)', boxShadow: '0 4px 16px rgba(176,125,26,0.35)' }}
         >
-          تأكيد الترتيب ✓
+          تأكيد ✓
         </button>
       )}
       {submitted && (
         <div className={`text-center py-3 rounded-xl font-black text-base ${isCorrect ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-          {isCorrect ? '🎉 ترتيب صحيح!' : '❌ ترتيب خاطئ'}
+          {isCorrect ? '🎉 ترتيب صح!' : '❌ ترتيب غلط'}
         </div>
       )}
     </div>
@@ -242,19 +242,19 @@ export function QuestionCard({
       {hasBomb && (
         <div className="mb-3 px-4 py-2.5 rounded-xl bg-orange-50 border border-orange-300 flex items-center gap-2">
           <span className="text-orange-500 text-xl">💣</span>
-          <span className="text-orange-700 text-sm font-bold">قنبلة! إجابة خاطئة = −150 إضافية</span>
+          <span className="text-orange-700 text-sm font-bold">قنبلة! إذا غلطت −150 زيادة</span>
         </div>
       )}
       {hasDouble && (
         <div className="mb-3 px-4 py-2.5 rounded-xl bg-yellow-50 border border-yellow-300 flex items-center gap-2">
           <span className="text-yellow-600 text-xl">⚡</span>
-          <span className="text-yellow-700 text-sm font-bold">رهان! صح = ضعف • خطأ = −75</span>
+          <span className="text-yellow-700 text-sm font-bold">رهان! صح = ضعف • غلط = −75</span>
         </div>
       )}
       {scrambledOptions && (
         <div className="mb-3 px-4 py-2 rounded-xl bg-purple-50 border border-purple-200 flex items-center gap-2">
           <span className="text-purple-500">🔀</span>
-          <span className="text-purple-700 text-xs font-bold">الخيارات مخلوطة</span>
+          <span className="text-purple-700 text-xs font-bold">الخيارات مقلوبة 🔀</span>
         </div>
       )}
 
@@ -291,7 +291,7 @@ export function QuestionCard({
 
         {lockPhase && !disabled && (
           <div className="text-center mb-3">
-            <span className="text-amber-600 text-sm font-black animate-pulse">استعد...</span>
+            <span className="text-amber-600 text-sm font-black animate-pulse">جهّزك...</span>
           </div>
         )}
 
@@ -320,12 +320,12 @@ export function QuestionCard({
         {/* Question text */}
         {qType === 'math' ? (
           <div className="mb-5 rounded-2xl p-4 text-center bg-blue-50 border border-blue-200">
-            <p className="text-xs font-bold text-blue-500 mb-2 tracking-widest">🔢 تحدي رياضي</p>
+            <p className="text-xs font-bold text-blue-500 mb-2 tracking-widest">🔢 رياضيات</p>
             <p className="font-display text-2xl sm:text-3xl text-blue-800 leading-relaxed" dir="ltr">{question.text}</p>
           </div>
         ) : qType === 'riddle' ? (
           <div className="mb-5 rounded-2xl p-4 text-center bg-amber-50 border border-amber-200">
-            <p className="text-xs font-bold text-amber-600 mb-2 tracking-widest">🧩 لغز وأحجية</p>
+            <p className="text-xs font-bold text-amber-600 mb-2 tracking-widest">🧩 لغز</p>
             <p className="text-xl font-black text-gray-900 leading-relaxed">{question.text}</p>
           </div>
         ) : qType === 'ordering' ? (
@@ -376,7 +376,7 @@ export function QuestionCard({
 
         {disabled && selected === null && !lockPhase && qType !== 'ordering' && (
           <p className="text-center text-gray-500 text-sm mt-4 font-medium">
-            👁️ أنت تشاهد فقط — دور الفريق الآخر
+            👁️ أنت تشوف بس — دور الفريق الثاني
           </p>
         )}
       </div>

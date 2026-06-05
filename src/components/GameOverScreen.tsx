@@ -408,7 +408,7 @@ export function GameOverScreen({
 
       <div className="max-w-lg w-full text-center relative z-10">
         <div className="text-6xl mb-2 animate-bounce-in">🏆</div>
-        <h1 className="text-3xl font-black text-gold-gradient mb-1">انتهت اللعبة!</h1>
+        <h1 className="text-3xl font-black text-gold-gradient mb-1">خلصت اللعبة!</h1>
         <div className="sea-wave-accent mx-auto mb-5" style={{ width: 120 }} />
 
         {/* Tie */}
@@ -435,7 +435,7 @@ export function GameOverScreen({
               className="game-card p-6 mb-3 animate-score-reveal"
               style={{ borderColor: `${winnerTeam.color}50`, borderWidth: '2px' }}
             >
-              <p className="text-jawwib-text-dim text-xs mb-2">الفريق الفائز 🎉</p>
+              <p className="text-jawwib-text-dim text-xs mb-2">الفريق الفايز 🎉</p>
               <div className="text-5xl mb-2">{winnerTeam.emoji}</div>
               <h2 className="text-2xl font-black mb-1" style={{ color: winnerTeam.color }}>
                 {winnerTeam.name}
@@ -444,7 +444,7 @@ export function GameOverScreen({
               <p className="text-jawwib-text-dim text-xs mt-1">نقطة</p>
               {gapScore > 0 && (
                 <p className="text-xs text-jawwib-text-dim mt-2">
-                  تقدّم بـ {fmt(gapScore)} نقطة على {loserTeam.name}
+                  فاز بـ {fmt(gapScore)} نقطة على {loserTeam.name} 💪
                 </p>
               )}
               {(() => {
@@ -474,7 +474,7 @@ export function GameOverScreen({
         {/* FFA winner */}
         {!winnerTeam && winner && (
           <div className="game-card p-6 mb-5 animate-score-reveal border-2 border-jawwib-gold/40">
-            <p className="text-jawwib-text-dim text-sm mb-2">الفائز 🥇</p>
+            <p className="text-jawwib-text-dim text-sm mb-2">الفايز 🥇</p>
             <div className="text-4xl mb-2">{winner.avatar}</div>
             <h2 className="text-2xl font-black text-jawwib-gold mb-1">{winner.name}</h2>
             <p className="text-3xl font-black text-jawwib-gold tabular-nums">{fmt(winner.score)} نقطة</p>
@@ -489,7 +489,7 @@ export function GameOverScreen({
 
         {/* Leaderboard */}
         <div className="game-card p-4 mb-5">
-          <h3 className="text-jawwib-gold font-bold text-sm mb-3 text-right">الترتيب النهائي</h3>
+          <h3 className="text-jawwib-gold font-bold text-sm mb-3 text-right">الترتيب الأخير</h3>
           <div className="space-y-1.5">
             {sorted.map((player, idx) => {
               const tColor =
@@ -523,7 +523,7 @@ export function GameOverScreen({
         {/* ── Action buttons ───────────────────────────────────────────────────── */}
         <div className="flex flex-col gap-2.5">
           <button onClick={onPlayAgain} className="btn-gold w-full text-lg py-4">
-            🔄 العب مرة ثانية
+            🔄 العب مرة ثانية!
           </button>
 
           {/* Share section */}
@@ -541,7 +541,7 @@ export function GameOverScreen({
                 color: '#D4A94A',
               }}
             >
-              📸 كارد للنشر على سناب وانستغرام
+              📸 ارسل كارد على سناب وانستغرام
             </button>
             <div className="flex gap-2">
               <ShareButton
@@ -574,7 +574,7 @@ export function GameOverScreen({
               onClick={onRateMatch}
               className="w-full text-sm py-3 rounded-xl border-2 border-jawwib-gold/40 text-jawwib-gold hover:bg-jawwib-gold/10 transition-all"
             >
-              ⭐ قيّم المباراة
+              ⭐ قيّم اللعبة
             </button>
           )}
           {onNewGame && (

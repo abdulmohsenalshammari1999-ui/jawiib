@@ -9,8 +9,8 @@ interface TeamSetupScreenProps {
 type GameLength = 3 | 4;
 
 const LENGTH_OPTIONS: { value: GameLength; label: string; sub: string; emoji: string }[] = [
-  { value: 3, label: 'سريع', sub: '3 فئات / فريق (~15 دقيقة)', emoji: '⚡' },
-  { value: 4, label: 'عادي', sub: '4 فئات / فريق (~20 دقيقة)', emoji: '🎯' },
+  { value: 3, label: 'سريع', sub: '٣ فئات للفريق (~١٥ دقيقة)', emoji: '⚡' },
+  { value: 4, label: 'عادي', sub: '٤ فئات للفريق (~٢٠ دقيقة)', emoji: '🎯' },
 ];
 
 /* Simple sadu-pattern SVG badge for each team */
@@ -44,8 +44,8 @@ export function TeamSetupScreen({ alphaName, betaName, onConfirm }: TeamSetupScr
       <div className="sadu-accent w-full max-w-sm" />
 
       <div className="text-center">
-        <h1 className="text-3xl font-black text-gold-gradient mb-0.5">حدّد الفرق</h1>
-        <p className="text-jawwib-text-dim text-sm">سمّ كل فريق واختر وقت اللعب</p>
+        <h1 className="text-3xl font-black text-gold-gradient mb-0.5">سمّي الفرق</h1>
+        <p className="text-jawwib-text-dim text-sm">سمّ كل فريق واختار طول اللعبة</p>
       </div>
 
       <div className="w-full max-w-sm space-y-5">
@@ -86,7 +86,7 @@ export function TeamSetupScreen({ alphaName, betaName, onConfirm }: TeamSetupScr
 
         {/* Game length */}
         <div>
-          <p className="text-xs text-jawwib-text-dim mb-2 text-center">مدة اللعبة</p>
+          <p className="text-xs text-jawwib-text-dim mb-2 text-center">طول اللعبة</p>
           <div className="grid grid-cols-2 gap-2">
             {LENGTH_OPTIONS.map((opt) => (
               <button

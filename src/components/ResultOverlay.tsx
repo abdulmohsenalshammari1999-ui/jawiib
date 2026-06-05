@@ -35,13 +35,13 @@ function EducationalSection({ question }: { question: Question }) {
       <div className="px-4 py-3.5 space-y-2.5">
         <p className="text-[10px] font-black tracking-wider text-blue-600 uppercase flex items-center gap-1">
           <span>🎓</span>
-          <span>زد معلوماتك</span>
+          <span>تعلّم أكثر</span>
         </p>
 
         {question.explanation && (
           <div>
             <p className="text-[10px] font-black text-blue-500 mb-0.5 uppercase tracking-wide">
-              📌 وش هو الجواب؟
+              📌 لماذا هذه الإجابة؟
             </p>
             <p className="text-sm leading-relaxed text-jawwib-text">{question.explanation}</p>
           </div>
@@ -53,7 +53,7 @@ function EducationalSection({ question }: { question: Question }) {
             style={{ background: 'rgba(176,125,26,0.08)', border: '1px solid rgba(176,125,26,0.2)' }}
           >
             <p className="text-[10px] font-black text-jawwib-gold mb-0.5 uppercase tracking-wide">
-              ⚡ معلومة حلوة
+              ⚡ حقيقة مثيرة
             </p>
             <p className="text-sm leading-relaxed text-jawwib-text">{question.funFact}</p>
           </div>
@@ -65,7 +65,7 @@ function EducationalSection({ question }: { question: Question }) {
             style={{ background: 'rgba(21,128,61,0.06)', border: '1px solid rgba(21,128,61,0.18)' }}
           >
             <p className="text-[10px] font-black text-green-700 mb-0.5 uppercase tracking-wide">
-              🌿 تعرف إنه؟
+              🌿 هل تعلم؟
             </p>
             <p className="text-sm leading-relaxed text-jawwib-text">{question.didYouKnow}</p>
           </div>
@@ -118,7 +118,7 @@ export function ResultOverlay({
           <div className="text-center mb-3 animate-final-flare">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black"
               style={{ background: 'linear-gradient(135deg,#B07D1A,#D4A94A)', color: '#fff' }}>
-              ⚡ آخر سؤال!
+              ⚡ السؤال الأخير!
             </div>
           </div>
         )}
@@ -157,14 +157,14 @@ export function ResultOverlay({
           }`}
         >
           {isCorrect
-            ? (isGoldenStreak ? 'ذهبي! 👑🔥' : isBig ? 'ممتاز! 🎉' : 'إجابة صح!')
-            : (isBig ? 'مصيبة! 😂' : 'غلطة كبيرة! 🚨')}
+            ? (isGoldenStreak ? 'ذهبي! 👑🔥' : isBig ? 'ممتاز! 🎉' : 'إجابة صحيحة!')
+            : (isBig ? 'مصيبة! 😂' : 'خطأ فادح! 🚨')}
         </h2>
 
         {/* ── Correct answer reveal — hidden while steal is pending ───── */}
         {!isCorrect && !pendingSteal && (
           <div className="bg-jawwib-green/8 border border-jawwib-green/25 rounded-xl p-3 mb-3 text-center">
-            <p className="text-jawwib-text-dim text-xs mb-1">الجواب الصحيح كان:</p>
+            <p className="text-jawwib-text-dim text-xs mb-1">الجواب الصحيح كان</p>
             <p className="text-jawwib-green font-bold text-base">{correctAnswer}</p>
           </div>
         )}
@@ -172,8 +172,8 @@ export function ResultOverlay({
         {/* ── Steal pending notice ─────────────────────────────────────── */}
         {pendingSteal && (
           <div className="bg-jawwib-purple/8 border border-jawwib-purple/30 rounded-xl p-3 mb-3 text-center">
-            <p className="text-jawwib-purple font-black text-sm">🏴‍☠️ الفريق الثاني عنده فرصة يسرق!</p>
-            <p className="text-jawwib-text-dim text-xs mt-1">الجواب يطلع بعد محاولتهم</p>
+            <p className="text-jawwib-purple font-black text-sm">🏴‍☠️ الفريق المنافس لديه فرصة للسرقة!</p>
+            <p className="text-jawwib-text-dim text-xs mt-1">الإجابة الصحيحة ستُكشف بعد محاولتهم</p>
           </div>
         )}
 
@@ -200,7 +200,7 @@ export function ResultOverlay({
                 </div>
               )}
               <div className="border-t border-jawwib-border pt-1.5 flex justify-between items-center">
-                <span className="font-bold text-sm">المجموع</span>
+                <span className="font-bold text-sm">الإجمالي</span>
                 <span
                   className={`font-black text-2xl animate-score-reveal tabular-nums ${
                     lastAnswer.points >= 0 ? 'text-jawwib-gold' : 'text-jawwib-red'
@@ -231,7 +231,7 @@ export function ResultOverlay({
                 </div>
                 {crowdWasRight !== undefined && (
                   <p className="text-center text-[10px] text-jawwib-text-dim mt-1">
-                    {crowdWasRight ? '🎯 الجمهور صاب!' : '😱 الجمهور انخدع!'}
+                    {crowdWasRight ? '🎯 الجمهور توقع صح!' : '😱 الجمهور انخدع!'}
                   </p>
                 )}
               </div>
@@ -256,7 +256,7 @@ export function ResultOverlay({
         )}
 
         <button onClick={onContinue} className="btn-gold w-full mt-4 tap-target text-base py-4">
-          {pendingSteal ? 'فرصة السرقة! ←' : 'كمّل ←'}
+          {pendingSteal ? 'فرصة السرقة! ←' : 'متابعة ←'}
         </button>
       </div>
     </div>

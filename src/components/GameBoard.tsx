@@ -163,7 +163,7 @@ export function GameBoard({
       {isTrial && (
         <div className="mt-3 p-2 rounded-xl bg-jawwib-gold/10 border border-jawwib-gold/20 text-center">
           <span className="text-jawwib-gold text-xs font-bold">
-            🔒 تجريبي: {answeredCount}/{trialLimit} أسئلة مجانية
+            🔒 تجريبي: {answeredCount}/{trialLimit} سؤال
           </span>
         </div>
       )}

@@ -199,6 +199,16 @@ export const CATEGORY_CONTEXT_IMAGES: Partial<Record<CategoryId, CategoryMedia>>
     url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Typical_Kuwaiti_Coffee_Pot_-_Dallah.jpg/640px-Typical_Kuwaiti_Coffee_Pot_-_Dallah.jpg',
     alt: 'دلة القهوة العربية — رمز الضيافة الخليجية',
   },
+  kuwait_bedou: {
+    url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Camels_in_Jordan.jpg/640px-Camels_in_Jordan.jpg',
+    alt: 'الإبل — رمز الحياة البدوية',
+    position: 'center',
+  },
+  hadar_dialect: {
+    url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Typical_Kuwaiti_Coffee_Pot_-_Dallah.jpg/640px-Typical_Kuwaiti_Coffee_Pot_-_Dallah.jpg',
+    alt: 'ضيافة الحضر الكويتية',
+    position: 'center',
+  },
   kuwait_tribes: {
     url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/59/Empty_Quarter.jpg/640px-Empty_Quarter.jpg',
     alt: 'الصحراء العربية — موطن القبائل',

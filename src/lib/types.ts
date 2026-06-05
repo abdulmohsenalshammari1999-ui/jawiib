@@ -65,7 +65,9 @@ export type CategoryId =
   // ── Gulf & Kuwait Heritage ───────────────────────────────────────────────
   | 'gulf_dialect'
   | 'kuwait_tribes'
-  | 'kuwait_old';
+  | 'kuwait_old'
+  | 'kuwait_bedou'
+  | 'hadar_dialect';
 
 // ── Question media type ───────────────────────────────────────────────────────
 export type QuestionType =

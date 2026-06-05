@@ -81,6 +81,8 @@ export const categories: Category[] = [
   { id: 'gulf_dialect',      name: 'كلمات خليجية',            icon: '🗣️',  color: '#B45309' },
   { id: 'kuwait_tribes',     name: 'لجهات وقبايل',            icon: '🏕️',  color: '#92400E' },
   { id: 'kuwait_old',        name: 'الكويت أول',              icon: '⚓',   color: '#0369A1' },
+  { id: 'kuwait_bedou',      name: 'بدو الكويت',              icon: '🐪',   color: '#78350F' },
+  { id: 'hadar_dialect',     name: 'لهجة الحضر',              icon: '🏘️',  color: '#0F766E' },
 ];
 
 export function getCategoryById(id: CategoryId): Category {

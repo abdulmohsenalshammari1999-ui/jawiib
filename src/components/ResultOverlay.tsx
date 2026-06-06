@@ -1,5 +1,7 @@
 import type { GameState, Question } from '@/lib/types';
 import { EvidenceCard } from './game/EvidenceCard';
+import { genderize } from '@/lib/host';
+import { useAccountStore } from '@/store/accountStore';
 
 interface ResultOverlayProps {
   lastAnswer: NonNullable<GameState['lastAnswer']>;
@@ -24,23 +26,23 @@ function EducationalSection({ question }: { question: Question }) {
     <div
       className="rounded-2xl overflow-hidden mt-3"
       style={{
-        background: 'linear-gradient(135deg,#F0F9FF,#E0F2FE)',
-        border: '1.5px solid #0369A125',
+        background: 'rgba(59,130,246,0.07)',
+        border: '1.5px solid rgba(59,130,246,0.20)',
       }}
     >
       <div
         className="h-1"
-        style={{ background: 'linear-gradient(90deg,#0369A1,#38BDF8,#0369A1)' }}
+        style={{ background: 'linear-gradient(90deg,#1D4ED8,#38BDF8,#1D4ED8)' }}
       />
       <div className="px-4 py-3.5 space-y-2.5">
-        <p className="text-[10px] font-black tracking-wider text-blue-600 uppercase flex items-center gap-1">
+        <p className="text-[10px] font-black tracking-wider text-blue-300 uppercase flex items-center gap-1">
           <span>🎓</span>
           <span>تعلّم أكثر</span>
         </p>
 
         {question.explanation && (
           <div>
-            <p className="text-[10px] font-black text-blue-500 mb-0.5 uppercase tracking-wide">
+            <p className="text-[10px] font-black text-blue-300 mb-0.5 uppercase tracking-wide">
               📌 لماذا هذه الإجابة؟
             </p>
             <p className="text-sm leading-relaxed text-jawwib-text">{question.explanation}</p>
@@ -50,9 +52,9 @@ function EducationalSection({ question }: { question: Question }) {
         {question.funFact && (
           <div
             className="rounded-xl px-3 py-2.5"
-            style={{ background: 'rgba(176,125,26,0.08)', border: '1px solid rgba(176,125,26,0.2)' }}
+            style={{ background: 'rgba(245,166,35,0.08)', border: '1px solid rgba(245,166,35,0.18)' }}
           >
-            <p className="text-[10px] font-black text-jawwib-gold mb-0.5 uppercase tracking-wide">
+            <p className="text-[10px] font-black text-yellow-400 mb-0.5 uppercase tracking-wide">
               ⚡ حقيقة مثيرة
             </p>
             <p className="text-sm leading-relaxed text-jawwib-text">{question.funFact}</p>
@@ -62,9 +64,9 @@ function EducationalSection({ question }: { question: Question }) {
         {question.didYouKnow && (
           <div
             className="rounded-xl px-3 py-2.5"
-            style={{ background: 'rgba(21,128,61,0.06)', border: '1px solid rgba(21,128,61,0.18)' }}
+            style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.18)' }}
           >
-            <p className="text-[10px] font-black text-green-700 mb-0.5 uppercase tracking-wide">
+            <p className="text-[10px] font-black text-green-400 mb-0.5 uppercase tracking-wide">
               🌿 هل تعلم؟
             </p>
             <p className="text-sm leading-relaxed text-jawwib-text">{question.didYouKnow}</p>
@@ -94,6 +96,8 @@ export function ResultOverlay({
   playerStreak = 0,
   pendingSteal = false,
 }: ResultOverlayProps) {
+  const gender        = useAccountStore((s) => s.account?.gender ?? 'neutral');
+  const displayMsg    = genderize(hostMessage, gender);
   const correctAnswer  = currentQuestion.options[currentQuestion.correctIndex];
   const isCorrect      = lastAnswer.correct;
   const isBig          = Math.abs(lastAnswer.points) >= 400;
@@ -242,7 +246,7 @@ export function ResultOverlay({
         {/* ── Host message ─────────────────────────────────────────────── */}
         <div className="flex items-start gap-2 bg-jawwib-surface rounded-xl p-3 mb-3">
           <span className="text-base shrink-0">🎙️</span>
-          <p className="text-sm leading-relaxed text-jawwib-text">{hostMessage}</p>
+          <p className="text-sm leading-relaxed text-jawwib-text">{displayMsg}</p>
         </div>
 
         {/* ── Educational reveal & Evidence — hidden while steal pending ─ */}

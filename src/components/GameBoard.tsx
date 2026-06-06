@@ -17,11 +17,11 @@ interface GameBoardProps {
 
 const TIER_POINTS = [100, 200, 300, 600] as const;
 
-const TIER_STYLES: Record<number, { text: string; glow: string }> = {
-  100: { text: '#15803D', glow: 'rgba(21,128,61,0.25)' },
-  200: { text: '#0369A1', glow: 'rgba(3,105,161,0.25)' },
-  300: { text: '#C8880A', glow: 'rgba(200,136,10,0.25)' },
-  600: { text: '#6D28D9', glow: 'rgba(109,40,217,0.3)' },
+const TIER_STYLES: Record<number, { text: string; bg: string; glow: string }> = {
+  100: { text: '#FFFFFF', bg: '#166534', glow: 'rgba(16,185,129,0.50)' },
+  200: { text: '#FFFFFF', bg: '#1E40AF', glow: 'rgba(59,130,246,0.50)' },
+  300: { text: '#FFFFFF', bg: '#92400E', glow: 'rgba(245,158,11,0.50)' },
+  600: { text: '#FFFFFF', bg: '#5B21B6', glow: 'rgba(139,92,246,0.55)' },
 };
 
 export function GameBoard({
@@ -51,7 +51,7 @@ export function GameBoard({
           <div
             key={pts}
             className="text-center text-xs font-black py-1 tracking-tight"
-            style={{ color: TIER_STYLES[pts].text }}
+            style={{ color: TIER_STYLES[pts].bg }}
           >
             {pts}
           </div>
@@ -133,8 +133,9 @@ export function GameBoard({
                         ? ({
                             '--cell-hover-color': style.text,
                             '--cell-glow-color': style.glow,
+                            background: style.bg,
                           } as React.CSSProperties)
-                        : undefined
+                        : { background: cell.answered ? undefined : style.bg }
                     }
                   >
                     {cell.answered ? (

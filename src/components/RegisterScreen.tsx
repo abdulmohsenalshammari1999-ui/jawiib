@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAccountStore } from '@/store/accountStore';
+import type { Gender } from '@/store/accountStore';
 
 interface RegisterScreenProps {
   onComplete: () => void;
   editMode?: boolean;
   initialName?: string;
   initialAvatar?: string;
-  onSave?: (name: string, avatar: string) => void;
+  initialGender?: Gender;
+  onSave?: (name: string, avatar: string, gender: Gender) => void;
 }
 
 const AVATARS = [
@@ -19,12 +21,13 @@ const AVATARS = [
 
 const STEP_LABELS = ['اسمك', 'أفاتارك', 'جاهز!'];
 
-export function RegisterScreen({ onComplete, editMode = false, initialName, initialAvatar, onSave }: RegisterScreenProps) {
+export function RegisterScreen({ onComplete, editMode = false, initialName, initialAvatar, initialGender, onSave }: RegisterScreenProps) {
   const createAccount = useAccountStore((s) => s.createAccount);
 
   const [step, setStep]     = useState(editMode ? 0 : 0);
   const [name, setName]     = useState(initialName ?? '');
   const [avatar, setAvatar] = useState(initialAvatar ?? '🦅');
+  const [gender, setGender] = useState<Gender>(initialGender ?? 'neutral');
   const [mounted, setMounted] = useState(false);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const [animating, setAnimating] = useState(false);
@@ -65,9 +68,9 @@ export function RegisterScreen({ onComplete, editMode = false, initialName, init
 
   function handleFinish() {
     if (editMode && onSave) {
-      onSave(name, avatar);
+      onSave(name, avatar, gender);
     } else {
-      createAccount(name, avatar);
+      createAccount(name, avatar, gender);
       onComplete();
     }
   }
@@ -175,6 +178,34 @@ export function RegisterScreen({ onComplete, editMode = false, initialName, init
                 <span>{name.trim().length}/20 حرف</span>
                 <span>{name.trim().length < 2 ? 'حرفان على الأقل' : '✓ ممتاز'}</span>
               </div>
+
+              {/* Gender picker */}
+              <div>
+                <p className="text-xs text-jawwib-text-dim mb-2 text-center">كيف تريد أن تُنادى؟</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { id: 'male',    label: 'ذكر',    emoji: '👦' },
+                    { id: 'female',  label: 'أنثى',   emoji: '👧' },
+                    { id: 'neutral', label: 'محايد',  emoji: '🙂' },
+                  ] as { id: Gender; label: string; emoji: string }[]).map(({ id, label, emoji }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setGender(id)}
+                      className="py-2.5 rounded-xl text-xs font-bold flex flex-col items-center gap-1 transition-all"
+                      style={
+                        gender === id
+                          ? { background: 'linear-gradient(135deg,#B07D1A,#D4A94A)', color: '#fff', boxShadow: '0 0 12px rgba(176,125,26,0.35)' }
+                          : { background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(176,125,26,0.18)', color: 'var(--color-jawwib-text-dim)' }
+                      }
+                    >
+                      <span className="text-lg leading-none">{emoji}</span>
+                      <span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <button
                 onClick={goNext}
                 disabled={name.trim().length < 2}
@@ -251,6 +282,12 @@ export function RegisterScreen({ onComplete, editMode = false, initialName, init
                 <div className="flex items-center justify-between">
                   <span className="text-jawwib-text-dim text-xs">الأفاتار</span>
                   <span className="text-xl">{avatar}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-jawwib-text-dim text-xs">النداء</span>
+                  <span className="font-bold text-sm text-jawwib-gold">
+                    {gender === 'male' ? '👦 ذكر' : gender === 'female' ? '👧 أنثى' : '🙂 محايد'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-jawwib-text-dim text-xs">الألعاب</span>

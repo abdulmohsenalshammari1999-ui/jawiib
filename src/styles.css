@@ -2,21 +2,20 @@
 @import "tailwindcss" source("../");
 
 @theme {
-  /* ── Kuwait Identity Palette ───────────────────────────────────────── */
-  /* Desert sand / pearl white / gahwa gold / gulf sea blue              */
-  --color-jawwib-bg:         #F4EED8;   /* desert sand */
-  --color-jawwib-surface:    #FBF8EE;   /* pearl white */
-  --color-jawwib-card:       #FFFFFF;
-  --color-jawwib-border:     #C9A87A;   /* camel leather */
-  --color-jawwib-gold:       #B07D1A;   /* gahwa dark gold */
-  --color-jawwib-gold-light: #D4A94A;   /* light gahwa */
-  --color-jawwib-gold-dark:  #8A6010;
-  --color-jawwib-text:       #1A1208;   /* dark coffee */
-  --color-jawwib-text-dim:   #7A6040;   /* muted sand */
-  --color-jawwib-green:      #1A7A42;   /* sea green */
-  --color-jawwib-red:        #B82118;   /* warm coral */
-  --color-jawwib-blue:       #1A5FA8;   /* gulf sea */
-  --color-jawwib-purple:     #6B4CAA;   /* oud purple */
+  /* ── Jawwib Dark Palette — modern TV game-show aesthetic ──────────── */
+  --color-jawwib-bg:         #0D1B2A;   /* deep navy */
+  --color-jawwib-surface:    #162035;   /* raised surface */
+  --color-jawwib-card:       #1E2D47;   /* card */
+  --color-jawwib-border:     rgba(255,255,255,0.10);
+  --color-jawwib-gold:       #F5A623;   /* vibrant gold */
+  --color-jawwib-gold-light: #FFD166;   /* bright gold */
+  --color-jawwib-gold-dark:  #C17D11;
+  --color-jawwib-text:       #EEF2FF;   /* near-white */
+  --color-jawwib-text-dim:   #7A8FBD;   /* muted blue */
+  --color-jawwib-green:      #10B981;   /* vivid emerald */
+  --color-jawwib-red:        #EF4444;   /* vivid red */
+  --color-jawwib-blue:       #3B82F6;   /* vivid blue */
+  --color-jawwib-purple:     #8B5CF6;   /* vivid purple */
 }
 
 body {
@@ -40,8 +39,8 @@ code {
 }
 
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #F4EED8; }
-::-webkit-scrollbar-thumb { background: #C9A87A; border-radius: 3px; }
+::-webkit-scrollbar-track { background: #0D1B2A; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 3px; }
 
 /* ── Keyframes ─────────────────────────────────────────────────────── */
 
@@ -226,7 +225,7 @@ code {
    cobalt and aqua from every edge like light refracting through water.
    ────────────────────────────────────────────────────────────────────── */
 .game-wrapper[data-active-team="alpha"] {
-  background-color: #C5DAEE; /* Gulf sea in midday sun */
+  background-color: #081828; /* Dark Gulf sea */
 }
 
 .game-wrapper[data-active-team="alpha"]::before {
@@ -257,7 +256,7 @@ code {
    and amber from above and below like a desert sunset.
    ────────────────────────────────────────────────────────────────────── */
 .game-wrapper[data-active-team="beta"] {
-  background-color: #EFD0B4; /* Desert sand at golden hour */
+  background-color: #1A0808; /* Dark desert night */
 }
 
 .game-wrapper[data-active-team="beta"]::before {
@@ -302,14 +301,14 @@ code {
 
 /* ── Active team panel highlight ─────────────────────────────────────── */
 .team-panel-active-alpha {
-  background: linear-gradient(135deg, rgba(29,78,216,0.08) 0%, rgba(59,130,246,0.04) 100%) !important;
-  border-color: rgba(29,78,216,0.45) !important;
-  box-shadow: 0 0 20px rgba(29,78,216,0.15), inset 0 0 12px rgba(29,78,216,0.05);
+  background: linear-gradient(135deg, rgba(29,78,216,0.20) 0%, rgba(59,130,246,0.10) 100%) !important;
+  border-color: rgba(59,130,246,0.55) !important;
+  box-shadow: 0 0 24px rgba(29,78,216,0.28), inset 0 0 12px rgba(29,78,216,0.12);
 }
 .team-panel-active-beta {
-  background: linear-gradient(135deg, rgba(185,28,28,0.08) 0%, rgba(239,68,68,0.04) 100%) !important;
-  border-color: rgba(185,28,28,0.45) !important;
-  box-shadow: 0 0 20px rgba(185,28,28,0.15), inset 0 0 12px rgba(185,28,28,0.05);
+  background: linear-gradient(135deg, rgba(185,28,28,0.20) 0%, rgba(239,68,68,0.10) 100%) !important;
+  border-color: rgba(239,68,68,0.55) !important;
+  box-shadow: 0 0 24px rgba(185,28,28,0.28), inset 0 0 12px rgba(185,28,28,0.12);
 }
 
 /* ── Board cell hover: team-tinted ───────────────────────────────────── */
@@ -340,7 +339,7 @@ code {
   appearance: none;
   height: 4px;
   border-radius: 2px;
-  background: #C9A87A;
+  background: rgba(255,255,255,0.15);
   outline: none;
   cursor: pointer;
   transition: background 0.2s;
@@ -349,15 +348,15 @@ code {
   -webkit-appearance: none;
   width: 14px; height: 14px;
   border-radius: 50%;
-  background: #B07D1A;
+  background: #F5A623;
   cursor: pointer;
-  box-shadow: 0 0 4px rgba(176,125,26,0.4);
+  box-shadow: 0 0 4px rgba(245,166,35,0.5);
 }
 .volume-slider::-moz-range-thumb {
   width: 14px; height: 14px;
   border-radius: 50%;
   border: none;
-  background: #B07D1A;
+  background: #F5A623;
   cursor: pointer;
 }
 
@@ -387,7 +386,7 @@ code {
 
 /* ── Gold gradient text ──────────────────────────────────────────── */
 .text-gold-gradient {
-  background: linear-gradient(135deg, #B07D1A, #D4A94A, #B07D1A);
+  background: linear-gradient(135deg, #F5A623, #FFD166, #F5A623);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -411,15 +410,15 @@ code {
 
 /* ── Card ────────────────────────────────────────────────────────── */
 .game-card {
-  background: #FFFFFF;
-  border: 1.5px solid #C9A87A;
+  background: #1E2D47;
+  border: 1.5px solid rgba(255,255,255,0.09);
   border-radius: 1rem;
-  box-shadow: 0 2px 12px rgba(176, 125, 26, 0.08), 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.20);
   transition: all 0.25s;
 }
 .game-card:hover {
-  border-color: #B07D1A;
-  box-shadow: 0 4px 20px rgba(176, 125, 26, 0.16), 0 1px 3px rgba(0,0,0,0.05);
+  border-color: rgba(245,166,35,0.35);
+  box-shadow: 0 6px 30px rgba(0,0,0,0.40), 0 0 0 1px rgba(245,166,35,0.10);
 }
 
 /* ── Board cell ──────────────────────────────────────────────────── */
@@ -427,27 +426,27 @@ code {
   position: relative;
   overflow: hidden;
   border-radius: 0.75rem;
-  border: 1.5px solid #C9A87A;
-  background: #FFFFFF;
+  border: 1.5px solid rgba(255,255,255,0.06);
+  background: #162035;
   cursor: pointer;
   transition: all 0.18s;
 }
 .board-cell:hover:not(.answered) {
-  border-color: var(--cell-hover-color, #B07D1A);
+  border-color: var(--cell-hover-color, rgba(245,166,35,0.6));
   transform: scale(1.06);
-  box-shadow: 0 0 14px var(--cell-glow-color, rgba(176, 125, 26, 0.25));
+  box-shadow: 0 0 18px var(--cell-glow-color, rgba(245,166,35,0.35));
 }
 .board-cell.answered {
-  opacity: 0.3;
+  opacity: 0.22;
   cursor: default;
-  background: #F4EED8;
+  background: #162035;
 }
 
 /* ── Gold button ─────────────────────────────────────────────────── */
 .btn-gold {
-  background: linear-gradient(135deg, #B07D1A, #D4A94A);
-  color: #FFFFFF;
-  font-weight: 800;
+  background: linear-gradient(135deg, #C17D11, #F5A623);
+  color: #0D1B2A;
+  font-weight: 900;
   border-radius: 0.85rem;
   padding: 0.75rem 2rem;
   border: none;
@@ -457,16 +456,17 @@ code {
   letter-spacing: 0.02em;
 }
 .btn-gold:hover {
-  box-shadow: 0 0 24px rgba(176, 125, 26, 0.45);
+  box-shadow: 0 0 28px rgba(245,166,35,0.55);
   transform: translateY(-2px);
 }
 .btn-gold:active { transform: scale(0.97); }
 .btn-gold:disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
-  background: #C9A87A;
+  background: #2A3D5A;
+  color: rgba(255,255,255,0.35);
 }
 
 /* ── Team glows ──────────────────────────────────────────────────── */
@@ -487,7 +487,7 @@ code {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(176,125,26,0.12), transparent);
+  background: radial-gradient(circle at center, rgba(245,166,35,0.10), transparent);
   opacity: 0;
   transition: opacity 0.25s;
 }
@@ -515,16 +515,19 @@ code {
 [dir="rtl"] textarea { text-align: right; }
 
 input, textarea {
-  background: #FFFFFF;
-  border: 1.5px solid #C9A87A;
-  color: #1A1208;
+  background: #162035;
+  border: 1.5px solid rgba(255,255,255,0.10);
+  color: #EEF2FF;
   border-radius: 0.75rem;
   padding: 0.65rem 1rem;
 }
+input::placeholder, textarea::placeholder {
+  color: rgba(255,255,255,0.28);
+}
 input:focus, textarea:focus {
-  border-color: #B07D1A;
+  border-color: #F5A623;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(176,125,26,0.12);
+  box-shadow: 0 0 0 3px rgba(245,166,35,0.15);
 }
 
 /* ── Mobile touch feedback ───────────────────────────────────────── */
@@ -545,10 +548,11 @@ input:focus, textarea:focus {
 
 /* ── Diwaniya texture bg ─────────────────────────────────────────── */
 .bg-diwaniya {
-  background-color: #F4EED8;
+  background-color: #0D1B2A;
   background-image:
-    radial-gradient(circle at 20% 50%, rgba(176,125,26,0.04) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(26,95,168,0.04) 0%, transparent 40%);
+    radial-gradient(ellipse at 15% 40%, rgba(245,166,35,0.07) 0%, transparent 45%),
+    radial-gradient(ellipse at 85% 15%, rgba(59,130,246,0.07) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 90%, rgba(139,92,246,0.05) 0%, transparent 50%);
 }
 
 /* ── Desert dune silhouette ──────────────────────────────────────────── */
@@ -672,8 +676,8 @@ input:focus, textarea:focus {
 }
 .answer-option:hover:not(:disabled) {
   transform: scale(1.015);
-  border-color: #B07D1A !important;
-  background: #FBF8EE !important;
+  border-color: #F5A623 !important;
+  background: rgba(245,166,35,0.08) !important;
 }
 .answer-option:active:not(:disabled) {
   transform: scale(0.97);
@@ -686,7 +690,7 @@ input:focus, textarea:focus {
   font-weight: 800;
   line-height: 1.55;
   letter-spacing: 0.01em;
-  color: #1A1208;
+  color: #EEF2FF;
 }
 
 /* ── Score numbers — Cairo for crisp Arabic numerals ─────────────────── */
@@ -741,10 +745,10 @@ input:focus, textarea:focus {
 /* ── High-contrast mode ───────────────────────────────────────────────── */
 @media (prefers-contrast: more) {
   body {
-    --color-jawwib-border: #7A5020;
-    --color-jawwib-text-dim: #5A4020;
+    --color-jawwib-border: rgba(255,255,255,0.25);
+    --color-jawwib-text-dim: rgba(255,255,255,0.65);
   }
-  .game-card   { border-width: 2px; border-color: #7A5020; }
+  .game-card   { border-width: 2px; border-color: rgba(255,255,255,0.25); }
   .answer-option { border-width: 2.5px !important; }
   .question-text { font-size: clamp(19px, 4.5vw, 24px); }
 }
@@ -763,7 +767,7 @@ input:focus, textarea:focus {
 /* ── Color-blind friendly focus rings ─────────────────────────────────── */
 button:focus-visible,
 a:focus-visible {
-  outline: 3px solid #B07D1A;
+  outline: 3px solid #F5A623;
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -864,11 +868,11 @@ a:focus-visible {
 .teaser-text {
   font-size: 13px;
   font-style: italic;
-  color: #7A6040;
+  color: #B0C4E8;
   text-align: center;
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
-  background: rgba(176,125,26,0.07);
-  border: 1px solid rgba(176,125,26,0.18);
+  background: rgba(245,166,35,0.07);
+  border: 1px solid rgba(245,166,35,0.16);
   line-height: 1.5;
 }

@@ -30,6 +30,7 @@ export function EntryScreen({
   account,
 }: EntryScreenProps) {
   const editProfile = useAccountStore((s) => s.editProfile);
+  const fullAccount = useAccountStore((s) => s.account);
   const [mounted, setMounted]           = useState(false);
   const [mode, setMode]                 = useState<StartMode>('teams');
   const [editingProfile, setEditingProfile] = useState(false);
@@ -54,7 +55,8 @@ export function EntryScreen({
         editMode
         initialName={account?.name}
         initialAvatar={account?.avatar}
-        onSave={(name, avatar) => { editProfile(name, avatar); setEditingProfile(false); }}
+        initialGender={fullAccount?.gender ?? 'neutral'}
+        onSave={(name, avatar, gender) => { editProfile(name, avatar, gender); setEditingProfile(false); }}
       />
     );
   }

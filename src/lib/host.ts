@@ -98,6 +98,32 @@ function randomFrom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+// Simple post-processing to adapt masculine host messages to feminine/neutral forms
+const MALE_TO_FEMALE: [RegExp, string][] = [
+  [/يا بطل/g,         'يا بطلة'],
+  [/ذكي ذكي/g,        'ذكية ذكية'],
+  [/\bذكي\b/g,        'ذكية'],
+  [/عبقري/g,          'عبقرية'],
+  [/يا ولد/g,         'يا بنت'],
+  [/يا ذيب/g,         'يا ذيبة'],
+  [/حافظ مو/g,        'حافظة مو'],
+  [/\bحافظ\b/g,       'حافظة'],
+  [/مبدع/g,           'مبدعة'],
+  [/نايم/g,           'نايمة'],
+  [/تتفلسف علينا/g,   'تتفلسفين علينا'],
+  [/تستاهل/g,         'تستاهلين'],
+  [/ما تعلّم/g,       'ما تعلّمتي'],
+  [/يا بعدي/g,        'يا بعدي'],
+  [/يا قلبي عليك/g,   'يا قلبي عليكِ'],
+];
+
+export function genderize(msg: string, gender: 'male' | 'female' | 'neutral'): string {
+  if (gender !== 'female') return msg;
+  let out = msg;
+  for (const [pat, rep] of MALE_TO_FEMALE) out = out.replace(pat, rep);
+  return out;
+}
+
 export function getWelcomeMessage(): string {
   return randomFrom(welcomeMessages);
 }

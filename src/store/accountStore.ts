@@ -2,10 +2,13 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuid } from 'uuid';
 
+export type Gender = 'male' | 'female' | 'neutral';
+
 export interface PlayerAccount {
   id: string;
   name: string;
   avatar: string;
+  gender: Gender;
   joinedAt: number;
   lastPlayed: number | null;
   stats: {
@@ -18,8 +21,8 @@ export interface PlayerAccount {
 
 interface AccountStoreState {
   account: PlayerAccount | null;
-  createAccount: (name: string, avatar: string) => void;
-  editProfile: (name: string, avatar: string) => void;
+  createAccount: (name: string, avatar: string, gender: Gender) => void;
+  editProfile: (name: string, avatar: string, gender: Gender) => void;
   recordGame: (won: boolean, points: number) => void;
   clearAccount: () => void;
 }
@@ -29,12 +32,13 @@ export const useAccountStore = create<AccountStoreState>()(
     (set, get) => ({
       account: null,
 
-      createAccount: (name, avatar) => {
+      createAccount: (name, avatar, gender) => {
         set({
           account: {
             id: uuid(),
             name: name.trim(),
             avatar,
+            gender,
             joinedAt: Date.now(),
             lastPlayed: null,
             stats: { gamesPlayed: 0, wins: 0, totalPoints: 0, bestScore: 0 },
@@ -42,10 +46,10 @@ export const useAccountStore = create<AccountStoreState>()(
         });
       },
 
-      editProfile: (name, avatar) => {
+      editProfile: (name, avatar, gender) => {
         const { account } = get();
         if (!account) return;
-        set({ account: { ...account, name: name.trim(), avatar } });
+        set({ account: { ...account, name: name.trim(), avatar, gender } });
       },
 
       recordGame: (won, points) => {

@@ -20,11 +20,10 @@ interface QuestionCardProps {
 const OPTION_LABELS = ['أ', 'ب', 'ج', 'د'];
 
 const POINT_COLORS: Record<number, { text: string; bg: string }> = {
-  100: { text: '#15803D', bg: '#DCFCE7' },
-  200: { text: '#0369A1', bg: '#DBEAFE' },
-  300: { text: '#B45309', bg: '#FEF3C7' },
-
-  600: { text: '#6D28D9', bg: '#EDE9FE' },
+  100: { text: '#86EFAC', bg: 'rgba(16,185,129,0.18)' },
+  200: { text: '#93C5FD', bg: 'rgba(59,130,246,0.18)' },
+  300: { text: '#FCD34D', bg: 'rgba(180,83,9,0.22)' },
+  600: { text: '#C4B5FD', bg: 'rgba(109,40,217,0.22)' },
 };
 
 const TYPE_LABELS: Record<string, { icon: string; label: string }> = {
@@ -82,7 +81,7 @@ function OrderingUI({
 
   return (
     <div className="space-y-2">
-      <p className="text-center text-xs text-gray-500 mb-3 font-bold">
+      <p className="text-center text-xs text-jawwib-text-dim mb-3 font-bold">
         رتّب العناصر بالضغط على ▲▼ ثم اضغط تأكيد
       </p>
       {order.map((itemIdx, pos) => {
@@ -92,19 +91,20 @@ function OrderingUI({
             key={itemIdx}
             className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${
               !submitted
-                ? 'bg-gray-50 border-gray-200'
+                ? 'border-white/10'
                 : posCorrect
-                ? 'bg-green-50 border-green-400'
-                : 'bg-red-50 border-red-400'
+                ? 'bg-green-900/30 border-green-500'
+                : 'bg-red-900/30 border-red-500'
             }`}
+            style={{ background: !submitted ? 'rgba(255,255,255,0.04)' : undefined }}
           >
             <span
               className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black shrink-0"
-              style={{ background: '#FEF3C7', color: '#B07D1A' }}
+              style={{ background: 'rgba(245,166,35,0.15)', color: '#FFD166' }}
             >
               {pos + 1}
             </span>
-            <span className="flex-1 font-bold text-gray-900 text-sm sm:text-base leading-snug">
+            <span className="flex-1 font-bold text-jawwib-text text-sm sm:text-base leading-snug">
               {items[itemIdx]}
             </span>
             {!submitted && !disabled && (
@@ -112,21 +112,21 @@ function OrderingUI({
                 <button
                   onClick={() => swap(pos, pos - 1)}
                   disabled={pos === 0}
-                  className="w-7 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-800 hover:bg-gray-100 disabled:opacity-20 text-xs font-black transition-colors"
+                  className="w-7 h-6 flex items-center justify-center rounded text-jawwib-text-dim hover:text-jawwib-text hover:bg-white/10 disabled:opacity-20 text-xs font-black transition-colors"
                 >
                   ▲
                 </button>
                 <button
                   onClick={() => swap(pos, pos + 1)}
                   disabled={pos === order.length - 1}
-                  className="w-7 h-6 flex items-center justify-center rounded text-gray-400 hover:text-gray-800 hover:bg-gray-100 disabled:opacity-20 text-xs font-black transition-colors"
+                  className="w-7 h-6 flex items-center justify-center rounded text-jawwib-text-dim hover:text-jawwib-text hover:bg-white/10 disabled:opacity-20 text-xs font-black transition-colors"
                 >
                   ▼
                 </button>
               </div>
             )}
             {submitted && (
-              <span className={`text-lg shrink-0 ${posCorrect ? 'text-green-600' : 'text-red-500'}`}>
+              <span className={`text-lg shrink-0 ${posCorrect ? 'text-green-400' : 'text-red-400'}`}>
                 {posCorrect ? '✓' : '✗'}
               </span>
             )}
@@ -144,7 +144,7 @@ function OrderingUI({
         </button>
       )}
       {submitted && (
-        <div className={`text-center py-3 rounded-xl font-black text-base ${isCorrect ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+        <div className={`text-center py-3 rounded-xl font-black text-base ${isCorrect ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
           {isCorrect ? '🎉 ترتيب صحيح!' : '❌ ترتيب خاطئ'}
         </div>
       )}
@@ -216,23 +216,23 @@ export function QuestionCard({
   };
 
   const optionStyle = (idx: number): string => {
-    const base = 'p-4 rounded-xl border-2 text-right transition-all leading-snug flex items-center select-none';
+    const base = 'p-4 rounded-xl border-2 text-right transition-all leading-snug flex items-center select-none answer-option';
     if (selected === null) {
       return isActuallyDisabled
-        ? `${base} border-gray-200 bg-gray-50 opacity-40 cursor-not-allowed`
-        : `${base} border-gray-200 bg-gray-50 hover:border-amber-400 hover:bg-amber-50 cursor-pointer active:scale-[0.97]`;
+        ? `${base} opacity-40 cursor-not-allowed`
+        : `${base} cursor-pointer active:scale-[0.97]`;
     }
     const isSelected = selected === idx;
     if (!revealed) {
       return isSelected
-        ? `${base} border-amber-400 bg-amber-50 scale-[0.97]`
-        : `${base} border-gray-200 bg-gray-50 opacity-25`;
+        ? `${base} border-yellow-400 scale-[0.97]`
+        : `${base} opacity-25`;
     }
     const isCorrect = idx === question.correctIndex;
-    if (isSelected && isCorrect)  return `${base} border-green-500 bg-green-50`;
-    if (isSelected && !isCorrect) return `${base} border-red-500 bg-red-50 animate-shake`;
-    if (!isSelected && isCorrect) return `${base} border-green-400 bg-green-50`;
-    return `${base} border-gray-200 bg-gray-50 opacity-20`;
+    if (isSelected && isCorrect)  return `${base} border-green-500 bg-green-900/30`;
+    if (isSelected && !isCorrect) return `${base} border-red-500 bg-red-900/30 animate-shake`;
+    if (!isSelected && isCorrect) return `${base} border-green-400 bg-green-900/20`;
+    return `${base} opacity-20`;
   };
 
   return (
@@ -240,32 +240,33 @@ export function QuestionCard({
 
       {/* ── Effect banners ─────────────────────────────────────────────────── */}
       {hasBomb && (
-        <div className="mb-3 px-4 py-2.5 rounded-xl bg-orange-50 border border-orange-300 flex items-center gap-2">
-          <span className="text-orange-500 text-xl">💣</span>
-          <span className="text-orange-700 text-sm font-bold">قنبلة! إجابة خاطئة = −150 إضافية</span>
+        <div className="mb-3 px-4 py-2.5 rounded-xl flex items-center gap-2" style={{ background: 'rgba(234,88,12,0.12)', border: '1px solid rgba(234,88,12,0.30)' }}>
+          <span className="text-orange-400 text-xl">💣</span>
+          <span className="text-orange-300 text-sm font-bold">قنبلة! إجابة خاطئة = −150 إضافية</span>
         </div>
       )}
       {hasDouble && (
-        <div className="mb-3 px-4 py-2.5 rounded-xl bg-yellow-50 border border-yellow-300 flex items-center gap-2">
-          <span className="text-yellow-600 text-xl">⚡</span>
-          <span className="text-yellow-700 text-sm font-bold">رهان! صح = ضعف • خطأ = −75</span>
+        <div className="mb-3 px-4 py-2.5 rounded-xl flex items-center gap-2" style={{ background: 'rgba(245,166,35,0.12)', border: '1px solid rgba(245,166,35,0.30)' }}>
+          <span className="text-yellow-400 text-xl">⚡</span>
+          <span className="text-yellow-300 text-sm font-bold">رهان! صح = ضعف • خطأ = −75</span>
         </div>
       )}
       {scrambledOptions && (
-        <div className="mb-3 px-4 py-2 rounded-xl bg-purple-50 border border-purple-200 flex items-center gap-2">
-          <span className="text-purple-500">🔀</span>
-          <span className="text-purple-700 text-xs font-bold">الخيارات مخلوطة</span>
+        <div className="mb-3 px-4 py-2 rounded-xl flex items-center gap-2" style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.28)' }}>
+          <span className="text-purple-400">🔀</span>
+          <span className="text-purple-300 text-xs font-bold">الخيارات مخلوطة</span>
         </div>
       )}
 
-      {/* ── Main card — WHITE ───────────────────────────────────────────────── */}
+      {/* ── Main card ───────────────────────────────────────────────────────── */}
       <div
-        className="bg-white rounded-2xl p-5 sm:p-6 transition-all"
+        className="rounded-2xl p-5 sm:p-6 transition-all"
         style={{
+          background: '#1E2D47',
           boxShadow: teamColor
-            ? `0 8px 40px ${teamColor}22, 0 2px 12px rgba(0,0,0,0.10)`
-            : '0 8px 40px rgba(0,0,0,0.14)',
-          border: teamColor ? `2px solid ${teamColor}28` : '2px solid rgba(0,0,0,0.05)',
+            ? `0 8px 40px ${teamColor}30, 0 2px 12px rgba(0,0,0,0.30)`
+            : '0 8px 40px rgba(0,0,0,0.40)',
+          border: teamColor ? `2px solid ${teamColor}40` : '2px solid rgba(255,255,255,0.08)',
         }}
       >
         {/* Header */}
@@ -319,21 +320,21 @@ export function QuestionCard({
 
         {/* Question text */}
         {qType === 'math' ? (
-          <div className="mb-5 rounded-2xl p-4 text-center bg-blue-50 border border-blue-200">
-            <p className="text-xs font-bold text-blue-500 mb-2 tracking-widest">🔢 تحدي رياضي</p>
-            <p className="font-display text-2xl sm:text-3xl text-blue-800 leading-relaxed" dir="ltr">{question.text}</p>
+          <div className="mb-5 rounded-2xl p-4 text-center" style={{ background: 'rgba(59,130,246,0.12)', border: '1.5px solid rgba(59,130,246,0.25)' }}>
+            <p className="text-xs font-bold text-blue-300 mb-2 tracking-widest">🔢 تحدي رياضي</p>
+            <p className="font-display text-2xl sm:text-3xl text-blue-200 leading-relaxed" dir="ltr">{question.text}</p>
           </div>
         ) : qType === 'riddle' ? (
-          <div className="mb-5 rounded-2xl p-4 text-center bg-amber-50 border border-amber-200">
-            <p className="text-xs font-bold text-amber-600 mb-2 tracking-widest">🧩 لغز وأحجية</p>
-            <p className="text-xl font-black text-gray-900 leading-relaxed">{question.text}</p>
+          <div className="mb-5 rounded-2xl p-4 text-center" style={{ background: 'rgba(245,166,35,0.10)', border: '1.5px solid rgba(245,166,35,0.22)' }}>
+            <p className="text-xs font-bold text-yellow-400 mb-2 tracking-widest">🧩 لغز وأحجية</p>
+            <p className="text-xl font-black text-jawwib-text leading-relaxed">{question.text}</p>
           </div>
         ) : qType === 'ordering' ? (
           <div className="mb-4 text-center">
-            <p className="text-lg sm:text-xl font-black text-gray-900 leading-snug">{question.text}</p>
+            <p className="text-lg sm:text-xl font-black text-jawwib-text leading-snug">{question.text}</p>
           </div>
         ) : (
-          <h2 className="text-xl sm:text-2xl font-black text-gray-900 text-center mb-5 px-1 leading-snug">
+          <h2 className="text-xl sm:text-2xl font-black text-jawwib-text text-center mb-5 px-1 leading-snug">
             {question.text}
           </h2>
         )}
@@ -361,11 +362,11 @@ export function QuestionCard({
               >
                 <span
                   className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black ml-3 shrink-0"
-                  style={{ background: '#FEF3C7', color: '#B07D1A', border: '1.5px solid #F59E0B40' }}
+                  style={{ background: 'rgba(245,166,35,0.15)', color: '#FFD166', border: '1.5px solid rgba(245,166,35,0.30)' }}
                 >
                   {OPTION_LABELS[idx]}
                 </span>
-                <span className="font-bold text-sm sm:text-base text-gray-900 flex-1 leading-snug">{option}</span>
+                <span className="font-bold text-sm sm:text-base text-jawwib-text flex-1 leading-snug">{option}</span>
                 {revealed && idx === question.correctIndex && (
                   <span className="mr-2 text-green-600 text-base shrink-0 font-black">✓</span>
                 )}
@@ -375,7 +376,7 @@ export function QuestionCard({
         )}
 
         {disabled && selected === null && !lockPhase && qType !== 'ordering' && (
-          <p className="text-center text-gray-500 text-sm mt-4 font-medium">
+          <p className="text-center text-jawwib-text-dim text-sm mt-4 font-medium">
             👁️ أنت تشاهد فقط — دور الفريق الآخر
           </p>
         )}

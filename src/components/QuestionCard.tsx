@@ -260,7 +260,7 @@ export function QuestionCard({
 
       {/* ── Main card ───────────────────────────────────────────────────────── */}
       <div
-        className="rounded-2xl p-5 sm:p-6 transition-all"
+        className="relative overflow-hidden rounded-2xl p-5 sm:p-6 pt-[1.375rem] sm:pt-[1.625rem] transition-all"
         style={{
           background: '#1E2D47',
           boxShadow: teamColor
@@ -269,19 +269,31 @@ export function QuestionCard({
           border: teamColor ? `2px solid ${teamColor}40` : '2px solid rgba(255,255,255,0.08)',
         }}
       >
+        {/* Gold accent strip */}
+        <div
+          className="absolute top-0 inset-x-0 h-1.5"
+          style={{ background: 'linear-gradient(90deg,#B07D1A,#F5A623,#B07D1A)' }}
+        />
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-5 gap-3">
-          <div
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full shrink-0 flex-wrap"
-            style={{ background: ptInfo.bg }}
-          >
-            <span className="font-black text-2xl tabular-nums leading-none" style={{ color: ptInfo.text }}>
-              {question.points}
-            </span>
-            <span className="text-xs font-bold" style={{ color: ptInfo.text }}>نقطة</span>
+        <div className="flex items-center justify-between mb-5 gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full shrink-0"
+              style={{ background: ptInfo.bg }}
+            >
+              <span className="font-black text-2xl tabular-nums leading-none" style={{ color: ptInfo.text }}>
+                {question.points}
+              </span>
+              <span className="text-xs font-bold" style={{ color: ptInfo.text }}>نقطة</span>
+            </div>
             {typeInfo && (
-              <span className="text-xs font-bold opacity-70" style={{ color: ptInfo.text }}>
-                · {typeInfo.icon} {typeInfo.label}
+              <span
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-black shrink-0"
+                style={{ background: 'rgba(245,166,35,0.14)', color: '#F5A623', border: '1px solid rgba(245,166,35,0.30)' }}
+              >
+                <span>{typeInfo.icon}</span>
+                <span>{typeInfo.label}</span>
               </span>
             )}
           </div>
@@ -368,7 +380,10 @@ export function QuestionCard({
                 </span>
                 <span className="font-bold text-sm sm:text-base text-jawwib-text flex-1 leading-snug">{option}</span>
                 {revealed && idx === question.correctIndex && (
-                  <span className="mr-2 text-green-600 text-base shrink-0 font-black">✓</span>
+                  <span className="mr-2 text-green-400 text-base shrink-0 font-black">✓</span>
+                )}
+                {revealed && selected === idx && idx !== question.correctIndex && (
+                  <span className="mr-2 text-red-400 text-base shrink-0 font-black">✗</span>
                 )}
               </button>
             ))}

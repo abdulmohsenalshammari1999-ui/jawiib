@@ -87,7 +87,7 @@ export function TeamScoreboard({
               activeTeam === 'alpha'
                 ? 'team-panel-active-alpha animate-team-pulse-blue'
                 : alphaLeads
-                ? 'border-blue-300/60 bg-blue-50/60'
+                ? 'border-jawwib-blue/45 bg-jawwib-blue/10'
                 : 'border-jawwib-border bg-jawwib-surface'
             }`}
           >
@@ -127,7 +127,7 @@ export function TeamScoreboard({
               activeTeam === 'beta'
                 ? 'team-panel-active-beta animate-team-pulse-red'
                 : !alphaLeads
-                ? 'border-red-300/60 bg-red-50/60'
+                ? 'border-jawwib-red/45 bg-jawwib-red/10'
                 : 'border-jawwib-border bg-jawwib-surface'
             }`}
           >
@@ -203,8 +203,8 @@ export function TeamScoreboard({
         {/* Individual player list */}
         <div className="space-y-1">
           {[
-            ...alphaPlayers.map((p) => ({ ...p, teamColor: '#1D4ED8', teamBg: 'bg-blue-50/80' })),
-            ...betaPlayers.map((p)  => ({ ...p, teamColor: '#B91C1C', teamBg: 'bg-red-50/80' })),
+            ...alphaPlayers.map((p) => ({ ...p, teamColor: '#5B9BE0', teamBg: 'bg-jawwib-blue/12' })),
+            ...betaPlayers.map((p)  => ({ ...p, teamColor: '#E08884', teamBg: 'bg-jawwib-red/12' })),
           ]
             .sort((a, b) => b.score - a.score)
             .map((player) => (

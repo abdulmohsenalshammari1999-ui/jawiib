@@ -139,7 +139,7 @@ export function GameBoard({
                     }
                   >
                     {cell.answered ? (
-                      <span className="text-jawwib-text-dim text-xs">✓</span>
+                      <span className="board-cell-check">✓</span>
                     ) : isLocked ? (
                       <span className="text-jawwib-text-dim text-xs">🔒</span>
                     ) : (

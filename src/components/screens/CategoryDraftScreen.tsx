@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { categories } from '@/lib/categories';
+import { CATEGORY_CONTEXT_IMAGES } from '@/lib/categoryMedia';
+import type { CategoryId } from '@/lib/types';
 
 interface DraftState {
   picks: Array<{ teamId: 'alpha' | 'beta'; categoryId: string }>;
@@ -174,7 +176,7 @@ export function CategoryDraftScreen({
           </div>
         )}
 
-        {/* Category grid */}
+        {/* Category grid — illustrated tiles */}
         <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {availableCategories.map((cat, i) => {
             const pickedBy  = pickMap.get(cat.id);
@@ -183,6 +185,7 @@ export function CategoryDraftScreen({
             const isClickable = canPick && !isPicked;
             const catFromLib = categories.find((c) => c.id === cat.id);
             const catColor   = catFromLib?.color ?? cat.color;
+            const catImg     = CATEGORY_CONTEXT_IMAGES[cat.id as CategoryId];
 
             return (
               <button
@@ -190,32 +193,66 @@ export function CategoryDraftScreen({
                 onClick={() => isClickable && onPick(cat.id)}
                 disabled={!isClickable}
                 className={[
-                  'relative p-2.5 rounded-xl border-2 flex flex-col items-center gap-1 text-center',
-                  'transition-all duration-200 animate-fade-in',
+                  'category-tile relative flex flex-col items-center justify-end text-center animate-fade-in',
+                  'min-h-[92px] border-2',
                   isPicked
                     ? isAlpha
-                      ? 'border-blue-400/50 bg-blue-50/70 opacity-70 cursor-default'
-                      : 'border-red-400/50 bg-red-50/70 opacity-70 cursor-default'
+                      ? 'border-jawwib-blue/50 opacity-65'
+                      : 'border-jawwib-red/50 opacity-65'
                     : isClickable
-                      ? 'border-jawwib-border bg-jawwib-card cursor-pointer hover:border-jawwib-gold hover:bg-jawwib-gold/5 hover:scale-105'
-                      : 'border-jawwib-border bg-jawwib-surface opacity-30 cursor-not-allowed',
+                      ? 'border-jawwib-border'
+                      : 'border-jawwib-border opacity-30',
                 ].join(' ')}
                 style={{ animationDelay: `${i * 25}ms` }}
               >
-                <span className="text-xl">{cat.icon}</span>
-                <span className="text-[11px] font-bold text-jawwib-text leading-tight">{cat.name}</span>
+                {/* Illustrated background */}
+                {catImg ? (
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${catImg.url})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: catImg.position ?? 'center',
+                    }}
+                  />
+                ) : (
+                  <div className="absolute inset-0" style={{ background: catColor }} />
+                )}
+                {/* Per-category color gradient overlay */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(165deg, ${catColor}55 0%, rgba(13,27,42,0.55) 55%, rgba(13,27,42,0.92) 100%)`,
+                  }}
+                />
+                {/* Idle shimmer sweep — only on pickable tiles */}
+                {isClickable && <div className="category-tile-shimmer" />}
+
+                {/* Icon */}
+                <span className="relative z-10 text-2xl mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+                  {cat.icon}
+                </span>
+
+                {/* Name pill */}
+                <span className="relative z-10 w-full px-1.5 pb-1.5">
+                  <span className="block text-[10.5px] font-black leading-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]">
+                    {cat.name}
+                  </span>
+                </span>
+
                 {isPicked && (
                   <span
-                    className={`absolute top-1 left-1 text-[9px] font-bold px-1 py-0.5 rounded-full ${
-                      isAlpha ? 'bg-blue-100 text-jawwib-blue' : 'bg-red-100 text-jawwib-red'
+                    className={`absolute top-1.5 left-1.5 z-10 text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                      isAlpha ? 'bg-jawwib-blue/85 text-white' : 'bg-jawwib-red/85 text-white'
                     }`}
                   >
                     {isAlpha ? '🌊' : '🐪'}
                   </span>
                 )}
+
                 <div
-                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-b-xl opacity-50"
-                  style={{ backgroundColor: catColor }}
+                  className="absolute bottom-0 left-0 right-0 h-1 z-10"
+                  style={{ background: catColor }}
                 />
               </button>
             );

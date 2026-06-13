@@ -651,7 +651,7 @@ export function GameApp() {
           players={game.room.players}
           hostMessage={game.hostMessage}
           onPlayAgain={rematch}
-          onNewGame={resetGame}
+          onNewGame={handleLeaveGame}
           teams={winnerTeamData}
           mode={mode}
           onRateMatch={() => setShowFeedback(true)}
@@ -675,16 +675,28 @@ export function GameApp() {
 
     if (subView === 'setup' && mode === 'teams') {
       return (
-        <TeamSetupScreen
-          alphaName={teams.alpha.name}
-          betaName={teams.beta.name}
-          onConfirm={(a, b, picks) => {
-            renameTeam('alpha', a);
-            renameTeam('beta', b);
-            setPicksPerTeam(picks);
-            setSubView('draft');
-          }}
-        />
+        <>
+          <TeamSetupScreen
+            alphaName={teams.alpha.name}
+            betaName={teams.beta.name}
+            onConfirm={(a, b, picks) => {
+              renameTeam('alpha', a);
+              renameTeam('beta', b);
+              setPicksPerTeam(picks);
+              setSubView('draft');
+            }}
+            onHome={() => setShowLeaveConfirm(true)}
+          />
+          {showLeaveConfirm && (
+            <ConfirmModal
+              title="إنهاء المباراة؟"
+              message="إذا رجعت للرئيسية بتنتهي الجلسة الحالية ولازم تبدون مباراة جديدة."
+              confirmLabel="إنهاء والرجوع 🏠"
+              onConfirm={handleLeaveGame}
+              onCancel={() => setShowLeaveConfirm(false)}
+            />
+          )}
+        </>
       );
     }
 
@@ -696,7 +708,10 @@ export function GameApp() {
             <div className="flex items-center justify-between mb-4">
               <button onClick={() => setSubView('lobby')} className="text-jawwib-text-dim text-sm hover:text-jawwib-text transition-colors">← رجوع</button>
               <h2 className="text-lg font-bold text-gold-gradient">توزيع الفرق</h2>
-              <AudioControls />
+              <div className="flex items-center gap-1">
+                <HomeButton />
+                <AudioControls />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-4">
@@ -768,6 +783,15 @@ export function GameApp() {
               <button onClick={() => setSubView('lobby')} className="btn-gold w-full">تأكيد الفرق ✓</button>
             </div>
           </div>
+          {showLeaveConfirm && (
+            <ConfirmModal
+              title="إنهاء المباراة؟"
+              message="إذا رجعت للرئيسية بتنتهي الجلسة الحالية ولازم تبدون مباراة جديدة."
+              confirmLabel="إنهاء والرجوع 🏠"
+              onConfirm={handleLeaveGame}
+              onCancel={() => setShowLeaveConfirm(false)}
+            />
+          )}
         </div>
       );
     }
@@ -781,29 +805,41 @@ export function GameApp() {
         );
       }
       return (
-        <CategoryDraftScreen
-          draftState={{
-            picks: draft.draft.picks.map((p) => ({ teamId: p.teamId, categoryId: p.categoryId })),
-            currentTeam: draft.draft.currentTeam,
-            round: draft.draft.round,
-            complete: draft.draft.isComplete,
-            alphaCategories: draft.alphaCategories,
-            betaCategories: draft.betaCategories,
-          }}
-          localTeamId={localTeamId}
-          isHost={isHost}
-          availableCategories={ALL_CATS.map((c) => ({ id: c.id, name: c.name, icon: c.icon, color: c.color }))}
-          requiredPerTeam={picksPerTeam}
-          alphaTeamName={teams.alpha.name}
-          betaTeamName={teams.beta.name}
-          onPick={(catId) => draft.pick(catId as CategoryId)}
-          onSkipDraft={() => {
-            const cats = draft.skipDraft();
-            if (cats.length >= 2) updateCategories(cats as CategoryId[]);
-            setSubView('lobby');
-          }}
-          onStartGame={() => { handleDraftComplete(); handleStartGame(); }}
-        />
+        <>
+          <CategoryDraftScreen
+            draftState={{
+              picks: draft.draft.picks.map((p) => ({ teamId: p.teamId, categoryId: p.categoryId })),
+              currentTeam: draft.draft.currentTeam,
+              round: draft.draft.round,
+              complete: draft.draft.isComplete,
+              alphaCategories: draft.alphaCategories,
+              betaCategories: draft.betaCategories,
+            }}
+            localTeamId={localTeamId}
+            isHost={isHost}
+            availableCategories={ALL_CATS.map((c) => ({ id: c.id, name: c.name, icon: c.icon, color: c.color }))}
+            requiredPerTeam={picksPerTeam}
+            alphaTeamName={teams.alpha.name}
+            betaTeamName={teams.beta.name}
+            onPick={(catId) => draft.pick(catId as CategoryId)}
+            onSkipDraft={() => {
+              const cats = draft.skipDraft();
+              if (cats.length >= 2) updateCategories(cats as CategoryId[]);
+              setSubView('lobby');
+            }}
+            onStartGame={() => { handleDraftComplete(); handleStartGame(); }}
+            onHome={() => setShowLeaveConfirm(true)}
+          />
+          {showLeaveConfirm && (
+            <ConfirmModal
+              title="إنهاء المباراة؟"
+              message="إذا رجعت للرئيسية بتنتهي الجلسة الحالية ولازم تبدون مباراة جديدة."
+              confirmLabel="إنهاء والرجوع 🏠"
+              onConfirm={handleLeaveGame}
+              onCancel={() => setShowLeaveConfirm(false)}
+            />
+          )}
+        </>
       );
     }
 
@@ -811,7 +847,10 @@ export function GameApp() {
       <div className="min-h-screen p-4">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-2xl font-black text-gold-gradient font-display">جاوب</h1>
-          <AudioControls />
+          <div className="flex items-center gap-1">
+            <HomeButton />
+            <AudioControls />
+          </div>
         </div>
         <HostBubble message={game.hostMessage} />
         <Lobby
@@ -834,6 +873,15 @@ export function GameApp() {
           onlinePlayers={mp.onlinePlayers}
           isOnline={mp.isOnline}
         />
+        {showLeaveConfirm && (
+          <ConfirmModal
+            title="إنهاء المباراة؟"
+            message="إذا رجعت للرئيسية بتنتهي الجلسة الحالية ولازم تبدون مباراة جديدة."
+            confirmLabel="إنهاء والرجوع 🏠"
+            onConfirm={handleLeaveGame}
+            onCancel={() => setShowLeaveConfirm(false)}
+          />
+        )}
       </div>
     );
   }

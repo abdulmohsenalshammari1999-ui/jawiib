@@ -23,6 +23,7 @@ interface CategoryDraftScreenProps {
   onPick: (categoryId: string) => void;
   onSkipDraft: () => void;
   onStartGame: () => void;
+  onHome?: () => void;
 }
 
 function ProgressDots({ filled, total, color }: { filled: number; total: number; color: string }) {
@@ -55,6 +56,7 @@ export function CategoryDraftScreen({
   onPick,
   onSkipDraft,
   onStartGame,
+  onHome,
 }: CategoryDraftScreenProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
@@ -80,7 +82,16 @@ export function CategoryDraftScreen({
       <div className="max-w-2xl mx-auto w-full flex flex-col gap-4 flex-1">
 
         {/* Header */}
-        <div className="text-center animate-slide-up">
+        <div className="text-center animate-slide-up relative">
+          {onHome && (
+            <button
+              onClick={onHome}
+              className="absolute top-0 left-0 text-sm px-2 py-1 rounded-lg border border-jawwib-border text-jawwib-text-dim hover:text-jawwib-red hover:border-jawwib-red/40 transition-all tap-target"
+              title="الرجوع للرئيسية"
+            >
+              🏠
+            </button>
+          )}
           <h1 className="text-2xl font-black text-gold-gradient mb-0.5">اختر الفئات</h1>
           <p className="text-xs text-jawwib-text-dim">كل فريق يختار {requiredPerTeam} فئات بالتناوب</p>
           <div className="sadu-accent mx-auto mt-2 max-w-xs" />

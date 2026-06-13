@@ -4,6 +4,7 @@ interface TeamSetupScreenProps {
   alphaName: string;
   betaName: string;
   onConfirm: (alphaName: string, betaName: string, picksPerTeam: number) => void;
+  onHome?: () => void;
 }
 
 type GameLength = 3 | 4;
@@ -33,13 +34,22 @@ function TeamBadge({ color, side }: { color: 'blue' | 'red'; side: 'right' | 'le
   );
 }
 
-export function TeamSetupScreen({ alphaName, betaName, onConfirm }: TeamSetupScreenProps) {
+export function TeamSetupScreen({ alphaName, betaName, onConfirm, onHome }: TeamSetupScreenProps) {
   const [alpha,      setAlpha]      = useState(alphaName);
   const [beta,       setBeta]       = useState(betaName);
   const [gameLength, setGameLength] = useState<GameLength>(3);
 
   return (
-    <div className="min-h-screen bg-diwaniya flex flex-col items-center justify-center p-5 gap-5 animate-fade-in">
+    <div className="relative min-h-screen bg-diwaniya flex flex-col items-center justify-center p-5 gap-5 animate-fade-in">
+      {onHome && (
+        <button
+          onClick={onHome}
+          className="absolute top-4 left-4 text-sm px-2 py-1 rounded-lg border border-jawwib-border text-jawwib-text-dim hover:text-jawwib-red hover:border-jawwib-red/40 transition-all tap-target"
+          title="الرجوع للرئيسية"
+        >
+          🏠
+        </button>
+      )}
       {/* Sadu accent stripe */}
       <div className="sadu-accent w-full max-w-sm" />
 

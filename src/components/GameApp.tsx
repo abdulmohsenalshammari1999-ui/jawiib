@@ -36,6 +36,7 @@ import { RegisterScreen } from './RegisterScreen';
 import { GameLoadingScreen } from './GameLoadingScreen';
 import { MysteryBoxOverlay } from './game/MysteryBoxOverlay';
 import { TeamWeaponInventory } from './game/TeamWeaponInventory';
+import { ConfirmModal } from './ConfirmModal';
 
 type SubView = 'setup' | 'lobby' | 'teams' | 'draft';
 
@@ -78,6 +79,7 @@ export function GameApp() {
   const renameTeam  = useRoomStore((s) => s.renameTeam);
   const assignTeam  = useRoomStore((s) => s.assignTeam);
   const autoAssign  = useRoomStore((s) => s.autoAssign);
+  const resetRoom   = useRoomStore((s) => s.resetRoom);
 
   const activeEffects = useSabotageStore((s) => s.activeEffects);
   const lastResult    = useSabotageStore((s) => s.lastResult);
@@ -116,6 +118,7 @@ export function GameApp() {
   const [pendingFullGame, setPendingFullGame] = useState<{ name: string; cats?: CategoryId[]; mode: 'ffa' | 'teams'; isQuick?: boolean } | null>(null);
   const [showIntro, setShowIntro]       = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [picksPerTeam, setPicksPerTeam] = useState(3);
   // Lazy-init: skip entry screen if a game is already in progress from persisted state
   const [showEntry, setShowEntry]       = useState(() => {
@@ -489,6 +492,24 @@ export function GameApp() {
     />
   ) : null;
 
+  // ── Leave game / go home ──────────────────────────────────────────────────────
+  const handleLeaveGame = () => {
+    resetGame();
+    resetRoom();
+    setSubView('lobby');
+    setShowLeaveConfirm(false);
+  };
+
+  const HomeButton = () => (
+    <button
+      onClick={() => setShowLeaveConfirm(true)}
+      className="text-sm px-2 py-1 rounded-lg border border-jawwib-border text-jawwib-text-dim hover:text-jawwib-red hover:border-jawwib-red/40 transition-all tap-target"
+      title="الرجوع للرئيسية"
+    >
+      🏠
+    </button>
+  );
+
   // ── Audio controls bar ────────────────────────────────────────────────────────
   const AudioControls = () => (
     <div className="flex items-center gap-1">
@@ -852,9 +873,12 @@ export function GameApp() {
         data-active-team={apTeamId ?? undefined}
       >
         <div className="min-h-screen p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <HostBubble message={game.hostMessage} compact />
-            <AudioControls />
+            <div className="flex items-center gap-1 shrink-0">
+              <HomeButton />
+              <AudioControls />
+            </div>
           </div>
 
           {/* Phase indicator */}
@@ -989,6 +1013,15 @@ export function GameApp() {
             </button>
           )}
         </div>
+        {showLeaveConfirm && (
+          <ConfirmModal
+            title="إنهاء المباراة؟"
+            message="إذا رجعت للرئيسية بتنتهي المباراة الحالية ولازم تبدون مباراة جديدة."
+            confirmLabel="إنهاء والرجوع 🏠"
+            onConfirm={handleLeaveGame}
+            onCancel={() => setShowLeaveConfirm(false)}
+          />
+        )}
       </div>
     );
   }
@@ -1049,6 +1082,7 @@ export function GameApp() {
         <div className="flex items-center justify-between mb-3">
           <h1 className="font-display text-xl font-black text-gold-gradient">جاوب</h1>
           <div className="flex items-center gap-3">
+            <HomeButton />
             <AudioControls />
             <div className="flex items-center gap-1">
               <span className="text-xs text-jawwib-text-dim">كود:</span>
@@ -1176,6 +1210,15 @@ export function GameApp() {
           </div>
         )}
       </div>
+      {showLeaveConfirm && (
+        <ConfirmModal
+          title="إنهاء المباراة؟"
+          message="إذا رجعت للرئيسية بتنتهي المباراة الحالية ولازم تبدون مباراة جديدة."
+          confirmLabel="إنهاء والرجوع 🏠"
+          onConfirm={handleLeaveGame}
+          onCancel={() => setShowLeaveConfirm(false)}
+        />
+      )}
     </div>
   );
 }

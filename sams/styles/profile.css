@@ -1,0 +1,86 @@
+.profile-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px;
+}
+.print-btn-wrap { text-align: right; margin-bottom: 12px; }
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.profile-header h1 { font-size: 28px; margin: 0; }
+.profile-header .sub { color: var(--text-light); margin-top: 4px; }
+.profile-header img { height: 48px; }
+
+.snapshot-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.snapshot-bar .stat-box {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+.snapshot-bar .stat-box .value { font-size: 20px; font-weight: 600; color: var(--primary); }
+.snapshot-bar .stat-box .label { font-size: 12px; color: var(--text-light); }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #EEF2FF;
+  color: var(--primary);
+}
+
+.proj-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.proj-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #FAFBFC; }
+.proj-card h4 { margin: 0 0 4px; font-size: 14px; }
+.proj-card .meta { font-size: 12px; color: var(--text-light); margin-bottom: 6px; }
+.proj-card .outcome { font-size: 13px; }
+
+.chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: flex; align-items: center; gap: 6px; background: #F3F4F6; border-radius: 16px; padding: 4px 10px; font-size: 12px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.dot-beginner { background: #D1D5DB; }
+.dot-intermediate { background: #93C5FD; }
+.dot-advanced { background: #60A5FA; }
+.dot-expert { background: #1D4ED8; }
+
+.score-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 16px 0;
+}
+.score-subscores { display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; }
+.score-total { text-align: center; }
+.score-total .value { font-size: 36px; font-weight: 600; }
+.score-band-badge { padding: 4px 12px; border-radius: 6px; color: #fff; font-weight: 600; font-size: 13px; }
+
+.profile-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text-light);
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .snapshot-bar { grid-template-columns: repeat(2, 1fr); }
+  .two-col { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Application Form</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/form.css">
+</head>
+<body>
+  <div id="resume-banner-container"></div>
+  <div class="app-shell">
+    <nav class="sidebar" id="sidebar" aria-label="Form sections"></nav>
+    <main class="main-content" id="app-root">
+      <div class="top-bar">
+        <div class="top-bar-info">
+          <img id="org-logo" src="" alt="">
+          <div>
+            <h2 id="vacancy-title"></h2>
+            <div class="top-bar-meta" id="vacancy-meta"></div>
+          </div>
+        </div>
+        <div id="progress-bar-label" class="top-bar-meta"></div>
+      </div>
+      <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-bar-fill" style="width:0%"></div></div>
+      <div class="mobile-stepper" id="mobile-stepper"></div>
+      <h2 id="section-heading"></h2>
+      <div id="section-content"></div>
+    </main>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="scripts/scoring.js"></script>
+  <script src="scripts/sheets.js"></script>
+  <script src="scripts/form.js"></script>
+</body>
+</html>

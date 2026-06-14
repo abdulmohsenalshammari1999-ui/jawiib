@@ -1,0 +1,19 @@
+@page { size: A4; margin: 12mm; }
+
+@media print {
+  .print-btn-wrap, .no-print { display: none !important; }
+  body { font-size: 10px; background: #fff; color: #000; }
+  .profile-page { max-width: 100%; padding: 0; }
+  .card, .stat-box, .proj-card, .chip, .badge, .score-band-badge {
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+    border: 1px solid #999 !important;
+  }
+  .proj-card { break-inside: avoid; page-break-inside: avoid; }
+  .snapshot-bar .stat-box .value { color: #000 !important; }
+  .profile-header h1 { font-size: 18px; }
+  .snapshot-bar, .two-col { gap: 6px; }
+  .review-section, .card { margin-bottom: 6px; padding: 8px; }
+  h1, h2, h3, h4 { margin: 4px 0; }
+}

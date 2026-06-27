@@ -5,4 +5,5 @@ dist/
 .netlify/
 .tanstack/
 *.local
-.claude/
+.claude/settings*.json
+.claude/credits*

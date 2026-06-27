@@ -1,26 +1,34 @@
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&family=Cairo:wght@700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 @import "tailwindcss" source("../");
 
 @theme {
-  /* ── Jawwib Dark Palette — modern TV game-show aesthetic ──────────── */
-  --color-jawwib-bg:         #0D1B2A;   /* deep navy */
-  --color-jawwib-surface:    #162035;   /* raised surface */
-  --color-jawwib-card:       #1E2D47;   /* card */
-  --color-jawwib-border:     rgba(255,255,255,0.10);
-  --color-jawwib-gold:       #F5A623;   /* vibrant gold */
-  --color-jawwib-gold-light: #FFD166;   /* bright gold */
+  /* ── Jawwib Flagship — warm desert earth palette ────────────────── */
+  --color-jawwib-bg:         #16100B;   /* ink — deep warm black */
+  --color-jawwib-bg-deep:    #110B07;   /* ink-2 — deepest gradient */
+  --color-jawwib-surface:    #1C150E;   /* surface */
+  --color-jawwib-card:       #241A12;   /* card / raised surface */
+  --color-jawwib-card-raised:#2E2317;   /* raised tiles, gradient tops */
+  --color-jawwib-border:     rgba(233,162,60,0.14);  /* warm border */
+  --color-jawwib-gold:       #E9A23C;   /* primary accent */
+  --color-jawwib-gold-light: #F4C063;   /* gold highlight */
   --color-jawwib-gold-dark:  #C17D11;
-  --color-jawwib-text:       #EEF2FF;   /* near-white */
-  --color-jawwib-text-dim:   #7A8FBD;   /* muted blue */
-  --color-jawwib-green:      #10B981;   /* vivid emerald */
-  --color-jawwib-red:        #EF4444;   /* vivid red */
-  --color-jawwib-blue:       #3B82F6;   /* vivid blue */
-  --color-jawwib-purple:     #8B5CF6;   /* vivid purple */
+  --color-jawwib-text:       #F2E7D3;   /* sand — primary text */
+  --color-jawwib-text-dim:   #CDBFA5;   /* sand-dim — secondary */
+  --color-jawwib-text-muted: #B7A488;   /* muted — tertiary */
+  --color-jawwib-green:      #5FA98C;   /* oasis — correct, Team B */
+  --color-jawwib-red:        #C85A34;   /* terra — wrong, image type */
+  --color-jawwib-blue:       #4E94A8;   /* oasis-water — draw mode */
+  --color-jawwib-purple:     #8B5CF6;   /* accent purple */
+  --color-jawwib-terra:      #C85A34;   /* terra orange */
+  --color-jawwib-clay:       #8E3B22;   /* deep accent */
+  --color-jawwib-oasis:      #5FA98C;   /* oasis green */
+  --color-jawwib-camel:      #B08968;   /* audio mode */
+  --color-jawwib-amber:      #D0A24A;   /* clue mode */
 }
 
 body {
   @apply m-0 bg-jawwib-bg text-jawwib-text;
-  font-family: 'Tajawal', 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   direction: rtl;
@@ -28,19 +36,25 @@ body {
   line-height: 1.65;
 }
 
-/* ── Heading / score numbers use Cairo for maximum legibility ─────────── */
+/* ── Display face — Reem Kufi for headlines, questions, logo ─────────── */
 .font-display {
-  font-family: 'Cairo', 'Tajawal', sans-serif;
-  font-weight: 900;
+  font-family: 'Reem Kufi', 'IBM Plex Sans Arabic', sans-serif;
+  font-weight: 700;
+}
+
+/* ── Mono face — IBM Plex Mono for scores, timers, codes ─────────────── */
+.font-mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-family: 'IBM Plex Mono', source-code-pro, Menlo, Monaco, Consolas, monospace;
 }
 
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #0D1B2A; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); border-radius: 3px; }
+::-webkit-scrollbar-track { background: #16100B; }
+::-webkit-scrollbar-thumb { background: rgba(233,162,60,0.22); border-radius: 3px; }
 
 /* ── Keyframes ─────────────────────────────────────────────────────── */
 
@@ -225,28 +239,17 @@ code {
    cobalt and aqua from every edge like light refracting through water.
    ────────────────────────────────────────────────────────────────────── */
 .game-wrapper[data-active-team="alpha"] {
-  background-color: #081828; /* Dark Gulf sea */
+  background-color: #1A1208; /* Warm gold dark */
 }
 
 .game-wrapper[data-active-team="alpha"]::before {
   opacity: 1;
   background:
-    /* Sky-blue sweep from top */
-    radial-gradient(ellipse 140% 75% at 50% -15%,  rgba(29,78,216,0.55)  0%, transparent 58%),
-    /* Deep cobalt from left edge */
-    radial-gradient(ellipse 75% 65% at -10% 55%,   rgba(14,51,145,0.42)  0%, transparent 55%),
-    /* Midnight blue from right edge */
-    radial-gradient(ellipse 75% 65% at 110% 55%,   rgba(29,78,216,0.38)  0%, transparent 55%),
-    /* Aqua-teal glow rising from bottom — like seafloor light */
-    radial-gradient(ellipse 110% 55% at 50% 120%,  rgba(56,189,248,0.32) 0%, transparent 52%),
-    /* Central atmospheric haze */
-    radial-gradient(ellipse 60% 50% at 50% 45%,    rgba(59,130,246,0.14) 0%, transparent 70%),
-    /* Horizontal wave lines texture */
-    repeating-linear-gradient(
-      180deg,
-      transparent 0px, transparent 22px,
-      rgba(29,78,216,0.055) 22px, rgba(29,78,216,0.055) 24px
-    );
+    radial-gradient(ellipse 140% 75% at 50% -15%,  rgba(233,162,60,0.45)  0%, transparent 58%),
+    radial-gradient(ellipse 75% 65% at -10% 55%,   rgba(193,125,17,0.32)  0%, transparent 55%),
+    radial-gradient(ellipse 75% 65% at 110% 55%,   rgba(233,162,60,0.28)  0%, transparent 55%),
+    radial-gradient(ellipse 110% 55% at 50% 120%,  rgba(244,192,99,0.22) 0%, transparent 52%),
+    radial-gradient(ellipse 60% 50% at 50% 45%,    rgba(233,162,60,0.10) 0%, transparent 70%);
   animation: ocean-breathe 5s ease-in-out infinite;
 }
 
@@ -256,28 +259,17 @@ code {
    and amber from above and below like a desert sunset.
    ────────────────────────────────────────────────────────────────────── */
 .game-wrapper[data-active-team="beta"] {
-  background-color: #1A0808; /* Dark desert night */
+  background-color: #0E1A15; /* Oasis dark */
 }
 
 .game-wrapper[data-active-team="beta"]::before {
   opacity: 1;
   background:
-    /* Crimson sweep from top — like blazing noon sky */
-    radial-gradient(ellipse 140% 75% at 50% -15%,  rgba(185,28,28,0.58)  0%, transparent 58%),
-    /* Deep burgundy from right edge */
-    radial-gradient(ellipse 75% 65% at 110% 55%,   rgba(120,20,20,0.44)  0%, transparent 55%),
-    /* Terracotta from left edge */
-    radial-gradient(ellipse 75% 65% at -10% 55%,   rgba(185,28,28,0.38)  0%, transparent 55%),
-    /* Amber glow rising from bottom — heat from the sand */
-    radial-gradient(ellipse 110% 55% at 50% 120%,  rgba(251,146,60,0.38) 0%, transparent 52%),
-    /* Central heat haze */
-    radial-gradient(ellipse 60% 50% at 50% 45%,    rgba(220,38,38,0.16)  0%, transparent 70%),
-    /* Diagonal dune ridge texture */
-    repeating-linear-gradient(
-      152deg,
-      transparent 0px, transparent 30px,
-      rgba(185,28,28,0.05) 30px, rgba(185,28,28,0.05) 32px
-    );
+    radial-gradient(ellipse 140% 75% at 50% -15%,  rgba(95,169,140,0.42)  0%, transparent 58%),
+    radial-gradient(ellipse 75% 65% at 110% 55%,   rgba(76,142,116,0.35)  0%, transparent 55%),
+    radial-gradient(ellipse 75% 65% at -10% 55%,   rgba(95,169,140,0.30)  0%, transparent 55%),
+    radial-gradient(ellipse 110% 55% at 50% 120%,  rgba(127,195,168,0.25) 0%, transparent 52%),
+    radial-gradient(ellipse 60% 50% at 50% 45%,    rgba(95,169,140,0.12)  0%, transparent 70%);
   animation: desert-breathe 4.5s ease-in-out infinite;
 }
 
@@ -301,36 +293,34 @@ code {
 
 /* ── Active team panel highlight ─────────────────────────────────────── */
 .team-panel-active-alpha {
-  background: linear-gradient(135deg, rgba(29,78,216,0.20) 0%, rgba(59,130,246,0.10) 100%) !important;
-  border-color: rgba(59,130,246,0.55) !important;
-  box-shadow: 0 0 24px rgba(29,78,216,0.28), inset 0 0 12px rgba(29,78,216,0.12);
+  background: linear-gradient(135deg, rgba(233,162,60,0.18) 0%, rgba(244,192,99,0.08) 100%) !important;
+  border-color: rgba(233,162,60,0.55) !important;
+  box-shadow: 0 0 24px rgba(233,162,60,0.25), inset 0 0 12px rgba(233,162,60,0.10);
 }
 .team-panel-active-beta {
-  background: linear-gradient(135deg, rgba(185,28,28,0.20) 0%, rgba(239,68,68,0.10) 100%) !important;
-  border-color: rgba(239,68,68,0.55) !important;
-  box-shadow: 0 0 24px rgba(185,28,28,0.28), inset 0 0 12px rgba(185,28,28,0.12);
+  background: linear-gradient(135deg, rgba(95,169,140,0.18) 0%, rgba(127,195,168,0.08) 100%) !important;
+  border-color: rgba(95,169,140,0.55) !important;
+  box-shadow: 0 0 24px rgba(95,169,140,0.25), inset 0 0 12px rgba(95,169,140,0.10);
 }
 
 /* ── Board cell hover: team-tinted ───────────────────────────────────── */
 .game-wrapper[data-active-team="alpha"] .board-cell:hover:not(.answered) {
-  --cell-hover-color: #1D4ED8;
-  --cell-glow-color: rgba(29,78,216,0.30);
-  border-color: #1D4ED8;
+  --cell-hover-color: #E9A23C;
+  --cell-glow-color: rgba(233,162,60,0.35);
 }
 .game-wrapper[data-active-team="beta"] .board-cell:hover:not(.answered) {
-  --cell-hover-color: #B91C1C;
-  --cell-glow-color: rgba(185,28,28,0.30);
-  border-color: #B91C1C;
+  --cell-hover-color: #5FA98C;
+  --cell-glow-color: rgba(95,169,140,0.35);
 }
 
 /* ── Answer option hover: team-tinted ───────────────────────────────── */
 .game-wrapper[data-active-team="alpha"] .answer-option:hover:not(:disabled) {
-  border-color: #1D4ED8 !important;
-  background: rgba(29,78,216,0.06) !important;
+  box-shadow: inset 0 0 0 1.5px #E9A23C !important;
+  background: rgba(233,162,60,0.06) !important;
 }
 .game-wrapper[data-active-team="beta"] .answer-option:hover:not(:disabled) {
-  border-color: #B91C1C !important;
-  background: rgba(185,28,28,0.06) !important;
+  box-shadow: inset 0 0 0 1.5px #5FA98C !important;
+  background: rgba(95,169,140,0.06) !important;
 }
 
 /* ── Volume slider styling ───────────────────────────────────────────── */
@@ -348,15 +338,15 @@ code {
   -webkit-appearance: none;
   width: 14px; height: 14px;
   border-radius: 50%;
-  background: #F5A623;
+  background: #E9A23C;
   cursor: pointer;
-  box-shadow: 0 0 4px rgba(245,166,35,0.5);
+  box-shadow: 0 0 4px rgba(233,162,60,0.5);
 }
 .volume-slider::-moz-range-thumb {
   width: 14px; height: 14px;
   border-radius: 50%;
   border: none;
-  background: #F5A623;
+  background: #E9A23C;
   cursor: pointer;
 }
 
@@ -386,7 +376,7 @@ code {
 
 /* ── Gold gradient text ──────────────────────────────────────────── */
 .text-gold-gradient {
-  background: linear-gradient(135deg, #F5A623, #FFD166, #F5A623);
+  background: linear-gradient(150deg, #F6C765, #E08E2E);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -396,12 +386,12 @@ code {
 .sadu-accent {
   background: repeating-linear-gradient(
     90deg,
-    #B07D1A 0px, #B07D1A 4px,
-    #C9A87A 4px, #C9A87A 8px,
-    #1A5FA8 8px, #1A5FA8 12px,
-    #C9A87A 12px, #C9A87A 16px,
-    #B82118 16px, #B82118 20px,
-    #C9A87A 20px, #C9A87A 24px
+    #E9A23C 0px, #E9A23C 4px,
+    #B7A488 4px, #B7A488 8px,
+    #5FA98C 8px, #5FA98C 12px,
+    #B7A488 12px, #B7A488 16px,
+    #C85A34 16px, #C85A34 20px,
+    #B7A488 20px, #B7A488 24px
   );
   height: 3px;
   border-radius: 2px;
@@ -410,41 +400,41 @@ code {
 
 /* ── Card ────────────────────────────────────────────────────────── */
 .game-card {
-  background: #1E2D47;
-  border: 1.5px solid rgba(255,255,255,0.09);
+  background: #241A12;
+  border: none;
   border-radius: 1rem;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.20);
+  box-shadow: inset 0 0 0 1px rgba(233,162,60,0.14), 0 4px 24px rgba(0,0,0,0.45), 0 1px 4px rgba(0,0,0,0.25);
   transition: all 0.25s;
 }
 .game-card:hover {
-  border-color: rgba(245,166,35,0.35);
-  box-shadow: 0 6px 30px rgba(0,0,0,0.40), 0 0 0 1px rgba(245,166,35,0.10);
+  box-shadow: inset 0 0 0 1px rgba(233,162,60,0.35), 0 6px 30px rgba(0,0,0,0.50), 0 0 26px -4px rgba(233,162,60,0.18);
 }
 
 /* ── Board cell ──────────────────────────────────────────────────── */
 .board-cell {
   position: relative;
   overflow: hidden;
-  border-radius: 0.75rem;
-  border: 1.5px solid rgba(255,255,255,0.06);
-  background: #162035;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(165deg, #2A2014, #1C150E);
+  box-shadow: inset 0 0 0 1px rgba(233,162,60,0.14);
   cursor: pointer;
   transition: all 0.18s;
 }
 .board-cell:hover:not(.answered) {
-  border-color: var(--cell-hover-color, rgba(245,166,35,0.6));
-  transform: scale(1.06);
-  box-shadow: 0 0 18px var(--cell-glow-color, rgba(245,166,35,0.35));
+  box-shadow: inset 0 0 0 1.5px var(--cell-hover-color, #E9A23C), 0 0 26px -4px var(--cell-glow-color, rgba(233,162,60,0.5));
+  transform: scale(1.02);
 }
 .board-cell:active:not(.answered):not(:disabled) {
   transform: scale(0.93);
   transition-duration: 0.08s;
-  box-shadow: 0 0 24px var(--cell-glow-color, rgba(245,166,35,0.5));
+  box-shadow: inset 0 0 0 1.5px var(--cell-hover-color, #E9A23C), 0 0 30px -4px var(--cell-glow-color, rgba(233,162,60,0.6));
 }
 .board-cell.answered {
-  opacity: 0.22;
+  opacity: 0.35;
   cursor: default;
-  background: #162035;
+  background: #1C150E;
+  box-shadow: inset 0 0 0 1px rgba(233,162,60,0.06);
 }
 .board-cell-check {
   display: inline-flex;
@@ -462,19 +452,20 @@ code {
 
 /* ── Gold button ─────────────────────────────────────────────────── */
 .btn-gold {
-  background: linear-gradient(135deg, #C17D11, #F5A623);
-  color: #0D1B2A;
-  font-weight: 900;
-  border-radius: 0.85rem;
+  background: linear-gradient(150deg, #F6C765, #E08E2E);
+  color: #16100B;
+  font-weight: 700;
+  border-radius: 14px;
   padding: 0.75rem 2rem;
   border: none;
   cursor: pointer;
   transition: all 0.2s;
-  font-family: 'Tajawal', sans-serif;
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
   letter-spacing: 0.02em;
+  box-shadow: 0 12px 28px -12px rgba(233,162,60,0.6);
 }
 .btn-gold:hover {
-  box-shadow: 0 0 28px rgba(245,166,35,0.55);
+  box-shadow: 0 14px 30px -10px rgba(233,162,60,0.7);
   transform: translateY(-2px);
 }
 .btn-gold:active { transform: scale(0.97); }
@@ -483,8 +474,8 @@ code {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
-  background: #2A3D5A;
-  color: rgba(255,255,255,0.35);
+  background: #2A2014;
+  color: rgba(242,231,211,0.35);
 }
 
 /* ── Illustrated category draft tile ─────────────────────────────── */
@@ -530,10 +521,10 @@ code {
 
 /* ── Team glows ──────────────────────────────────────────────────── */
 .team-glow-blue {
-  box-shadow: 0 0 18px rgba(26,95,168,0.25), inset 0 0 18px rgba(26,95,168,0.05);
+  box-shadow: 0 0 18px rgba(233,162,60,0.25), inset 0 0 18px rgba(233,162,60,0.05);
 }
 .team-glow-red {
-  box-shadow: 0 0 18px rgba(184,33,24,0.25), inset 0 0 18px rgba(184,33,24,0.05);
+  box-shadow: 0 0 18px rgba(95,169,140,0.25), inset 0 0 18px rgba(95,169,140,0.05);
 }
 
 /* ── Answer option ────────────────────────────────────────────────── */
@@ -546,7 +537,7 @@ code {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(245,166,35,0.10), transparent);
+  background: radial-gradient(circle at center, rgba(233,162,60,0.10), transparent);
   opacity: 0;
   transition: opacity 0.25s;
 }
@@ -574,19 +565,19 @@ code {
 [dir="rtl"] textarea { text-align: right; }
 
 input, textarea {
-  background: #162035;
-  border: 1.5px solid rgba(255,255,255,0.10);
-  color: #EEF2FF;
-  border-radius: 0.75rem;
+  background: #1C150E;
+  border: none;
+  box-shadow: inset 0 0 0 1px rgba(233,162,60,0.14);
+  color: #F2E7D3;
+  border-radius: 14px;
   padding: 0.65rem 1rem;
 }
 input::placeholder, textarea::placeholder {
-  color: rgba(255,255,255,0.28);
+  color: rgba(183,164,136,0.5);
 }
 input:focus, textarea:focus {
-  border-color: #F5A623;
+  box-shadow: inset 0 0 0 1.5px #E9A23C, 0 0 26px -4px rgba(233,162,60,0.3);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(245,166,35,0.15);
 }
 
 /* ── Mobile touch feedback ───────────────────────────────────────── */
@@ -607,11 +598,11 @@ input:focus, textarea:focus {
 
 /* ── Diwaniya texture bg ─────────────────────────────────────────── */
 .bg-diwaniya {
-  background-color: #0D1B2A;
+  background-color: #16100B;
   background-image:
-    radial-gradient(ellipse at 15% 40%, rgba(245,166,35,0.07) 0%, transparent 45%),
-    radial-gradient(ellipse at 85% 15%, rgba(59,130,246,0.07) 0%, transparent 40%),
-    radial-gradient(ellipse at 50% 90%, rgba(139,92,246,0.05) 0%, transparent 50%);
+    radial-gradient(ellipse at 15% 40%, rgba(233,162,60,0.06) 0%, transparent 45%),
+    radial-gradient(ellipse at 85% 15%, rgba(95,169,140,0.05) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 90%, rgba(200,90,52,0.04) 0%, transparent 50%);
 }
 
 /* ── Desert dune silhouette ──────────────────────────────────────────── */
@@ -644,7 +635,7 @@ input:focus, textarea:focus {
 .sea-wave-accent {
   height: 3px;
   border-radius: 2px;
-  background: linear-gradient(90deg, #1A5FA8 0%, #0891B2 35%, #1A7A42 65%, #1A5FA8 100%);
+  background: linear-gradient(90deg, #E9A23C 0%, #B08968 35%, #5FA98C 65%, #E9A23C 100%);
   background-size: 200% 100%;
   animation: sea-drift 5s ease-in-out infinite;
   opacity: 0.60;
@@ -735,8 +726,8 @@ input:focus, textarea:focus {
 }
 .answer-option:hover:not(:disabled) {
   transform: scale(1.015);
-  border-color: #F5A623 !important;
-  background: rgba(245,166,35,0.08) !important;
+  box-shadow: inset 0 0 0 1.5px #E9A23C !important;
+  background: rgba(233,162,60,0.08) !important;
 }
 .answer-option:active:not(:disabled) {
   transform: scale(0.97);
@@ -749,7 +740,7 @@ input:focus, textarea:focus {
   font-weight: 800;
   line-height: 1.55;
   letter-spacing: 0.01em;
-  color: #EEF2FF;
+  color: #F2E7D3;
 }
 
 /* ── Score numbers — Cairo for crisp Arabic numerals ─────────────────── */
@@ -826,7 +817,7 @@ input:focus, textarea:focus {
 /* ── Color-blind friendly focus rings ─────────────────────────────────── */
 button:focus-visible,
 a:focus-visible {
-  outline: 3px solid #F5A623;
+  outline: 3px solid #E9A23C;
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -902,24 +893,29 @@ a:focus-visible {
    QUESTION TYPE STYLES
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Guess question (person/place/object) ─────────────────────────────── */
-.question-type-guess {
-  background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
-  border: 1.5px solid rgba(21,128,61,0.25);
+/* ── Question type accent worlds ──────────────────────────────────────── */
+.question-type-text {
+  box-shadow: inset 0 0 0 1.5px rgba(233,162,60,0.35);
   border-radius: 1rem;
 }
-
-/* ── Scene question (what happened?) ─────────────────────────────────── */
-.question-type-scene {
-  background: linear-gradient(135deg, #FFF7ED, #FFEDD5);
-  border: 1.5px solid rgba(234,88,12,0.22);
+.question-type-image {
+  box-shadow: inset 0 0 0 1.5px rgba(200,90,52,0.35);
   border-radius: 1rem;
 }
-
-/* ── Identify question (sound/voice/song) ─────────────────────────────── */
-.question-type-identify {
-  background: linear-gradient(135deg, #F5F3FF, #EDE9FE);
-  border: 1.5px solid rgba(109,40,217,0.22);
+.question-type-audio {
+  box-shadow: inset 0 0 0 1.5px rgba(176,137,104,0.35);
+  border-radius: 1rem;
+}
+.question-type-charades {
+  box-shadow: inset 0 0 0 1.5px rgba(95,169,140,0.35);
+  border-radius: 1rem;
+}
+.question-type-draw {
+  box-shadow: inset 0 0 0 1.5px rgba(78,148,168,0.35);
+  border-radius: 1rem;
+}
+.question-type-clue {
+  box-shadow: inset 0 0 0 1.5px rgba(208,162,74,0.35);
   border-radius: 1rem;
 }
 
@@ -927,11 +923,11 @@ a:focus-visible {
 .teaser-text {
   font-size: 13px;
   font-style: italic;
-  color: #B0C4E8;
+  color: #CDBFA5;
   text-align: center;
   padding: 0.5rem 0.75rem;
   border-radius: 0.5rem;
-  background: rgba(245,166,35,0.07);
-  border: 1px solid rgba(245,166,35,0.16);
+  background: rgba(233,162,60,0.07);
+  box-shadow: inset 0 0 0 1px rgba(233,162,60,0.16);
   line-height: 1.5;
 }

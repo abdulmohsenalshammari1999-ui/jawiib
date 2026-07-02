@@ -494,7 +494,7 @@ export function GameOverScreen({
             {sorted.map((player, idx) => {
               const tColor =
                 mode === 'teams' && teams
-                  ? teams.alpha.playerIds.includes(player.id) ? '#1D4ED8' : '#B91C1C'
+                  ? teams.alpha.playerIds.includes(player.id) ? '#5FA98C' : '#C85A34'
                   : null;
               return (
                 <div

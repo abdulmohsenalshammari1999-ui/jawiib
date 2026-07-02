@@ -90,7 +90,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, accountName,
                 else { setView('quickplay'); }
               }}
               className="w-full text-xl py-4 mb-2 rounded-xl font-black transition-all"
-              style={{ background: 'linear-gradient(135deg,#1D4ED8,#1A5FA8)', color: '#fff', boxShadow: '0 4px 18px rgba(29,78,216,0.35)' }}
+              style={{ background: 'linear-gradient(135deg,#5FA98C,#4A8C74)', color: '#16100B', boxShadow: '0 4px 18px rgba(95,169,140,0.35)' }}
             >
               ⚡ لعبة سريعة
             </button>
@@ -212,7 +212,7 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, accountName,
               onClick={() => { if (playerName.trim() && onQuickPlay) onQuickPlay(playerName.trim()); }}
               disabled={!playerName.trim()}
               className="w-full text-xl py-4 rounded-xl font-black transition-all"
-              style={{ background: 'linear-gradient(135deg,#1D4ED8,#1A5FA8)', color: '#fff', boxShadow: '0 4px 18px rgba(29,78,216,0.35)', opacity: playerName.trim() ? 1 : 0.5 }}
+              style={{ background: 'linear-gradient(135deg,#5FA98C,#4A8C74)', color: '#16100B', boxShadow: '0 4px 18px rgba(95,169,140,0.35)', opacity: playerName.trim() ? 1 : 0.5 }}
             >
               ⚡ انطلق!
             </button>

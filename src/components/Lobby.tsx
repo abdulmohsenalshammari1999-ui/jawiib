@@ -73,8 +73,8 @@ export function Lobby({
           roomCode={roomCode}
           hostName={hostName}
           mode={mode}
-          alphaTeam={alphaTeamName ? { name: alphaTeamName, emoji: alphaTeamEmoji ?? '🔵', color: '#1D4ED8' } : undefined}
-          betaTeam={betaTeamName ? { name: betaTeamName, emoji: betaTeamEmoji ?? '🔴', color: '#B91C1C' } : undefined}
+          alphaTeam={alphaTeamName ? { name: alphaTeamName, emoji: alphaTeamEmoji ?? '🌊', color: '#5FA98C' } : undefined}
+          betaTeam={betaTeamName ? { name: betaTeamName, emoji: betaTeamEmoji ?? '🐪', color: '#C85A34' } : undefined}
           onClose={() => setShowInvite(false)}
         />
       )}
@@ -84,8 +84,8 @@ export function Lobby({
         <div className="flex items-center justify-between mb-2">
           <p className="text-jawwib-text-dim text-xs">شارك الكود مع أصدقائك</p>
           {isOnline && (
-            <span className="flex items-center gap-1 text-[10px] font-bold text-green-500">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            <span className="flex items-center gap-1 text-[10px] font-bold text-jawwib-oasis">
+              <span className="w-1.5 h-1.5 rounded-full bg-jawwib-oasis animate-pulse" />
               {onlinePlayers} متصل
             </span>
           )}
@@ -168,7 +168,7 @@ export function Lobby({
           {!isTrial && isHost && onShowDraft && (
             <button
               onClick={onShowDraft}
-              className="text-xs px-3 py-1 rounded-lg bg-jawwib-purple/20 text-jawwib-purple border border-jawwib-purple/30 hover:bg-jawwib-purple/30 transition-all"
+              className="text-xs px-3 py-1 rounded-lg bg-jawwib-amber/20 text-jawwib-amber border border-jawwib-amber/30 hover:bg-jawwib-amber/30 transition-all"
             >
               Draft الفئات →
             </button>

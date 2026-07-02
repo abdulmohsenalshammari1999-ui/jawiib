@@ -18,10 +18,10 @@ interface GameBoardProps {
 const TIER_POINTS = [100, 200, 300, 600] as const;
 
 const TIER_STYLES: Record<number, { text: string; bg: string; glow: string }> = {
-  100: { text: '#FFFFFF', bg: '#166534', glow: 'rgba(16,185,129,0.50)' },
-  200: { text: '#FFFFFF', bg: '#1E40AF', glow: 'rgba(59,130,246,0.50)' },
-  300: { text: '#FFFFFF', bg: '#92400E', glow: 'rgba(245,158,11,0.50)' },
-  600: { text: '#FFFFFF', bg: '#5B21B6', glow: 'rgba(139,92,246,0.55)' },
+  100: { text: '#F2E7D3', bg: '#3A2416', glow: 'rgba(176,137,104,0.40)' },
+  200: { text: '#16100B', bg: '#A07228', glow: 'rgba(208,162,74,0.50)' },
+  300: { text: '#16100B', bg: '#D0A24A', glow: 'rgba(233,162,60,0.55)' },
+  600: { text: '#F5D5C0', bg: '#8B2D12', glow: 'rgba(200,90,52,0.55)' },
 };
 
 export function GameBoard({
@@ -66,7 +66,7 @@ export function GameBoard({
             <div
               key={cat.id}
               className={`grid gap-1.5 items-center rounded-lg transition-all ${
-                forcedCategoryId === cat.id ? 'bg-jawwib-purple/8 ring-1 ring-jawwib-purple/30' : ''
+                forcedCategoryId === cat.id ? 'bg-jawwib-amber/8 ring-1 ring-jawwib-amber/30' : ''
               }`}
               style={{ gridTemplateColumns: gridCols }}
             >
@@ -76,7 +76,7 @@ export function GameBoard({
                 return (
                   <div
                     className={`board-category-col relative overflow-hidden rounded-lg min-w-0 ${tvMode ? 'min-h-[56px]' : 'min-h-[44px]'} ${
-                      forcedCategoryId === cat.id ? 'ring-1 ring-jawwib-purple/60' : ''
+                      forcedCategoryId === cat.id ? 'ring-1 ring-jawwib-amber/60' : ''
                     }`}
                   >
                     {catImg ? (
@@ -99,12 +99,12 @@ export function GameBoard({
                       <span
                         className={`font-bold leading-tight mt-0.5 line-clamp-2 ${tvMode ? 'text-[10px]' : 'text-[8.5px]'} ${
                           catImg ? 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]' :
-                          forcedCategoryId === cat.id ? 'text-jawwib-purple' : 'text-jawwib-text-dim'
+                          forcedCategoryId === cat.id ? 'text-jawwib-amber' : 'text-jawwib-text-dim'
                         }`}
                       >
                         {cat.name}
                       </span>
-                      {forcedCategoryId === cat.id && <span className="text-[9px] text-jawwib-purple font-black mt-0.5">🎯</span>}
+                      {forcedCategoryId === cat.id && <span className="text-[9px] text-jawwib-amber font-black mt-0.5">🎯</span>}
                     </div>
                   </div>
                 );

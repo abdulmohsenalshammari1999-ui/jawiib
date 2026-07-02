@@ -20,10 +20,10 @@ interface QuestionCardProps {
 const OPTION_LABELS = ['أ', 'ب', 'ج', 'د'];
 
 const POINT_COLORS: Record<number, { text: string; bg: string }> = {
-  100: { text: '#86EFAC', bg: 'rgba(16,185,129,0.18)' },
-  200: { text: '#93C5FD', bg: 'rgba(59,130,246,0.18)' },
-  300: { text: '#FCD34D', bg: 'rgba(180,83,9,0.22)' },
-  600: { text: '#C4B5FD', bg: 'rgba(109,40,217,0.22)' },
+  100: { text: '#CDBFA5', bg: 'rgba(176,137,104,0.18)' },
+  200: { text: '#D0A24A', bg: 'rgba(208,162,74,0.18)' },
+  300: { text: '#E9A23C', bg: 'rgba(233,162,60,0.20)' },
+  600: { text: '#F5C0A0', bg: 'rgba(200,90,52,0.22)' },
 };
 
 const TYPE_LABELS: Record<string, { icon: string; label: string }> = {
@@ -93,8 +93,8 @@ function OrderingUI({
               !submitted
                 ? 'border-white/10'
                 : posCorrect
-                ? 'bg-green-900/30 border-green-500'
-                : 'bg-red-900/30 border-red-500'
+                ? 'bg-jawwib-oasis/15 border-jawwib-oasis'
+                : 'bg-jawwib-terra/15 border-jawwib-terra'
             }`}
             style={{ background: !submitted ? 'rgba(255,255,255,0.04)' : undefined }}
           >
@@ -126,7 +126,7 @@ function OrderingUI({
               </div>
             )}
             {submitted && (
-              <span className={`text-lg shrink-0 ${posCorrect ? 'text-green-400' : 'text-red-400'}`}>
+              <span className={`text-lg shrink-0 ${posCorrect ? 'text-jawwib-oasis' : 'text-jawwib-terra'}`}>
                 {posCorrect ? '✓' : '✗'}
               </span>
             )}
@@ -144,7 +144,7 @@ function OrderingUI({
         </button>
       )}
       {submitted && (
-        <div className={`text-center py-3 rounded-xl font-black text-base ${isCorrect ? 'bg-green-900/30 text-green-300' : 'bg-red-900/30 text-red-300'}`}>
+        <div className={`text-center py-3 rounded-xl font-black text-base ${isCorrect ? 'bg-jawwib-oasis/15 text-jawwib-oasis' : 'bg-jawwib-terra/15 text-jawwib-terra'}`}>
           {isCorrect ? '🎉 ترتيب صحيح!' : '❌ ترتيب خاطئ'}
         </div>
       )}
@@ -229,9 +229,9 @@ export function QuestionCard({
         : `${base} opacity-25`;
     }
     const isCorrect = idx === question.correctIndex;
-    if (isSelected && isCorrect)  return `${base} border-green-500 bg-green-900/30`;
-    if (isSelected && !isCorrect) return `${base} border-red-500 bg-red-900/30 animate-shake`;
-    if (!isSelected && isCorrect) return `${base} border-green-400 bg-green-900/20`;
+    if (isSelected && isCorrect)  return `${base} border-jawwib-oasis bg-jawwib-oasis/15`;
+    if (isSelected && !isCorrect) return `${base} border-jawwib-terra bg-jawwib-terra/15 animate-shake`;
+    if (!isSelected && isCorrect) return `${base} border-jawwib-oasis/70 bg-jawwib-oasis/10`;
     return `${base} opacity-20`;
   };
 
@@ -252,9 +252,9 @@ export function QuestionCard({
         </div>
       )}
       {scrambledOptions && (
-        <div className="mb-3 px-4 py-2 rounded-xl flex items-center gap-2" style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.28)' }}>
-          <span className="text-purple-400">🔀</span>
-          <span className="text-purple-300 text-xs font-bold">الخيارات مخلوطة</span>
+        <div className="mb-3 px-4 py-2 rounded-xl flex items-center gap-2" style={{ background: 'rgba(176,137,104,0.12)', border: '1px solid rgba(176,137,104,0.28)' }}>
+          <span className="text-jawwib-camel">🔀</span>
+          <span className="text-jawwib-camel text-xs font-bold">الخيارات مخلوطة</span>
         </div>
       )}
 
@@ -262,7 +262,7 @@ export function QuestionCard({
       <div
         className="relative overflow-hidden rounded-2xl p-5 sm:p-6 pt-[1.375rem] sm:pt-[1.625rem] transition-all"
         style={{
-          background: '#1E2D47',
+          background: '#1C150E',
           boxShadow: teamColor
             ? `0 8px 40px ${teamColor}30, 0 2px 12px rgba(0,0,0,0.30)`
             : '0 8px 40px rgba(0,0,0,0.40)',
@@ -309,7 +309,7 @@ export function QuestionCard({
         )}
 
         {question.teaser && selected === null && (
-          <div className="text-center text-sm text-gray-500 italic mb-3">{question.teaser}</div>
+          <div className="text-center text-sm text-jawwib-text-muted italic mb-3">{question.teaser}</div>
         )}
 
         {/* Media */}
@@ -332,9 +332,9 @@ export function QuestionCard({
 
         {/* Question text */}
         {qType === 'math' ? (
-          <div className="mb-5 rounded-2xl p-4 text-center" style={{ background: 'rgba(59,130,246,0.12)', border: '1.5px solid rgba(59,130,246,0.25)' }}>
-            <p className="text-xs font-bold text-blue-300 mb-2 tracking-widest">🔢 تحدي رياضي</p>
-            <p className="font-display text-2xl sm:text-3xl text-blue-200 leading-relaxed" dir="ltr">{question.text}</p>
+          <div className="mb-5 rounded-2xl p-4 text-center" style={{ background: 'rgba(208,162,74,0.10)', border: '1.5px solid rgba(208,162,74,0.28)' }}>
+            <p className="text-xs font-bold text-jawwib-amber mb-2 tracking-widest">🔢 تحدي رياضي</p>
+            <p className="font-display text-2xl sm:text-3xl text-jawwib-text leading-relaxed" dir="ltr">{question.text}</p>
           </div>
         ) : qType === 'riddle' ? (
           <div className="mb-5 rounded-2xl p-4 text-center" style={{ background: 'rgba(245,166,35,0.10)', border: '1.5px solid rgba(245,166,35,0.22)' }}>
@@ -380,10 +380,10 @@ export function QuestionCard({
                 </span>
                 <span className="font-bold text-sm sm:text-base text-jawwib-text flex-1 leading-snug">{option}</span>
                 {revealed && idx === question.correctIndex && (
-                  <span className="mr-2 text-green-400 text-base shrink-0 font-black">✓</span>
+                  <span className="mr-2 text-jawwib-oasis text-base shrink-0 font-black">✓</span>
                 )}
                 {revealed && selected === idx && idx !== question.correctIndex && (
-                  <span className="mr-2 text-red-400 text-base shrink-0 font-black">✗</span>
+                  <span className="mr-2 text-jawwib-terra text-base shrink-0 font-black">✗</span>
                 )}
               </button>
             ))}

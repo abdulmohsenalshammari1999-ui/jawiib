@@ -41,8 +41,8 @@ import { ConfirmModal } from './ConfirmModal';
 type SubView = 'setup' | 'lobby' | 'teams' | 'draft';
 
 // ── Team colors ───────────────────────────────────────────────────────────────
-const ALPHA_COLOR = '#1D4ED8';
-const BETA_COLOR  = '#B91C1C';
+const ALPHA_COLOR = '#5FA98C';
+const BETA_COLOR  = '#C85A34';
 function teamColor(id: TeamId | null | undefined): string | null {
   if (id === 'alpha') return ALPHA_COLOR;
   if (id === 'beta')  return BETA_COLOR;
@@ -1188,7 +1188,7 @@ export function GameApp() {
                 style={{
                   width: `${(boardPickTimer / 45) * 100}%`,
                   background: boardPickTimer <= 10
-                    ? 'linear-gradient(90deg,#B91C1C,#EF4444)'
+                    ? 'linear-gradient(90deg,#C85A34,#E07040)'
                     : 'linear-gradient(90deg,#B07D1A,#D4A94A)',
                 }}
               />

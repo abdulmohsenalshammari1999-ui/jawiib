@@ -20,7 +20,7 @@ const GOLD = '#D4A94A';
 const DARK = '#040C1E';
 const GOLD_DIM = '#B07D1A';
 
-const SADU_COLORS = ['#B07D1A', '#1D4ED8', '#B91C1C', '#040C1E', '#D4A94A'];
+const SADU_COLORS = ['#B07D1A', '#5FA98C', '#C85A34', '#16100B', '#D4A94A'];
 
 function SaduStripe({ height = 8 }: { height?: number }) {
   const count = 28;

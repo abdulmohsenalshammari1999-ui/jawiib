@@ -73,7 +73,7 @@ export function TeamScoreboard({
         {gap >= 400 && !isCloseGame && (
           <div className="text-center mb-2">
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-              alphaLeads ? 'text-jawwib-red bg-jawwib-red/10' : 'text-jawwib-blue bg-jawwib-blue/10'
+              alphaLeads ? 'text-jawwib-red bg-jawwib-red/10' : 'text-jawwib-oasis bg-jawwib-oasis/10'
             }`}>
               💪 {alphaLeads ? teams.beta.name : teams.alpha.name} يحارب للعودة!
             </span>
@@ -87,31 +87,31 @@ export function TeamScoreboard({
               activeTeam === 'alpha'
                 ? 'team-panel-active-alpha animate-team-pulse-blue'
                 : alphaLeads
-                ? 'border-jawwib-blue/45 bg-jawwib-blue/10'
+                ? 'border-jawwib-oasis/45 bg-jawwib-oasis/10'
                 : 'border-jawwib-border bg-jawwib-surface'
             }`}
           >
             <div className="flex items-center gap-1.5 mb-1">
               <span className="text-base">🌊</span>
-              <span className="font-bold text-xs truncate text-jawwib-blue">{teams.alpha.name}</span>
+              <span className="font-bold text-xs truncate text-jawwib-oasis">{teams.alpha.name}</span>
               {alphaLeads && gap > 0 && <span className="text-jawwib-gold text-xs mr-auto">👑</span>}
               {activeTeam === 'alpha' && (
                 <span
                   className="text-[9px] font-black px-1.5 py-0.5 rounded-full mr-auto"
-                  style={{ background: 'rgba(29,78,216,0.15)', color: '#1D4ED8' }}
+                  style={{ background: 'rgba(95,169,140,0.15)', color: '#5FA98C' }}
                 >
                   دورهم
                 </span>
               )}
             </div>
-            <p className="score-display text-2xl font-black text-jawwib-blue tabular-nums">{alphaScore}</p>
+            <p className="score-display text-2xl font-black text-jawwib-oasis tabular-nums">{alphaScore}</p>
             <div className="flex flex-wrap gap-0.5 mt-1">
               {alphaPlayers.map((p) => (
                 <span
                   key={p.id}
                   className={`text-[10px] px-1 py-0.5 rounded ${
                     p.id === activePlayerId
-                      ? 'bg-jawwib-blue/20 text-jawwib-blue font-bold'
+                      ? 'bg-jawwib-oasis/20 text-jawwib-oasis font-bold'
                       : 'bg-jawwib-surface text-jawwib-text-dim'
                   }`}
                 >
@@ -138,7 +138,7 @@ export function TeamScoreboard({
               {activeTeam === 'beta' && (
                 <span
                   className="text-[9px] font-black px-1.5 py-0.5 rounded-full mr-auto"
-                  style={{ background: 'rgba(185,28,28,0.15)', color: '#B91C1C' }}
+                  style={{ background: 'rgba(200,90,52,0.15)', color: '#C85A34' }}
                 >
                   دورهم
                 </span>
@@ -170,12 +170,12 @@ export function TeamScoreboard({
                 className="h-full rounded-full transition-all duration-700"
                 style={{
                   width: `${(alphaScore / Math.max(alphaScore + betaScore, 1)) * 100}%`,
-                  background: 'linear-gradient(to left, #1D4ED8, #3B82F6)',
+                  background: 'linear-gradient(to left, #5FA98C, #7EC4A9)',
                 }}
               />
             </div>
             <div className="flex justify-between text-[9px] text-jawwib-text-dim mt-0.5">
-              <span className="text-jawwib-blue font-bold">{teams.alpha.name}</span>
+              <span className="text-jawwib-oasis font-bold">{teams.alpha.name}</span>
               {gap > 0 && <span className="font-bold">فارق {gap}</span>}
               <span className="text-jawwib-red font-bold">{teams.beta.name}</span>
             </div>
@@ -186,7 +186,7 @@ export function TeamScoreboard({
         {alphaCanLastStand && (
           <button
             onClick={() => onActivateLastStand?.('alpha')}
-            className="w-full mb-2 py-2.5 rounded-xl border-2 border-jawwib-blue/40 bg-jawwib-blue/8 text-jawwib-blue text-xs font-black last-stand-btn tap-target"
+            className="w-full mb-2 py-2.5 rounded-xl border-2 border-jawwib-oasis/40 bg-jawwib-oasis/8 text-jawwib-oasis text-xs font-black last-stand-btn tap-target"
           >
             🌊 صمود أخير — ضاعف نقاط السؤال ×3
           </button>
@@ -203,7 +203,7 @@ export function TeamScoreboard({
         {/* Individual player list */}
         <div className="space-y-1">
           {[
-            ...alphaPlayers.map((p) => ({ ...p, teamColor: '#5B9BE0', teamBg: 'bg-jawwib-blue/12' })),
+            ...alphaPlayers.map((p) => ({ ...p, teamColor: '#5B9BE0', teamBg: 'bg-jawwib-oasis/12' })),
             ...betaPlayers.map((p)  => ({ ...p, teamColor: '#E08884', teamBg: 'bg-jawwib-red/12' })),
           ]
             .sort((a, b) => b.score - a.score)

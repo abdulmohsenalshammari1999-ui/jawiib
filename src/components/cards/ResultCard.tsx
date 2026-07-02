@@ -25,9 +25,9 @@ interface ResultCardProps {
 
 const GOLD      = '#D4A94A';
 const GOLD_DIM  = '#B07D1A';
-const DARK      = '#040C1E';
-const DARK2     = '#070F22';
-const SADU_COLORS = ['#B07D1A', '#1D4ED8', '#B91C1C', '#040C1E', '#D4A94A', '#1A5FA8', '#B07D1A'];
+const DARK      = '#16100B';
+const DARK2     = '#1C150E';
+const SADU_COLORS = ['#B07D1A', '#5FA98C', '#C85A34', '#16100B', '#D4A94A', '#B08968', '#B07D1A'];
 
 function fmt(n: number) { return n.toLocaleString('ar-EG'); }
 

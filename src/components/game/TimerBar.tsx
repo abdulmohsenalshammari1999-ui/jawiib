@@ -12,10 +12,10 @@ export function TimerBar({ time, maxTime, compact = false, teamColor }: TimerBar
 
   // Team color overrides the default gold when a team is active
   const activeColor = isLow
-    ? '#B91C1C'
+    ? '#C85A34'
     : isMed
-    ? '#CA8A04'
-    : (teamColor ?? '#C8880A');
+    ? '#D0A24A'
+    : (teamColor ?? '#E9A23C');
 
   const barClass = isLow
     ? 'from-jawwib-red to-red-400'

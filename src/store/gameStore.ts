@@ -100,7 +100,7 @@ export interface GameSlice extends GameState {
   answeredCount: number;
   // Actions
   createRoom: (name: string, isTrial: boolean, cats?: CategoryId[]) => { roomId: string; playerId: string };
-  addPlayer: (name: string) => string;
+  addPlayer: (name: string, explicitId?: string) => string;
   startGame: () => void;
   selectQuestion: (questionId: string) => void;
   answerQuestion: (playerId: string, answerIndex: number) => void;
@@ -216,8 +216,8 @@ export const useGameStore = create<GameStoreState>()(
       return { roomId, playerId };
     },
 
-    addPlayer: (name) => {
-      const playerId = uuid();
+    addPlayer: (name, explicitId) => {
+      const playerId = explicitId ?? uuid();
       const { game } = get();
       if (!game) return playerId;
       const player: Player = {

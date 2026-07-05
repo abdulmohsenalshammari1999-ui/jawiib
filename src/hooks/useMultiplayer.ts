@@ -6,6 +6,17 @@ const PARTYKIT_HOST = import.meta.env['VITE_PARTYKIT_HOST'] as string | undefine
 
 export type MultiplayerRole = 'host' | 'guest' | 'offline';
 
+interface UseMultiplayerOptions {
+  /** Guest's display name — sent as GUEST_JOIN on connect */
+  guestName?: string;
+  /** Guest's stable player ID — same ID used on host side */
+  guestId?: string;
+  /** Host callback: called when a guest announces themselves */
+  onGuestJoined?: (name: string, guestId: string) => void;
+  /** Called once after the first ROOM_SNAPSHOT is applied (guest only) */
+  onSnapshotReceived?: () => void;
+}
+
 interface UseMultiplayerResult {
   role: MultiplayerRole;
   isOnline: boolean;
@@ -20,6 +31,8 @@ interface UseMultiplayerResult {
  *
  * Host: subscribes to game state changes and broadcasts via PartyKit.
  * Guest: receives HOST_SYNC and patches local game state from server.
+ *   On connect, guest sends GUEST_JOIN so the host can register them.
+ *   Host calls onGuestJoined() which triggers addPlayer() with the same ID.
  *
  * When VITE_PARTYKIT_HOST is not set, returns offline role with no-ops.
  */
@@ -27,14 +40,18 @@ export function useMultiplayer(
   roomCode: string | undefined,
   localPlayerId: string | undefined,
   role: MultiplayerRole,
+  options: UseMultiplayerOptions = {},
 ): UseMultiplayerResult {
-  const [isOnline, setIsOnline] = useState(false);
+  const [isOnline, setIsOnline]       = useState(false);
   const [onlinePlayers, setOnlinePlayers] = useState(1);
-  const socketRef = useRef<import('partysocket').default | null>(null);
-  const roleRef = useRef(role);
-  roleRef.current = role;
+  const socketRef  = useRef<import('partysocket').default | null>(null);
+  const roleRef    = useRef(role);
+  const optionsRef = useRef(options);
+  roleRef.current    = role;
+  optionsRef.current = options;
+  const snapshotDone = useRef(false);
 
-  // ── Connect / disconnect ────────────────────────────────────────────────
+  // ── Connect / disconnect ──────────────────────────────────────────────────
   useEffect(() => {
     if (!PARTYKIT_HOST || !roomCode) return;
 
@@ -51,11 +68,19 @@ export function useMultiplayer(
       socket.addEventListener('open', () => {
         setIsOnline(true);
         socketRef.current = socket;
+
+        // Guest announces themselves immediately on connect
+        if (roleRef.current === 'guest' && optionsRef.current.guestId && optionsRef.current.guestName) {
+          socket.send(JSON.stringify({
+            type: 'GUEST_JOIN',
+            name: optionsRef.current.guestName,
+            guestId: optionsRef.current.guestId,
+            ts: Date.now(),
+          }));
+        }
       });
 
-      socket.addEventListener('close', () => {
-        setIsOnline(false);
-      });
+      socket.addEventListener('close', () => setIsOnline(false));
 
       socket.addEventListener('message', (e) => {
         try {
@@ -71,31 +96,50 @@ export function useMultiplayer(
       socket?.close();
       socketRef.current = null;
       setIsOnline(false);
+      snapshotDone.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomCode]);
 
-  // ── Message handler ─────────────────────────────────────────────────────
+  // ── Message handler ──────────────────────��────────────────────────────────
   function handleMessage(msg: Record<string, unknown>) {
     switch (msg['type']) {
       case 'ROOM_SNAPSHOT':
       case 'HOST_SYNC': {
-        // Guest receives host game state — apply it
         if (roleRef.current === 'guest' && msg['game']) {
           useGameStore.setState({ game: msg['game'] as GameState });
+          // Fire the one-time snapshot callback so GameApp can register the guest player
+          if (!snapshotDone.current) {
+            snapshotDone.current = true;
+            optionsRef.current.onSnapshotReceived?.();
+          }
         }
         break;
       }
+
+      case 'GUEST_JOIN': {
+        // Host receives a new guest — notify GameApp so it can addPlayer with the exact same ID
+        if (roleRef.current === 'host') {
+          const name    = msg['name'] as string | undefined;
+          const guestId = msg['guestId'] as string | undefined;
+          if (name && guestId) {
+            optionsRef.current.onGuestJoined?.(name, guestId);
+          }
+        }
+        break;
+      }
+
       case 'PLAYER_COUNT': {
         setOnlinePlayers(Number(msg['count']) || 1);
         break;
       }
+
       default:
         break;
     }
   }
 
-  // ── Host: broadcast state on every game change ─────────────────────────
+  // ── Host: broadcast state on every game change ─────────────────��──────────
   useEffect(() => {
     if (role !== 'host' || !PARTYKIT_HOST) return;
 
@@ -111,7 +155,7 @@ export function useMultiplayer(
     return unsub;
   }, [role, localPlayerId]);
 
-  // ── Guest: send answer to host via relay ────────────────────────────────
+  // ── Guest: send answer to host via relay ─────────────────────��────────────
   const sendAnswer = useCallback((answerIndex: number) => {
     const socket = socketRef.current;
     if (!socket || socket.readyState !== WebSocket.OPEN) return;
@@ -140,7 +184,7 @@ export function useMultiplayer(
     socket.send(JSON.stringify({ type: 'REACTION', playerId: localPlayerId, emoji, ts: Date.now() }));
   }, [localPlayerId]);
 
-  // ── Offline fallback ────────────────────────────────────────────────────
+  // ── Offline fallback ─────────────────���────────────────────────────────��───
   if (!PARTYKIT_HOST) {
     return {
       role: 'offline',

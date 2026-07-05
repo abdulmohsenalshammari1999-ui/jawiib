@@ -108,10 +108,58 @@ export function GameApp() {
   const qflow = useQuestionFlow();
   const draft  = useCategoryDraft();
 
-  // Multiplayer role: host if this device created the room, guest otherwise
-  const isHost      = !game || game.room.players[0]?.id === localPlayerId;
-  const mpRole      = !game ? 'offline' as const : isHost ? 'host' as const : 'guest' as const;
-  const mp          = useMultiplayer(game?.room.code, localPlayerId ?? undefined, mpRole);
+  // ── Remote-join via share link: read ?join=CODE&name=NAME from URL ────────────
+  const [guestJoinCode, setGuestJoinCode] = useState<string | null>(() => {
+    const p = new URLSearchParams(window.location.search);
+    return p.get('join')?.toUpperCase().replace(/\s/g, '') ?? null;
+  });
+  const [guestJoinName, setGuestJoinName] = useState<string | null>(() => {
+    const p = new URLSearchParams(window.location.search);
+    return p.get('name') ?? null;
+  });
+  const [guestConnecting, setGuestConnecting] = useState(() => {
+    return !!new URLSearchParams(window.location.search).get('join');
+  });
+  // Stable guest ID that stays the same for this join session
+  const guestIdRef = useRef<string>((() => {
+    const p = new URLSearchParams(window.location.search);
+    if (!p.get('join')) return '';
+    return `g-${Math.random().toString(36).slice(2, 9)}`;
+  })());
+
+  // Clear URL params after reading so refreshes don't re-join
+  useEffect(() => {
+    if (guestJoinCode) {
+      const clean = window.location.pathname;
+      window.history.replaceState({}, '', clean);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Multiplayer role: host if this device created the room, guest if joining via link
+  const effectiveRoomCode = game?.room.code ?? guestJoinCode ?? undefined;
+  const isHost = !guestJoinCode && (!game || game.room.players[0]?.id === localPlayerId);
+  const mpRole = !effectiveRoomCode
+    ? 'offline' as const
+    : isHost ? 'host' as const : 'guest' as const;
+
+  const mp = useMultiplayer(effectiveRoomCode, localPlayerId ?? undefined, mpRole, {
+    guestName: guestJoinName ?? undefined,
+    guestId: guestIdRef.current || undefined,
+    onSnapshotReceived: () => {
+      // First HOST_SYNC received — register ourselves as a player in the game
+      if (guestJoinName && guestIdRef.current) {
+        addPlayer(guestJoinName, guestIdRef.current);
+      }
+      setGuestConnecting(false);
+      setGuestJoinCode(null);
+      setGuestJoinName(null);
+      setShowEntry(false);
+    },
+    onGuestJoined: (name, id) => {
+      // Host received GUEST_JOIN from a remote player — add them to the game
+      addPlayer(name, id);
+    },
+  });
 
   // ── Local state ───────────────────────────────────────────────────────────────
   const [subView, setSubView]           = useState<SubView>('lobby');
@@ -579,6 +627,39 @@ export function GameApp() {
   // ── Registration gate — shown once when no account exists ────────────────────
   if (!account) {
     return <RegisterScreen onComplete={() => {}} />;
+  }
+
+  // ── Guest connecting screen ───────────────────────────────────────────────────
+  if (guestConnecting) {
+    return (
+      <div className="min-h-screen bg-jawwib-bg flex flex-col items-center justify-center p-6 text-center" dir="rtl">
+        <div className="game-card p-8 max-w-sm w-full animate-fade-in">
+          <div className="text-5xl mb-4 animate-spin" style={{ animationDuration: '2s' }}>🎮</div>
+          <h2 className="font-black text-2xl text-jawwib-text mb-2">جاري الاتصال...</h2>
+          <p className="text-jawwib-text-dim text-sm mb-4">
+            نتصل بغرفة{' '}
+            <span className="font-bold text-jawwib-gold tracking-widest">
+              {guestJoinCode}
+            </span>
+          </p>
+          <div className="flex justify-center gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="w-2 h-2 rounded-full bg-jawwib-gold animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }}
+              />
+            ))}
+          </div>
+          <button
+            onClick={() => { setGuestConnecting(false); setGuestJoinCode(null); setGuestJoinName(null); }}
+            className="mt-6 text-xs text-jawwib-text-muted underline underline-offset-2 tap-target"
+          >
+            إلغاء والعودة
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // ── Entry screen ──────────────────────────────────────────────────────────────

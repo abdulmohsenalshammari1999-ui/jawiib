@@ -120,7 +120,7 @@ export interface GameStoreState {
   answeredCount: number;
   // Actions
   createRoom: (name: string, isTrial: boolean, cats?: CategoryId[]) => { roomId: string; playerId: string };
-  addPlayer: (name: string) => string;
+  addPlayer: (name: string, explicitId?: string) => string;
   startGame: () => void;
   selectQuestion: (questionId: string) => void;
   answerQuestion: (playerId: string, answerIndex: number) => void;

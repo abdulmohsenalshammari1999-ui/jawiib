@@ -167,12 +167,14 @@ export function GameApp() {
   });
 
   // ── Local state ───────────────────────────────────────────────────────────────
-  const [showSplash, setShowSplash]     = useState(() => {
-    if (typeof window === 'undefined') return false;
-    if (sessionStorage.getItem('jawib_splash_shown')) return false;
-    sessionStorage.setItem('jawib_splash_shown', '1');
-    return true;
-  });
+  // Always false on SSR to avoid hydration mismatch; set on client after mount
+  const [showSplash, setShowSplash]     = useState(false);
+  useEffect(() => {
+    if (!sessionStorage.getItem('jawib_splash_shown')) {
+      sessionStorage.setItem('jawib_splash_shown', '1');
+      setShowSplash(true);
+    }
+  }, []);
   const [subView, setSubView]           = useState<SubView>('lobby');
   const [showPayment, setShowPayment]   = useState(false);
   const [pendingFullGame, setPendingFullGame] = useState<{ name: string; cats?: CategoryId[]; mode: 'ffa' | 'teams'; isQuick?: boolean } | null>(null);

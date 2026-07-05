@@ -738,7 +738,7 @@ export const MEDIA_SAMPLE_QUESTIONS: Question[] = [
   // ── technology ────────────────────────────────────────────────────────────
   qs({
     id: 'media-order-tech-inventions',
-    category: 'technology', tier: 2, points: 200, type: 'ordering',
+    category: 'science', tier: 2, points: 200, type: 'ordering',
     text: 'رتّب الاختراعات التقنية من الأقدم إلى الأحدث',
     options: ['الطائرة', 'المطبعة', 'الهاتف', 'الإنترنت'],
     correctIndex: 0,
@@ -748,7 +748,7 @@ export const MEDIA_SAMPLE_QUESTIONS: Question[] = [
   }),
   qs({
     id: 'media-riddle-tech',
-    category: 'technology', tier: 1, points: 100, type: 'riddle',
+    category: 'science', tier: 1, points: 100, type: 'riddle',
     text: 'لا عيون لكنه يرى، لا أذنان لكنه يسمع، لا دماغ لكنه يفكر. ما هو؟',
     options: ['الحاسوب', 'الكاميرا', 'الساعة الذكية', 'الروبوت'],
     correctIndex: 0,
@@ -1333,9 +1333,9 @@ export const MEDIA_SAMPLE_QUESTIONS: Question[] = [
   // correctIndex: 0 = correct team guessed it
   // options kept minimal — judging is done by host via CharadesQRScreen
   // ══════════════════════════════════════════════════════════════════════════
-  qs({ id: 'ch-sports-1',   category: 'sports',       tier: 1, points: 100, type: 'charades', text: 'كرة القدم',        options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-sports-2',   category: 'sports',       tier: 2, points: 200, type: 'charades', text: 'السباحة',          options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-sports-3',   category: 'sports',       tier: 3, points: 300, type: 'charades', text: 'الجودو',           options: ['صح', 'غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-sports-1',   category: 'sport',       tier: 1, points: 100, type: 'charades', text: 'كرة القدم',        options: ['صح', 'غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-sports-2',   category: 'sport',       tier: 2, points: 200, type: 'charades', text: 'السباحة',          options: ['صح', 'غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-sports-3',   category: 'sport',       tier: 3, points: 300, type: 'charades', text: 'الجودو',           options: ['صح', 'غلط'], correctIndex: 0 }),
   qs({ id: 'ch-animals-1',  category: 'animals',      tier: 1, points: 100, type: 'charades', text: 'الفيل',            options: ['صح', 'غلط'], correctIndex: 0 }),
   qs({ id: 'ch-animals-2',  category: 'animals',      tier: 2, points: 200, type: 'charades', text: 'النسر',            options: ['صح', 'غلط'], correctIndex: 0 }),
   qs({ id: 'ch-animals-3',  category: 'animals',      tier: 3, points: 300, type: 'charades', text: 'الحرباء',          options: ['صح', 'غلط'], correctIndex: 0 }),
@@ -1346,8 +1346,8 @@ export const MEDIA_SAMPLE_QUESTIONS: Question[] = [
   qs({ id: 'ch-jobs-3',     category: 'culture',      tier: 3, points: 300, type: 'charades', text: 'المصارع',          options: ['صح', 'غلط'], correctIndex: 0 }),
   qs({ id: 'ch-hist-1',     category: 'world_history',tier: 2, points: 200, type: 'charades', text: 'نابليون بونابرت',  options: ['صح', 'غلط'], correctIndex: 0 }),
   qs({ id: 'ch-hist-2',     category: 'world_history',tier: 3, points: 300, type: 'charades', text: 'يولي قيصر',        options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-tech-1',     category: 'tech',         tier: 2, points: 200, type: 'charades', text: 'التصوير الفوتوغرافي', options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-tech-2',     category: 'tech',         tier: 3, points: 300, type: 'charades', text: 'برمجة الكمبيوتر',  options: ['صح', 'غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-tech-1',     category: 'science',         tier: 2, points: 200, type: 'charades', text: 'التصوير الفوتوغرافي', options: ['صح', 'غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-tech-2',     category: 'science',         tier: 3, points: 300, type: 'charades', text: 'برمجة الكمبيوتر',  options: ['صح', 'غلط'], correctIndex: 0 }),
   qs({ id: 'ch-music-1',    category: 'music',        tier: 1, points: 100, type: 'charades', text: 'العزف على العود',  options: ['صح', 'غلط'], correctIndex: 0 }),
   qs({ id: 'ch-music-2',    category: 'music',        tier: 2, points: 200, type: 'charades', text: 'الغناء بميكروفون', options: ['صح', 'غلط'], correctIndex: 0 }),
   qs({ id: 'ch-travel-1',   category: 'travel',       tier: 2, points: 200, type: 'charades', text: 'ركوب الجمل',       options: ['صح', 'غلط'], correctIndex: 0 }),
@@ -1366,7 +1366,7 @@ export const MEDIA_SAMPLE_QUESTIONS: Question[] = [
     options: ['صح', 'غلط'], correctIndex: 0,
   }),
   qs({
-    id: 'ch-vis-3', category: 'sports', tier: 3, points: 300, type: 'charades',
+    id: 'ch-vis-3', category: 'sport', tier: 3, points: 300, type: 'charades',
     text: 'مثّل هذه الرياضة',
     mediaUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Olympic_Rings.svg/320px-Olympic_Rings.svg.png',
     options: ['صح', 'غلط'], correctIndex: 0,

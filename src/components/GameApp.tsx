@@ -38,6 +38,7 @@ import { MysteryBoxOverlay } from './game/MysteryBoxOverlay';
 import { TeamWeaponInventory } from './game/TeamWeaponInventory';
 import { ConfirmModal } from './ConfirmModal';
 import { CharadesQRScreen } from './CharadesQRScreen';
+import { SplashScreen } from './SplashScreen';
 
 type SubView = 'setup' | 'lobby' | 'teams' | 'draft';
 
@@ -166,6 +167,12 @@ export function GameApp() {
   });
 
   // ── Local state ───────────────────────────────────────────────────────────────
+  const [showSplash, setShowSplash]     = useState(() => {
+    if (typeof window === 'undefined') return false;
+    if (sessionStorage.getItem('jawib_splash_shown')) return false;
+    sessionStorage.setItem('jawib_splash_shown', '1');
+    return true;
+  });
   const [subView, setSubView]           = useState<SubView>('lobby');
   const [showPayment, setShowPayment]   = useState(false);
   const [pendingFullGame, setPendingFullGame] = useState<{ name: string; cats?: CategoryId[]; mode: 'ffa' | 'teams'; isQuick?: boolean } | null>(null);
@@ -627,6 +634,11 @@ export function GameApp() {
       </button>
     </div>
   );
+
+  // ── Splash screen — shown once per session ───────────────────────────────────
+  if (showSplash) {
+    return <SplashScreen onDone={() => setShowSplash(false)} />;
+  }
 
   // ── Registration gate — shown once when no account exists ────────────────────
   if (!account) {

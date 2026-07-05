@@ -81,7 +81,8 @@ export type QuestionType =
   | 'scene'      // "ماذا حدث في هذا المشهد؟" — video/image scene question
   | 'identify'   // "عرّف هذا الصوت/الأغنية/الصوت" — sound/voice identification
   | 'ordering'   // "رتّب" — drag/tap items into the correct order
-  | 'map';       // "خريطة" — image of a map, zoom-tap to read it
+  | 'map'        // "خريطة" — image of a map, zoom-tap to read it
+  | 'charades';  // مثّل بدون كلام — QR-delivered private prompt, host judges
 
 export interface Question {
   id: string;

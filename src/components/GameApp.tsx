@@ -37,6 +37,7 @@ import { GameLoadingScreen } from './GameLoadingScreen';
 import { MysteryBoxOverlay } from './game/MysteryBoxOverlay';
 import { TeamWeaponInventory } from './game/TeamWeaponInventory';
 import { ConfirmModal } from './ConfirmModal';
+import { CharadesQRScreen } from './CharadesQRScreen';
 
 type SubView = 'setup' | 'lobby' | 'teams' | 'draft';
 
@@ -1008,23 +1009,57 @@ export function GameApp() {
           )}
 
           <div className={`flex-1 flex items-center justify-center ${isSteal && !stealHandoffDone ? 'hidden' : ''}`}>
-            <QuestionCard
-              key={`${game.currentQuestion.id}-${game.phase}`}
-              question={game.currentQuestion}
-              timer={game.timer}
-              maxTimer={30}
-              onAnswer={(idx) => {
-                if (!canAnswer) return;
-                if (localPlayerId) answerQuestion(localPlayerId, idx);
-              }}
-              disabled={!canAnswer}
-              hasBomb={hasBomb}
-              hasDouble={hasDouble}
-              scrambledOptions={isSteal ? null : scrambledOptions}
-              teamColor={apTeamColor ?? undefined}
-              teamId={apTeamId ?? undefined}
-              suppressCorrectReveal={!isSteal && mode === 'teams'}
-            />
+            {game.currentQuestion.type === 'charades' ? (
+              <CharadesQRScreen
+                key={`${game.currentQuestion.id}-${game.phase}`}
+                question={game.currentQuestion}
+                timer={game.timer}
+                maxTimer={45}
+                actingTeamName={
+                  apTeamId === 'alpha'
+                    ? (teamData?.alpha.name ?? 'الفريق الأول')
+                    : apTeamId === 'beta'
+                    ? (teamData?.beta.name ?? 'الفريق الثاني')
+                    : (ap?.name ?? 'اللاعب')
+                }
+                actingTeamEmoji={
+                  apTeamId === 'alpha'
+                    ? (teamData?.alpha.emoji ?? '🌊')
+                    : apTeamId === 'beta'
+                    ? (teamData?.beta.emoji ?? '🐪')
+                    : '🎭'
+                }
+                actingTeamColor={apTeamColor ?? undefined}
+                onCorrect={() => {
+                  if (!canAnswer || !localPlayerId) return;
+                  answerQuestion(localPlayerId, game.currentQuestion!.correctIndex);
+                }}
+                onWrong={() => {
+                  if (!canAnswer || !localPlayerId) return;
+                  const wrongIdx = game.currentQuestion!.correctIndex === 0 ? 1 : 0;
+                  answerQuestion(localPlayerId, wrongIdx);
+                }}
+                disabled={!canAnswer}
+              />
+            ) : (
+              <QuestionCard
+                key={`${game.currentQuestion.id}-${game.phase}`}
+                question={game.currentQuestion}
+                timer={game.timer}
+                maxTimer={30}
+                onAnswer={(idx) => {
+                  if (!canAnswer) return;
+                  if (localPlayerId) answerQuestion(localPlayerId, idx);
+                }}
+                disabled={!canAnswer}
+                hasBomb={hasBomb}
+                hasDouble={hasDouble}
+                scrambledOptions={isSteal ? null : scrambledOptions}
+                teamColor={apTeamColor ?? undefined}
+                teamId={apTeamId ?? undefined}
+                suppressCorrectReveal={!isSteal && mode === 'teams'}
+              />
+            )}
           </div>
 
           {/* Crowd prediction */}

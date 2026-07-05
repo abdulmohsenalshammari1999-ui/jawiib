@@ -110,18 +110,22 @@ export function GameApp() {
 
   // ── Remote-join via share link: read ?join=CODE&name=NAME from URL ────────────
   const [guestJoinCode, setGuestJoinCode] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
     const p = new URLSearchParams(window.location.search);
     return p.get('join')?.toUpperCase().replace(/\s/g, '') ?? null;
   });
   const [guestJoinName, setGuestJoinName] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
     const p = new URLSearchParams(window.location.search);
     return p.get('name') ?? null;
   });
   const [guestConnecting, setGuestConnecting] = useState(() => {
+    if (typeof window === 'undefined') return false;
     return !!new URLSearchParams(window.location.search).get('join');
   });
   // Stable guest ID that stays the same for this join session
   const guestIdRef = useRef<string>((() => {
+    if (typeof window === 'undefined') return '';
     const p = new URLSearchParams(window.location.search);
     if (!p.get('join')) return '';
     return `g-${Math.random().toString(36).slice(2, 9)}`;

@@ -39,8 +39,8 @@ async function computeExpectedPin(): Promise<string> {
     ( sig[off + 3]! & 0xff);
   const pin = String(code % 1_000_000).padStart(6, '0');
 
-  // Server-only log — visible in Netlify Functions logs, NOT the browser
-  console.log(`[Jawib Admin] Daily PIN: ${pin}`);
+  // Server-only log — use process.stdout so drop_console:true in Terser doesn't strip it
+  process.stdout.write(`[Jawib Admin] Daily PIN: ${pin}\n`);
   return pin;
 }
 

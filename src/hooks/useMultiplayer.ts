@@ -11,10 +11,16 @@ interface UseMultiplayerOptions {
   guestName?: string;
   /** Guest's stable player ID — same ID used on host side */
   guestId?: string;
-  /** Host callback: called when a guest announces themselves */
+  /** Host: called when a guest announces themselves */
   onGuestJoined?: (name: string, guestId: string) => void;
-  /** Called once after the first ROOM_SNAPSHOT is applied (guest only) */
+  /** Guest: called once after the guest's ID appears in game.room.players */
   onSnapshotReceived?: () => void;
+  /** Host: guest relayed an answer — apply it to the game */
+  onGuestAnswer?: (playerId: string, answerIndex: number) => void;
+  /** Host: guest selected a board question */
+  onGuestSelectQuestion?: (playerId: string, questionId: string) => void;
+  /** Host: guest picked a draft category */
+  onGuestDraftPick?: (categoryId: string) => void;
 }
 
 interface UseMultiplayerResult {
@@ -23,6 +29,7 @@ interface UseMultiplayerResult {
   onlinePlayers: number;
   sendAnswer: (answerIndex: number) => void;
   sendSelectQuestion: (questionId: string) => void;
+  sendDraftPick: (categoryId: string) => void;
   sendReaction: (emoji: string) => void;
 }
 
@@ -101,30 +108,65 @@ export function useMultiplayer(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomCode]);
 
-  // ── Message handler ──────────────────────��────────────────────────────────
+  // ── Message handler ───────────────────────────────────────────────────────
   function handleMessage(msg: Record<string, unknown>) {
     switch (msg['type']) {
       case 'ROOM_SNAPSHOT':
       case 'HOST_SYNC': {
         if (roleRef.current === 'guest' && msg['game']) {
-          useGameStore.setState({ game: msg['game'] as GameState });
-          // Fire the one-time snapshot callback so GameApp can register the guest player
+          const incoming = msg['game'] as GameState;
+          useGameStore.setState({ game: incoming });
+          // Fire once — but only after our player ID appears in the game,
+          // so we know the host has processed our GUEST_JOIN.
           if (!snapshotDone.current) {
-            snapshotDone.current = true;
-            optionsRef.current.onSnapshotReceived?.();
+            const guestId = optionsRef.current.guestId;
+            const confirmed = guestId
+              ? incoming.room.players.some((p) => p.id === guestId)
+              : true; // no guestId = offline spectator, fire immediately
+            if (confirmed) {
+              snapshotDone.current = true;
+              optionsRef.current.onSnapshotReceived?.();
+            }
           }
         }
         break;
       }
 
       case 'GUEST_JOIN': {
-        // Host receives a new guest — notify GameApp so it can addPlayer with the exact same ID
         if (roleRef.current === 'host') {
           const name    = msg['name'] as string | undefined;
           const guestId = msg['guestId'] as string | undefined;
-          if (name && guestId) {
-            optionsRef.current.onGuestJoined?.(name, guestId);
+          if (name && guestId) optionsRef.current.onGuestJoined?.(name, guestId);
+        }
+        break;
+      }
+
+      case 'GUEST_ANSWER': {
+        if (roleRef.current === 'host') {
+          const playerId    = msg['playerId'] as string | undefined;
+          const answerIndex = msg['answerIndex'] as number | undefined;
+          if (playerId && answerIndex !== undefined) {
+            optionsRef.current.onGuestAnswer?.(playerId, answerIndex);
           }
+        }
+        break;
+      }
+
+      case 'GUEST_SELECT_QUESTION': {
+        if (roleRef.current === 'host') {
+          const playerId   = msg['playerId'] as string | undefined;
+          const questionId = msg['questionId'] as string | undefined;
+          if (playerId && questionId) {
+            optionsRef.current.onGuestSelectQuestion?.(playerId, questionId);
+          }
+        }
+        break;
+      }
+
+      case 'GUEST_DRAFT_PICK': {
+        if (roleRef.current === 'host') {
+          const categoryId = msg['categoryId'] as string | undefined;
+          if (categoryId) optionsRef.current.onGuestDraftPick?.(categoryId);
         }
         break;
       }
@@ -178,13 +220,19 @@ export function useMultiplayer(
     }));
   }, [localPlayerId]);
 
+  const sendDraftPick = useCallback((categoryId: string) => {
+    const socket = socketRef.current;
+    if (!socket || socket.readyState !== WebSocket.OPEN) return;
+    socket.send(JSON.stringify({ type: 'GUEST_DRAFT_PICK', playerId: localPlayerId, categoryId, ts: Date.now() }));
+  }, [localPlayerId]);
+
   const sendReaction = useCallback((emoji: string) => {
     const socket = socketRef.current;
     if (!socket || socket.readyState !== WebSocket.OPEN) return;
     socket.send(JSON.stringify({ type: 'REACTION', playerId: localPlayerId, emoji, ts: Date.now() }));
   }, [localPlayerId]);
 
-  // ── Offline fallback ─────────────────���────────────────────────────────��───
+  // ── Offline fallback ──────────────────────────────────────────────────────
   if (!PARTYKIT_HOST) {
     return {
       role: 'offline',
@@ -192,9 +240,10 @@ export function useMultiplayer(
       onlinePlayers: 1,
       sendAnswer: () => {},
       sendSelectQuestion: () => {},
+      sendDraftPick: () => {},
       sendReaction: () => {},
     };
   }
 
-  return { role, isOnline, onlinePlayers, sendAnswer, sendSelectQuestion, sendReaction };
+  return { role, isOnline, onlinePlayers, sendAnswer, sendSelectQuestion, sendDraftPick, sendReaction };
 }

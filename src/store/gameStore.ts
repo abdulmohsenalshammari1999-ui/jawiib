@@ -111,6 +111,8 @@ export interface GameSlice extends GameState {
   setHostMessage: (msg: string) => void;
   tickTimer: () => void;
   updateCategories: (cats: CategoryId[]) => void;
+  updateDraftPhase: (picks: Array<{ teamId: 'alpha' | 'beta'; categoryId: string }>, currentTeam: 'alpha' | 'beta', isComplete: boolean) => void;
+  setLocalPlayerId: (id: string) => void;
   rematch: () => void;
 }
 
@@ -130,6 +132,8 @@ export interface GameStoreState {
   resetGame: () => void;
   setHostMessage: (msg: string) => void;
   updateCategories: (cats: CategoryId[]) => void;
+  updateDraftPhase: (picks: Array<{ teamId: 'alpha' | 'beta'; categoryId: string }>, currentTeam: 'alpha' | 'beta', isComplete: boolean) => void;
+  setLocalPlayerId: (id: string) => void;
   rematch: () => void;
   // Weapon system
   setTeamMembership: (alpha: string[], beta: string[], alphaName?: string, alphaEmoji?: string, betaName?: string, betaEmoji?: string) => void;
@@ -220,6 +224,8 @@ export const useGameStore = create<GameStoreState>()(
       const playerId = explicitId ?? uuid();
       const { game } = get();
       if (!game) return playerId;
+      // Skip if player already in room (idempotent re-join)
+      if (game.room.players.some((p) => p.id === playerId)) return playerId;
       const player: Player = {
         id: playerId,
         name: name.trim() || 'لاعب',
@@ -230,17 +236,27 @@ export const useGameStore = create<GameStoreState>()(
       };
       const allTypes: SabotageType[] = ['steal', 'block', 'halve', 'bomb', 'freeze', 'scramble', 'double', 'mystery'];
       const updatedSabotages = { ...game.sabotages, [playerId]: allTypes };
-      // Register new player in sabotage engine
-      useSabotageStore.getState().earnSabotage(playerId, 'steal'); // will no-op if already inited
-      set({
+      useSabotageStore.getState().earnSabotage(playerId, 'steal');
+      // When explicitId is provided we're adding a REMOTE player on the host side —
+      // don't overwrite the host's own localPlayerId.
+      const stateUpdate: Partial<GameStoreState> = {
         game: {
           ...game,
           room: { ...game.room, players: [...game.room.players, player] },
           sabotages: updatedSabotages,
         },
-        localPlayerId: playerId,
-      });
+      };
+      if (!explicitId) stateUpdate.localPlayerId = playerId;
+      set(stateUpdate);
       return playerId;
+    },
+
+    setLocalPlayerId: (id) => { set({ localPlayerId: id }); },
+
+    updateDraftPhase: (picks, currentTeam, isComplete) => {
+      const { game } = get();
+      if (!game) return;
+      set({ game: { ...game, draftPhase: { picks, currentTeam, isComplete } } });
     },
 
     startGame: () => {

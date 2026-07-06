@@ -217,6 +217,12 @@ export interface GameState {
   teamScores: Partial<Record<TeamId, number>>;
   // ── Display info (persisted so names survive refresh) ──
   teamDisplay: { alpha: { name: string; emoji: string }; beta: { name: string; emoji: string } } | null;
+  // ── Multiplayer category draft — synced via HOST_SYNC so guest sees live picks ──
+  draftPhase?: {
+    picks: Array<{ teamId: 'alpha' | 'beta'; categoryId: string }>;
+    currentTeam: 'alpha' | 'beta';
+    isComplete: boolean;
+  } | null;
 }
 
 // ─── Sabotage system ──────────────────────────────────────────────────────────

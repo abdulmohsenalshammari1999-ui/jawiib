@@ -11,7 +11,7 @@ export interface CategoryDraftHook {
   isDraftMode: boolean;
   isMyTeamsTurn: boolean;
   startDraft: (picksPerTeam?: number) => void;
-  pick: (categoryId: CategoryId) => void;
+  pick: (categoryId: CategoryId) => DraftState | null;
   skipDraft: () => CategoryId[];
   selectedCategories: CategoryId[];
   alphaCategories: CategoryId[];
@@ -43,19 +43,19 @@ export function useCategoryDraft(): CategoryDraftHook {
     setDraft(mgr.state);
   }, []);
 
-  const pick = useCallback((categoryId: CategoryId) => {
-    if (!manager || !draft || draft.isComplete) return;
-    // Host can pick for any team in local/same-device play
+  const pick = useCallback((categoryId: CategoryId): DraftState | null => {
+    if (!manager || !draft || draft.isComplete) return null;
     const storeState = useGameStore.getState();
     const isHost = storeState.localPlayerId
       ? storeState.game?.room.hostId === storeState.localPlayerId
       : false;
-    if (!isHost && draft.currentTeam !== localTeamId) return;
+    if (!isHost && draft.currentTeam !== localTeamId) return null;
     try {
       const next = manager.pick(draft.currentTeam, categoryId);
       setDraft({ ...next });
+      return next;
     } catch {
-      // invalid pick
+      return null;
     }
   }, [manager, draft, localTeamId]);
 

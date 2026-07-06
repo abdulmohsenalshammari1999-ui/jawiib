@@ -64,8 +64,10 @@ export function GameApp() {
   const returnToBoard    = useGameStore((s) => s.returnToBoard);
   const triggerStealPhase = useGameStore((s) => s.triggerStealPhase);
   const resetGame        = useGameStore((s) => s.resetGame);
-  const updateCategories = useGameStore((s) => s.updateCategories);
-  const rematch          = useGameStore((s) => s.rematch);
+  const updateCategories  = useGameStore((s) => s.updateCategories);
+  const updateDraftPhase  = useGameStore((s) => s.updateDraftPhase);
+  const setLocalPlayerId  = useGameStore((s) => s.setLocalPlayerId);
+  const rematch           = useGameStore((s) => s.rematch);
 
   const setTeamMembership    = useGameStore((s) => s.setTeamMembership);
   const dismissPendingWeapon = useGameStore((s) => s.dismissPendingWeapon);
@@ -151,18 +153,27 @@ export function GameApp() {
     guestName: guestJoinName ?? undefined,
     guestId: guestIdRef.current || undefined,
     onSnapshotReceived: () => {
-      // First HOST_SYNC received — register ourselves as a player in the game
-      if (guestJoinName && guestIdRef.current) {
-        addPlayer(guestJoinName, guestIdRef.current);
-      }
+      // Guest is now confirmed in game — set their local identity then clear connecting state.
+      // Do NOT call addPlayer — host already added them; game state arrived via HOST_SYNC.
+      if (guestIdRef.current) setLocalPlayerId(guestIdRef.current);
       setGuestConnecting(false);
       setGuestJoinCode(null);
       setGuestJoinName(null);
       setShowEntry(false);
     },
     onGuestJoined: (name, id) => {
-      // Host received GUEST_JOIN from a remote player — add them to the game
+      // Host received GUEST_JOIN — addPlayer with explicit ID so host's localPlayerId is NOT overwritten.
       addPlayer(name, id);
+    },
+    onGuestAnswer: (playerId, answerIndex) => {
+      answerQuestion(playerId, answerIndex);
+    },
+    onGuestSelectQuestion: (_playerId, questionId) => {
+      selectQuestion(questionId);
+    },
+    onGuestDraftPick: (categoryId) => {
+      const next = draft.pick(categoryId as import('@/lib/types').CategoryId);
+      if (next) updateDraftPhase(next.picks, next.currentTeam, next.isComplete);
     },
   });
 
@@ -486,8 +497,10 @@ export function GameApp() {
   const handleDraftComplete = useCallback(() => {
     const cats = draft.selectedCategories as CategoryId[];
     if (cats.length >= 2) updateCategories(cats);
+    // Clear draftPhase from game state so guests leave the draft screen
+    updateDraftPhase([], 'alpha', true);
     setSubView('lobby');
-  }, [draft.selectedCategories, updateCategories]);
+  }, [draft.selectedCategories, updateCategories, updateDraftPhase]);
 
   const handleStartGame = useCallback(() => { setShowIntro(true); }, []);
 
@@ -896,8 +909,32 @@ export function GameApp() {
       );
     }
 
-    if (subView === 'draft' && !game.room.isTrial) {
-      if (draft.draft === null) {
+    // Show draft screen when host enters draft mode OR when guest receives draftPhase via HOST_SYNC
+    const showDraftView = (subView === 'draft' || (!!game.draftPhase && !game.draftPhase.isComplete)) && !game.room.isTrial;
+    if (showDraftView) {
+      // Guest uses remote draftPhase from game state; host uses local draft manager
+      const remoteDraft = !isHost && game.draftPhase;
+      const draftStateForScreen = remoteDraft
+        ? {
+            picks: remoteDraft.picks,
+            currentTeam: remoteDraft.currentTeam,
+            round: Math.floor(remoteDraft.picks.length / 2),
+            complete: remoteDraft.isComplete,
+            alphaCategories: remoteDraft.picks.filter((p) => p.teamId === 'alpha').map((p) => p.categoryId),
+            betaCategories: remoteDraft.picks.filter((p) => p.teamId === 'beta').map((p) => p.categoryId),
+          }
+        : draft.draft
+        ? {
+            picks: draft.draft.picks.map((p) => ({ teamId: p.teamId, categoryId: p.categoryId })),
+            currentTeam: draft.draft.currentTeam,
+            round: draft.draft.round,
+            complete: draft.draft.isComplete,
+            alphaCategories: draft.alphaCategories,
+            betaCategories: draft.betaCategories,
+          }
+        : null;
+
+      if (!draftStateForScreen) {
         return (
           <div className="min-h-screen bg-diwaniya flex items-center justify-center">
             <p className="text-jawwib-text-dim text-sm animate-pulse-gold">جاري التحميل...</p>
@@ -907,21 +944,23 @@ export function GameApp() {
       return (
         <>
           <CategoryDraftScreen
-            draftState={{
-              picks: draft.draft.picks.map((p) => ({ teamId: p.teamId, categoryId: p.categoryId })),
-              currentTeam: draft.draft.currentTeam,
-              round: draft.draft.round,
-              complete: draft.draft.isComplete,
-              alphaCategories: draft.alphaCategories,
-              betaCategories: draft.betaCategories,
-            }}
+            draftState={draftStateForScreen}
             localTeamId={localTeamId}
             isHost={isHost}
             availableCategories={ALL_CATS.map((c) => ({ id: c.id, name: c.name, icon: c.icon, color: c.color }))}
             requiredPerTeam={picksPerTeam}
             alphaTeamName={teams.alpha.name}
             betaTeamName={teams.beta.name}
-            onPick={(catId) => draft.pick(catId as CategoryId)}
+            onPick={(catId) => {
+              if (!isHost) {
+                // Guest relays pick to host via WebSocket
+                mp.sendDraftPick(catId);
+              } else {
+                // Host picks locally and syncs to game state
+                const next = draft.pick(catId as CategoryId);
+                if (next) updateDraftPhase(next.picks, next.currentTeam, next.isComplete);
+              }
+            }}
             onSkipDraft={() => {
               const cats = draft.skipDraft();
               if (cats.length >= 2) updateCategories(cats as CategoryId[]);

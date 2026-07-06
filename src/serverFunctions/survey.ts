@@ -1,5 +1,14 @@
 import { createServerFn } from '@tanstack/react-start';
 
+// ── In-memory store for local review access ───────────────────────────────────
+const _localStore: SurveyPayload[] = [];
+const MAX_LOCAL = 200;
+
+/** Returns a snapshot of locally stored survey submissions. */
+export function _getLocalReviews(): SurveyPayload[] {
+  return [..._localStore];
+}
+
 export interface SurveyPayload {
   // Auto-filled game context
   timestamp: string;
@@ -26,6 +35,10 @@ export interface SurveyPayload {
 export const submitSurvey = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => data as SurveyPayload)
   .handler(async ({ data }) => {
+    // Always save locally so admin can view reviews regardless of webhook config
+    _localStore.push(data);
+    if (_localStore.length > MAX_LOCAL) _localStore.splice(0, _localStore.length - MAX_LOCAL);
+
     const webhookUrl = process.env['SURVEY_WEBHOOK_URL'];
     if (!webhookUrl) {
       return { ok: true, stored: 'local' as const };

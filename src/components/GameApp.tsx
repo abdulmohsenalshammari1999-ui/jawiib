@@ -10,6 +10,7 @@ import { useQuestionFlow } from '@/hooks/useQuestionFlow';
 import { audio } from '@/lib/audio';
 import { globalPool } from '@/engine/questionPool';
 import { initCsvContent } from '@/lib/contentRegistry';
+import { recordVisit } from '@/serverFunctions/analytics';
 import { customGameToQuestions, type CustomGame } from '@/lib/customGames';
 import { applySeasonalBodyClass, APP_CONFIG } from '@/lib/appConfig';
 import { hapticSuccess, hapticError, hapticSelection } from '@/lib/haptics';
@@ -213,10 +214,18 @@ export function GameApp() {
   const prevTimer         = useRef(game?.timer ?? 0);
   const prevActiveTeamId  = useRef(game?.activeTeamId);
 
-  // Load CSV questions + apply seasonal theme + init IAP on native
+  // Load CSV questions + apply seasonal theme + init IAP on native + record visit
   useEffect(() => {
     initCsvContent().catch(() => {});
     applySeasonalBodyClass();
+    // Track this visit (fire-and-forget — never block the game)
+    recordVisit({
+      data: {
+        playerName: account?.name ?? 'زائر',
+        platform:   navigator.platform,
+        userAgent:  navigator.userAgent,
+      },
+    }).catch(() => {});
     // Warm up RevenueCat on native so the first price fetch is instant
     if (APP_CONFIG.platform !== 'web' && APP_CONFIG.revenueCatApiKey) {
       import('@/lib/iap').then(({ fetchProductInfo }) => fetchProductInfo()).catch(() => {});

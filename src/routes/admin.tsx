@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
-import { getDailyPin } from '@/lib/adminAuth'
+import { verifyAdminPin, verifyAdminToken } from '@/serverFunctions/adminAuth'
 import { categories as ALL_CATS } from '@/lib/categories'
 import type { CategoryId } from '@/lib/types'
 import {
@@ -816,34 +816,67 @@ function AdminDashboard() {
 }
 
 // ── PIN Gate ───────────────────────────────────────────────────────────────────
-function AdminPage() {
-  const [pin, setPin] = useState('')
-  const [authed, setAuthed] = useState(() => {
-    // Persist auth for the session
-    if (typeof window === 'undefined') return false
-    return sessionStorage.getItem('jawib_admin_authed') === '1'
-  })
-  const [error, setError] = useState(false)
-  const [dailyPin, setDailyPin] = useState<string | null>(null)
+function getOrCreateClientId(): string {
+  const KEY = 'jawib_admin_cid'
+  let id = localStorage.getItem(KEY)
+  if (!id) {
+    id = `cid-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    localStorage.setItem(KEY, id)
+  }
+  return id
+}
 
+function AdminPage() {
+  const [pin, setPin]         = useState('')
+  const [checking, setChecking] = useState(true)   // true while re-validating stored token
+  const [authed, setAuthed]   = useState(false)
+  const [error, setError]     = useState<string | null>(null)
+  const [locked, setLocked]   = useState(false)
+  const [lockMin, setLockMin] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
+
+  // On mount: re-validate any stored token with the server
   useEffect(() => {
-    getDailyPin().then((p) => {
-      setDailyPin(p)
-      console.info('[Jawib Admin] Daily PIN:', p)
-    })
+    const token    = sessionStorage.getItem('jawib_admin_token')
+    const clientId = typeof localStorage !== 'undefined' ? getOrCreateClientId() : ''
+    if (!token || !clientId) { setChecking(false); return }
+    verifyAdminToken({ data: { token, clientId } })
+      .then((r) => { if (r.ok) setAuthed(true) })
+      .catch(() => {})
+      .finally(() => setChecking(false))
   }, [])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!dailyPin) return
-    if (pin === dailyPin) {
-      sessionStorage.setItem('jawib_admin_authed', '1')
-      setAuthed(true)
-      setError(false)
-    } else {
-      setError(true)
-      setPin('')
+    if (pin.length < 4 || submitting) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      const clientId = getOrCreateClientId()
+      const result   = await verifyAdminPin({ data: { pin, clientId } })
+      if (result.ok) {
+        sessionStorage.setItem('jawib_admin_token', result.token)
+        setAuthed(true)
+      } else if (result.locked) {
+        setLocked(true)
+        setLockMin(result.retryAfterMin ?? 30)
+        setError(`محاولات كثيرة — حاول بعد ${result.retryAfterMin ?? 30} دقيقة`)
+      } else {
+        const left = result.attemptsLeft ?? 0
+        setError(left > 0 ? `الرمز غير صحيح — ${left} محاولة متبقية` : 'الرمز غير صحيح')
+        setPin('')
+      }
+    } catch {
+      setError('خطأ في الاتصال — حاول مجدداً')
+    } finally {
+      setSubmitting(false)
     }
+  }
+
+  if (checking) {
+    return <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <p style={{ color: T.muted, fontFamily: T.font }}>...</p>
+    </div>
   }
 
   if (authed) return <AdminDashboard />
@@ -851,22 +884,30 @@ function AdminPage() {
   return (
     <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, direction: 'rtl', padding: '1rem' }}>
       <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '1rem', padding: '2.5rem 2rem', width: '100%', maxWidth: '340px', textAlign: 'center' }}>
-        <h1 style={{ fontFamily: "'Reem Kufi', sans-serif", fontSize: '1.6rem', color: T.gold, margin: '0 0 0.3rem' }}>جاوب</h1>
-        <p style={{ color: T.muted, fontSize: '0.85rem', marginBottom: '2rem' }}>لوحة التحكم</p>
+        <div style={{ fontSize: '2rem', marginBottom: '0.4rem' }}>🔐</div>
+        <h1 style={{ fontFamily: "'Reem Kufi', sans-serif", fontSize: '1.5rem', color: T.gold, margin: '0 0 0.3rem' }}>جاوب</h1>
+        <p style={{ color: T.muted, fontSize: '0.82rem', marginBottom: '2rem' }}>لوحة التحكم — دخول مقيّد</p>
         <form onSubmit={handleSubmit}>
-          <input type="password" inputMode="numeric" maxLength={6} value={pin}
-            onChange={(e) => { setError(false); setPin(e.target.value.replace(/\D/g, '')) }}
-            placeholder="الرمز اليومي"
-            style={{ ...css.input, fontSize: '1.4rem', letterSpacing: '0.3em', textAlign: 'center', border: `1px solid ${error ? T.terra : T.border}` }}
-            autoFocus />
-          {error && <p style={{ color: T.terra, fontSize: '0.85rem', marginTop: '0.5rem' }}>الرمز غير صحيح.</p>}
-          <button type="submit" disabled={pin.length !== 6 || !dailyPin}
-            style={{ marginTop: '1rem', width: '100%', background: pin.length === 6 && dailyPin ? T.gold : 'rgba(233,162,60,0.2)', color: pin.length === 6 && dailyPin ? T.bg : T.muted, border: 'none', borderRadius: '0.5rem', padding: '0.75rem', fontWeight: 700, fontSize: '1rem', cursor: pin.length === 6 && dailyPin ? 'pointer' : 'not-allowed' }}>
-            دخول
+          <input
+            type="password"
+            maxLength={20}
+            value={pin}
+            disabled={locked}
+            onChange={(e) => { setError(null); setPin(e.target.value) }}
+            placeholder={locked ? `مقفل — انتظر ${lockMin} دق` : 'أدخل كلمة المرور'}
+            style={{ ...css.input, fontSize: '1.2rem', textAlign: 'center', border: `1px solid ${error ? T.terra : T.border}` }}
+            autoFocus
+          />
+          {error && <p style={{ color: T.terra, fontSize: '0.82rem', marginTop: '0.5rem' }}>{error}</p>}
+          <button
+            type="submit"
+            disabled={pin.length < 4 || locked || submitting}
+            style={{ marginTop: '1rem', width: '100%', background: (!locked && pin.length >= 4) ? T.gold : 'rgba(233,162,60,0.2)', color: (!locked && pin.length >= 4) ? T.bg : T.muted, border: 'none', borderRadius: '0.5rem', padding: '0.75rem', fontWeight: 700, fontSize: '1rem', cursor: (!locked && pin.length >= 4) ? 'pointer' : 'not-allowed', transition: 'all 0.2s' }}>
+            {submitting ? '...' : 'دخول'}
           </button>
         </form>
-        <p style={{ color: T.muted, fontSize: '0.72rem', marginTop: '1.25rem', opacity: 0.7 }}>
-          افتح Developer Tools → Console لرؤية الرمز
+        <p style={{ color: T.muted, fontSize: '0.7rem', marginTop: '1.25rem', opacity: 0.65, lineHeight: 1.5 }}>
+          ضع ADMIN_PIN في متغيرات Netlify<br />أو تحقق من سجلات Netlify Functions
         </p>
       </div>
     </div>

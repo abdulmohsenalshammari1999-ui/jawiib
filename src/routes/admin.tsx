@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
-import { QRCodeSVG } from 'qrcode.react'
-import { verifyAdminPin, verifyAdminToken, getTotpSetupInfo } from '@/serverFunctions/adminAuth'
+import { login, requestPasswordRecovery } from '@netlify/identity'
+import { useIdentity } from '@/lib/identity-context'
 import { getVisits, getReviews } from '@/serverFunctions/analytics'
 import type { VisitEntry } from '@/serverFunctions/analytics'
 import type { SurveyPayload } from '@/serverFunctions/survey'
@@ -782,18 +782,11 @@ function TabVisitors() {
   const [errMsg,  setErrMsg]    = useState<string | null>(null);
 
   useEffect(() => {
-    const token    = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('jawib_admin_token') ?? '' : '';
-    const clientId = typeof localStorage   !== 'undefined' ? localStorage.getItem('jawib_admin_cid')    ?? '' : '';
-    if (!token || !clientId) { setErrMsg('لا يوجد رمز مصادقة — سجّل دخولك أولاً'); setLoading(false); return; }
-
-    Promise.all([
-      getVisits ({ data: { token, clientId } }),
-      getReviews({ data: { token, clientId } }),
-    ])
+    Promise.all([getVisits(), getReviews()])
       .then(([v, r]) => {
         if (v.ok) setVisits(v.visits.slice().reverse());
         if (r.ok) setReviews(r.reviews.slice().reverse());
-        if (!v.ok && !r.ok) setErrMsg('رمز المصادقة منتهي — أعد تسجيل الدخول');
+        if (!v.ok && !r.ok) setErrMsg('غير مصرح — سجّل دخولك أولاً');
       })
       .catch(() => setErrMsg('خطأ في الاتصال بالخادم'))
       .finally(() => setLoading(false));
@@ -904,7 +897,7 @@ function TabVisitors() {
 // ── Admin Dashboard ────────────────────────────────────────────────────────────
 type Tab = 'analytics' | 'visitors' | 'categories' | 'questions' | 'images' | 'payments' | 'custom' | 'settings'
 
-function AdminDashboard() {
+function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>('analytics')
 
   const tabs: Array<{ id: Tab; label: string; icon: string }> = [
@@ -931,7 +924,12 @@ function AdminDashboard() {
             </h1>
             <p style={{ color: T.muted, margin: '0.15rem 0 0', fontSize: '0.78rem' }}>{today}</p>
           </div>
-          <a href="/" style={{ color: T.dim, fontSize: '0.82rem', textDecoration: 'none' }}>← اللعبة</a>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <a href="/" style={{ color: T.dim, fontSize: '0.82rem', textDecoration: 'none' }}>← اللعبة</a>
+            <button onClick={onLogout} style={{ ...css.btn('ghost'), fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}>
+              خروج
+            </button>
+          </div>
         </div>
       </div>
 
@@ -969,182 +967,173 @@ function AdminDashboard() {
   )
 }
 
-// ── TOTP Gate ─────────────────────────────────────────────────────────────────
-function getOrCreateClientId(): string {
-  const KEY = 'jawib_admin_cid'
-  let id = localStorage.getItem(KEY)
-  if (!id) {
-    id = `cid-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-    localStorage.setItem(KEY, id)
-  }
-  return id
-}
-
-function AdminPage() {
-  const [totp,        setTotp]       = useState('')
-  const [checking,    setChecking]   = useState(true)
-  const [authed,      setAuthed]     = useState(false)
-  const [setupNeeded, setSetupNeeded] = useState(false)
-  const [setupSecret, setSetupSecret] = useState('')
-  const [setupOtpUrl, setSetupOtpUrl] = useState('')
+// ── Login Portal ──────────────────────────────────────────────────────────────
+function LoginPortal() {
+  const [email,       setEmail]      = useState('')
+  const [password,    setPassword]   = useState('')
   const [error,       setError]      = useState<string | null>(null)
-  const [locked,      setLocked]     = useState(false)
-  const [lockMin,     setLockMin]    = useState(0)
   const [submitting,  setSubmitting] = useState(false)
+  const [recovering,  setRecovering] = useState(false)
+  const [recoverSent, setRecoverSent] = useState(false)
 
-  // On mount: re-validate stored token, then check if TOTP is configured
-  useEffect(() => {
-    const clientId = getOrCreateClientId()
-    const token    = sessionStorage.getItem('jawib_admin_token') ?? ''
-
-    async function init() {
-      // Fast path: already have a valid token
-      if (token) {
-        const check = await verifyAdminToken({ data: { token, clientId } })
-        if (check.ok) { setAuthed(true); setChecking(false); return }
-      }
-      // Check if TOTP is configured
-      const info = await getTotpSetupInfo({ data: { clientId } })
-      if (info.needsSetup) {
-        setSetupNeeded(true)
-        setSetupSecret(info.secret)
-        setSetupOtpUrl(info.otpauthUrl)
-      }
-      setChecking(false)
-    }
-
-    init().catch(() => setChecking(false))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (totp.length !== 6 || submitting) return
+    if (!email || !password || submitting) return
     setSubmitting(true)
     setError(null)
     try {
-      const clientId = getOrCreateClientId()
-      const result   = await verifyAdminPin({ data: { totp, clientId } })
-      if ('needsSetup' in result) {
-        // Secret still not set — refresh setup screen
-        const info = await getTotpSetupInfo({ data: { clientId } })
-        if (info.needsSetup) {
-          setSetupSecret(info.secret)
-          setSetupOtpUrl(info.otpauthUrl)
-          setSetupNeeded(true)
-        }
-        return
-      }
-      if (result.ok) {
-        sessionStorage.setItem('jawib_admin_token', result.token)
-        setAuthed(true)
-      } else if (result.locked) {
-        setLocked(true)
-        setLockMin(result.retryAfterMin ?? 30)
-        setError(`محاولات كثيرة — حاول بعد ${result.retryAfterMin ?? 30} دقيقة`)
-      } else {
-        const left = result.attemptsLeft ?? 0
-        setError(left > 0 ? `الرمز غير صحيح — ${left} محاولة متبقية` : 'الرمز غير صحيح')
-        setTotp('')
-      }
-    } catch {
-      setError('خطأ في الاتصال — حاول مجدداً')
+      await login(email, password)
+      // auth state updates via onAuthChange → AdminPage re-renders automatically
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setError(msg.includes('Invalid') || msg.includes('400')
+        ? 'البريد أو كلمة المرور غير صحيحة'
+        : 'خطأ في الاتصال — حاول مجدداً')
     } finally {
       setSubmitting(false)
     }
   }
 
-  if (checking) {
-    return (
-      <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: T.muted, fontFamily: T.font }}>...</p>
-      </div>
-    )
+  const handleRecover = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email || submitting) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      await requestPasswordRecovery(email)
+      setRecoverSent(true)
+    } catch {
+      setError('تعذّر إرسال رسالة الاسترداد — تحقق من البريد')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  if (authed) return <AdminDashboard />
+  const pageStyle: React.CSSProperties = {
+    minHeight: '100vh',
+    background: `radial-gradient(ellipse at 60% 0%, rgba(233,162,60,0.07) 0%, transparent 60%), ${T.bg}`,
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    fontFamily: T.font, direction: 'rtl', padding: '1rem',
+  }
 
-  // ── Setup screen (ADMIN_TOTP_SECRET not yet configured) ─────────────────────
-  if (setupNeeded) {
+  if (recoverSent) {
     return (
-      <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, direction: 'rtl', padding: '1.5rem' }}>
-        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '1rem', padding: '2rem 1.75rem', width: '100%', maxWidth: '400px', textAlign: 'center' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '0.4rem' }}>🔐</div>
-          <h1 style={{ fontFamily: "'Reem Kufi', sans-serif", fontSize: '1.4rem', color: T.gold, margin: '0 0 0.3rem' }}>إعداد المصادقة الثنائية</h1>
-          <p style={{ color: T.muted, fontSize: '0.82rem', marginBottom: '1.5rem' }}>
-            امسح رمز الاستجابة السريعة بـ Google Authenticator أو Authy
+      <div style={pageStyle}>
+        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '1.25rem', padding: '2.5rem 2rem', width: '100%', maxWidth: '360px', textAlign: 'center' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📬</div>
+          <h2 style={{ color: T.gold, fontFamily: "'Reem Kufi', sans-serif", fontSize: '1.3rem', margin: '0 0 0.5rem' }}>تم الإرسال</h2>
+          <p style={{ color: T.dim, fontSize: '0.88rem', lineHeight: 1.6 }}>
+            أُرسل رابط إعادة تعيين كلمة المرور إلى<br />
+            <strong style={{ color: T.text }}>{email}</strong>
           </p>
-
-          {/* QR Code */}
-          <div style={{ display: 'inline-block', background: '#fff', padding: '0.75rem', borderRadius: '0.75rem', marginBottom: '1.25rem' }}>
-            <QRCodeSVG value={setupOtpUrl} size={180} />
-          </div>
-
-          {/* Manual secret */}
-          <div style={{ background: T.surface, borderRadius: '0.5rem', padding: '0.65rem 0.9rem', marginBottom: '1rem', border: `1px solid ${T.border}`, wordBreak: 'break-all' as const }}>
-            <p style={{ color: T.muted, fontSize: '0.7rem', margin: '0 0 0.25rem' }}>أو أدخل هذا المفتاح يدوياً:</p>
-            <p style={{ color: T.gold, fontFamily: 'monospace', fontSize: '0.88rem', margin: 0, letterSpacing: '0.05em' }}>{setupSecret}</p>
-          </div>
-
-          {/* Netlify instructions */}
-          <div style={{ background: 'rgba(200,90,52,0.09)', border: `1px solid ${T.terra}44`, borderRadius: '0.5rem', padding: '0.75rem', marginBottom: '1.25rem', textAlign: 'right' as const }}>
-            <p style={{ color: T.terra, fontWeight: 700, fontSize: '0.8rem', margin: '0 0 0.35rem' }}>خطوة مطلوبة:</p>
-            <p style={{ color: T.dim, fontSize: '0.78rem', margin: 0, lineHeight: 1.6 }}>
-              في Netlify → Site → Environment variables<br />
-              أضف متغير: <code style={{ color: T.gold, background: 'rgba(0,0,0,0.3)', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>ADMIN_TOTP_SECRET</code><br />
-              القيمة: <code style={{ color: T.gold, background: 'rgba(0,0,0,0.3)', padding: '0.1rem 0.3rem', borderRadius: '3px', wordBreak: 'break-all' as const }}>{setupSecret}</code>
-            </p>
-          </div>
-
-          <button
-            style={{ ...css.btn('oasis'), width: '100%', padding: '0.65rem' }}
-            onClick={() => window.location.reload()}>
-            ✅ حفظت المفتاح — تحديث الصفحة
+          <button style={{ ...css.btn('ghost'), marginTop: '1.5rem', width: '100%' }} onClick={() => { setRecovering(false); setRecoverSent(false) }}>
+            العودة لتسجيل الدخول
           </button>
         </div>
       </div>
     )
   }
 
-  // ── TOTP login screen ────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: T.font, direction: 'rtl', padding: '1rem' }}>
-      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '1rem', padding: '2.5rem 2rem', width: '100%', maxWidth: '340px', textAlign: 'center' }}>
-        <div style={{ fontSize: '2rem', marginBottom: '0.4rem' }}>🔐</div>
-        <h1 style={{ fontFamily: "'Reem Kufi', sans-serif", fontSize: '1.5rem', color: T.gold, margin: '0 0 0.3rem' }}>جاوب</h1>
-        <p style={{ color: T.muted, fontSize: '0.82rem', marginBottom: '2rem' }}>أدخل رمز المصادقة الثنائية (6 أرقام)</p>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={6}
-            value={totp}
-            disabled={locked}
-            onChange={(e) => { setError(null); setTotp(e.target.value.replace(/\D/g, '').slice(0, 6)) }}
-            placeholder={locked ? `مقفل — انتظر ${lockMin} دق` : '● ● ● ● ● ●'}
-            style={{ ...css.input, fontSize: '1.8rem', textAlign: 'center', letterSpacing: '0.4em', border: `1px solid ${error ? T.terra : T.border}` }}
-            autoFocus
-          />
-          {error && <p style={{ color: T.terra, fontSize: '0.82rem', marginTop: '0.5rem' }}>{error}</p>}
-          <button
-            type="submit"
-            disabled={totp.length !== 6 || locked || submitting}
-            style={{
-              marginTop: '1rem', width: '100%',
-              background: (!locked && totp.length === 6) ? T.gold : 'rgba(233,162,60,0.2)',
-              color: (!locked && totp.length === 6) ? T.bg : T.muted,
-              border: 'none', borderRadius: '0.5rem', padding: '0.75rem',
-              fontWeight: 700, fontSize: '1rem',
-              cursor: (!locked && totp.length === 6) ? 'pointer' : 'not-allowed',
-              transition: 'all 0.2s',
-            }}>
-            {submitting ? '...' : 'دخول'}
-          </button>
-        </form>
-        <p style={{ color: T.muted, fontSize: '0.7rem', marginTop: '1.25rem', opacity: 0.65, lineHeight: 1.5 }}>
-          افتح Google Authenticator أو Authy<br />واستخدم رمز «Jawib Admin»
+    <div style={pageStyle}>
+      {/* Brand mark */}
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <p style={{ fontFamily: "'Reem Kufi', sans-serif", fontSize: 'clamp(3rem, 12vw, 5rem)', color: T.gold, margin: 0, lineHeight: 1, textShadow: '0 0 40px rgba(233,162,60,0.3)' }}>
+          جاوب
+        </p>
+        <p style={{ color: T.muted, fontSize: '0.85rem', margin: '0.35rem 0 0', letterSpacing: '0.12em' }}>
+          بوابة الإدارة
         </p>
       </div>
+
+      {/* Card */}
+      <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '1.25rem', padding: '2rem 1.75rem', width: '100%', maxWidth: '360px', boxShadow: '0 24px 48px rgba(0,0,0,0.4)' }}>
+        <h2 style={{ color: T.text, fontWeight: 700, fontSize: '1.1rem', margin: '0 0 1.5rem', textAlign: 'center' }}>
+          {recovering ? 'استعادة كلمة المرور' : 'تسجيل الدخول'}
+        </h2>
+
+        <form onSubmit={recovering ? handleRecover : handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+          <div>
+            <label style={css.label}>البريد الإلكتروني</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => { setError(null); setEmail(e.target.value) }}
+              placeholder="you@example.com"
+              style={{ ...css.input, direction: 'ltr', textAlign: 'right' }}
+              autoComplete="email"
+              autoFocus
+            />
+          </div>
+
+          {!recovering && (
+            <div>
+              <label style={css.label}>كلمة المرور</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => { setError(null); setPassword(e.target.value) }}
+                placeholder="••••••••"
+                style={{ ...css.input, direction: 'ltr', textAlign: 'right' }}
+                autoComplete="current-password"
+              />
+            </div>
+          )}
+
+          {error && (
+            <p style={{ color: T.terra, fontSize: '0.82rem', margin: 0, textAlign: 'center' }}>
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting || !email || (!recovering && !password)}
+            style={{
+              marginTop: '0.25rem',
+              background: (!submitting && email && (recovering || password)) ? T.gold : 'rgba(233,162,60,0.2)',
+              color: (!submitting && email && (recovering || password)) ? T.bg : T.muted,
+              border: 'none', borderRadius: '0.65rem', padding: '0.85rem',
+              fontWeight: 800, fontSize: '1rem', cursor: submitting ? 'wait' : 'pointer',
+              transition: 'all 0.18s', fontFamily: T.font,
+            }}>
+            {submitting ? '...' : recovering ? 'إرسال رابط الاسترداد' : 'دخول →'}
+          </button>
+        </form>
+
+        <div style={{ marginTop: '1.25rem', textAlign: 'center' }}>
+          <button
+            onClick={() => { setRecovering((v) => !v); setError(null) }}
+            style={{ background: 'none', border: 'none', color: T.muted, fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline', fontFamily: T.font }}>
+            {recovering ? 'رجوع لتسجيل الدخول' : 'نسيت كلمة المرور؟'}
+          </button>
+        </div>
+      </div>
+
+      <p style={{ color: T.muted, fontSize: '0.72rem', marginTop: '1.5rem', opacity: 0.5 }}>
+        للوصول الأول: Netlify → Identity → Invite user
+      </p>
     </div>
   )
+}
+
+// ── Admin Page (Identity-gated) ────────────────────────────────────────────────
+function AdminPage() {
+  const { user, ready, logout: identityLogout } = useIdentity()
+
+  const handleLogout = async () => {
+    await identityLogout()
+  }
+
+  if (!ready) {
+    return (
+      <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: T.muted, fontFamily: T.font, fontSize: '1.5rem' }}>...</p>
+      </div>
+    )
+  }
+
+  if (!user) return <LoginPortal />
+
+  return <AdminDashboard onLogout={handleLogout} />
 }

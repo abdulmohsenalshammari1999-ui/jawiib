@@ -1,8 +1,21 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Outlet, Scripts, createRootRoute } from '@tanstack/react-router'
+import { IdentityProvider } from '../lib/identity-context'
+import { CallbackHandler } from '../components/CallbackHandler'
 
 import '../styles.css'
 
+function RootComponent() {
+  return (
+    <IdentityProvider>
+      <CallbackHandler>
+        <Outlet />
+      </CallbackHandler>
+    </IdentityProvider>
+  )
+}
+
 export const Route = createRootRoute({
+  component: RootComponent,
   head: () => ({
     meta: [
       {

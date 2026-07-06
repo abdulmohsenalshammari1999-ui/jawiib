@@ -1459,6 +1459,14 @@ export function getQuestionsByCategoryAndTier(
   return questions.filter((q) => q.category === category && q.tier === tier);
 }
 
+// Custom question registry — populated when a custom game is launched
+const _customRegistry = new Map<string, Question>();
+
+export function registerCustomQuestions(qs: Question[]): void {
+  _customRegistry.clear();
+  for (const q of qs) _customRegistry.set(q.id, q);
+}
+
 export function getQuestionById(id: string): Question | undefined {
-  return questions.find((q) => q.id === id);
+  return _customRegistry.get(id) ?? questions.find((q) => q.id === id);
 }

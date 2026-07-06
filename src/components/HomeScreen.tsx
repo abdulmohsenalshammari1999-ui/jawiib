@@ -2,24 +2,27 @@ import { useState } from 'react';
 import { categories } from '@/lib/categories';
 import { APP_CONFIG } from '@/lib/appConfig';
 import type { CategoryId } from '@/lib/types';
+import { loadCustomGames, type CustomGame } from '@/lib/customGames';
 
 interface HomeScreenProps {
   onCreateRoom: (name: string, isTrial: boolean, cats?: CategoryId[], mode?: 'ffa' | 'teams') => void;
   onJoinRoom: (name: string, code: string) => void;
   onQuickPlay?: (name: string) => void;
+  onCustomGame?: (game: CustomGame, playerName: string) => void;
   accountName?: string;
   accountAvatar?: string;
 }
 
-type View = 'main' | 'create' | 'join' | 'quickplay';
+type View = 'main' | 'create' | 'join' | 'quickplay' | 'customgame';
 type GameMode = 'ffa' | 'teams';
 
-export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, accountName, accountAvatar }: HomeScreenProps) {
+export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, onCustomGame, accountName, accountAvatar }: HomeScreenProps) {
   const [view, setView]               = useState<View>('main');
   const [playerName, setPlayerName]   = useState(accountName ?? '');
   const [roomCode, setRoomCode]       = useState('');
   const [gameMode, setGameMode]       = useState<GameMode>('teams');
   const [selectedCats, setSelectedCats] = useState<CategoryId[]>(categories.map((c) => c.id));
+  const [customGames]                 = useState<CustomGame[]>(() => loadCustomGames());
 
   const toggleCategory = (id: CategoryId) =>
     setSelectedCats((prev) => prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]);
@@ -104,6 +107,19 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, accountName,
           >
             🔗 انضم بكود
           </button>
+          {onCustomGame && (
+            <button
+              onClick={() => setView('customgame')}
+              className="w-full py-3 text-sm font-bold rounded-xl border-2 transition-all flex items-center justify-center gap-2"
+              style={{ borderColor: 'rgba(200,90,52,0.5)', color: '#C85A34', background: 'rgba(200,90,52,0.08)' }}
+            >
+              <span>🎨</span>
+              <span>لعبة مخصصة</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-black" style={{ background: '#C85A34', color: '#fff' }}>
+                مميز
+              </span>
+            </button>
+          )}
         </div>
 
         {/* Stats row */}
@@ -217,6 +233,70 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, accountName,
               ⚡ انطلق!
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Custom Game ───────────────────────────────────────────────────────────────
+  if (view === 'customgame') {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="max-w-sm w-full animate-slide-up">
+          <button
+            onClick={() => setView('main')}
+            className="text-jawwib-text-dim text-sm mb-6 flex items-center gap-1 hover:text-jawwib-text transition-colors"
+          >
+            ← رجوع
+          </button>
+          <h2 className="text-2xl font-black mb-1 text-center" style={{ color: '#C85A34' }}>🎨 لعبة مخصصة</h2>
+          <p className="text-jawwib-text-dim text-xs text-center mb-5">ألعابك المحفوظة من لوحة التحكم</p>
+
+          {/* Player name */}
+          <div className="mb-4">
+            <label className="block text-xs text-jawwib-text-dim mb-1">اسمك</label>
+            <input
+              type="text"
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              placeholder="ادخل اسمك..."
+              className="w-full px-4 py-3 rounded-xl"
+              maxLength={20}
+              autoFocus
+            />
+          </div>
+
+          {customGames.length === 0 ? (
+            <div className="text-center py-8 rounded-xl border-2 border-dashed" style={{ borderColor: 'rgba(200,90,52,0.3)', color: '#C85A34' }}>
+              <p className="text-3xl mb-2">📭</p>
+              <p className="font-bold text-sm mb-1">لا توجد ألعاب مخصصة بعد</p>
+              <p className="text-jawwib-text-dim text-xs">أنشئ لعبة من لوحة التحكم على /admin</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5 max-h-72 overflow-y-auto">
+              {customGames.map((game) => (
+                <button
+                  key={game.id}
+                  disabled={!playerName.trim() || game.questions.length === 0}
+                  onClick={() => onCustomGame?.(game, playerName.trim())}
+                  className="w-full text-right p-3.5 rounded-xl border-2 transition-all disabled:opacity-40"
+                  style={{ borderColor: game.color + '60', background: game.color + '12' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{game.emoji}</span>
+                    <div className="flex-1">
+                      <p className="font-black text-sm text-jawwib-text">{game.name}</p>
+                      <p className="text-[10px] text-jawwib-text-dim mt-0.5">
+                        {game.questions.length} سؤال
+                        {game.description ? ` · ${game.description}` : ''}
+                      </p>
+                    </div>
+                    <span className="text-jawwib-gold text-sm">▶</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );

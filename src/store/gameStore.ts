@@ -11,7 +11,8 @@ import type {
   TeamId,
   WeaponType,
 } from '@/lib/types';
-import { getQuestionById } from '@/lib/questions';
+import { getQuestionById, registerCustomQuestions } from '@/lib/questions';
+import type { Question } from '@/lib/types';
 import { useSabotageStore } from './sabotageStore';
 import {
   getWelcomeMessage,
@@ -77,6 +78,26 @@ function buildBoard(selectedCategories: CategoryId[]): GameBoardCell[][] {
   });
 }
 
+function buildCustomBoard(customQuestions: Question[]): { board: GameBoardCell[][]; cats: CategoryId[] } {
+  registerCustomQuestions(customQuestions);
+  // Sort by points then group into rows of 4 for the grid
+  const sorted = [...customQuestions].sort((a, b) => a.points - b.points);
+  const rows: GameBoardCell[][] = [];
+  for (let i = 0; i < sorted.length; i += 4) {
+    const chunk = sorted.slice(i, i + 4);
+    rows.push(chunk.map((q) => ({
+      questionId: q.id,
+      category: q.category,
+      tier: q.tier,
+      points: q.points as 100|200|300|400|500|600,
+      answered: false,
+    })));
+  }
+  // Unique categories present in the custom game (for engine init)
+  const cats = [...new Set(customQuestions.map((q) => q.category))] as CategoryId[];
+  return { board: rows, cats };
+}
+
 function getTrialCategories(): CategoryId[] {
   const all: CategoryId[] = [
     'culture', 'sport', 'history', 'quran', 'gulf', 'science', 'geo', 'food',
@@ -99,7 +120,7 @@ export interface GameSlice extends GameState {
   // Derived
   answeredCount: number;
   // Actions
-  createRoom: (name: string, isTrial: boolean, cats?: CategoryId[]) => { roomId: string; playerId: string };
+  createRoom: (name: string, isTrial: boolean, cats?: CategoryId[], customQuestions?: Question[]) => { roomId: string; playerId: string };
   addPlayer: (name: string, explicitId?: string) => string;
   startGame: () => void;
   selectQuestion: (questionId: string) => void;
@@ -121,7 +142,7 @@ export interface GameStoreState {
   localPlayerId: string | null;
   answeredCount: number;
   // Actions
-  createRoom: (name: string, isTrial: boolean, cats?: CategoryId[]) => { roomId: string; playerId: string };
+  createRoom: (name: string, isTrial: boolean, cats?: CategoryId[], customQuestions?: Question[]) => { roomId: string; playerId: string };
   addPlayer: (name: string, explicitId?: string) => string;
   startGame: () => void;
   selectQuestion: (questionId: string) => void;
@@ -154,10 +175,13 @@ export const useGameStore = create<GameStoreState>()(
     localPlayerId: null,
     answeredCount: 0,
 
-    createRoom: (name, isTrial, cats) => {
+    createRoom: (name, isTrial, cats, customQuestions) => {
       const playerId = uuid();
       const roomId = uuid();
-      const categories = isTrial ? getTrialCategories() : (cats ?? getTrialCategories());
+      const isCustom = !!customQuestions?.length;
+      const categories = isCustom
+        ? [...new Set(customQuestions.map((q) => q.category))] as CategoryId[]
+        : isTrial ? getTrialCategories() : (cats ?? getTrialCategories());
       const player: Player = {
         id: playerId,
         name: name.trim() || 'لاعب',
@@ -178,7 +202,9 @@ export const useGameStore = create<GameStoreState>()(
         isTrial,
         createdAt: Date.now(),
       };
-      const board = buildBoard(categories);
+      const board = isCustom
+        ? buildCustomBoard(customQuestions!).board
+        : buildBoard(categories);
 
       // Bootstrap the engine for adaptive difficulty + round management
       engine.newGame(

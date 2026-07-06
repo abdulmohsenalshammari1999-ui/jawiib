@@ -10,6 +10,7 @@ import { useQuestionFlow } from '@/hooks/useQuestionFlow';
 import { audio } from '@/lib/audio';
 import { globalPool } from '@/engine/questionPool';
 import { initCsvContent } from '@/lib/contentRegistry';
+import { customGameToQuestions, type CustomGame } from '@/lib/customGames';
 import { applySeasonalBodyClass, APP_CONFIG } from '@/lib/appConfig';
 import { hapticSuccess, hapticError, hapticSelection } from '@/lib/haptics';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
@@ -468,6 +469,16 @@ export function GameApp() {
     [createRoom, setMode, initTeams, assignTeam, paymentConfigured]
   );
 
+  const handleCustomGame = useCallback(
+    (customGame: CustomGame, playerName: string) => {
+      const qs = customGameToQuestions(customGame);
+      if (qs.length === 0) return;
+      setMode('ffa');
+      createRoom(playerName, false, undefined, qs);
+    },
+    [createRoom, setMode]
+  );
+
   // Direct-start from the new compact EntryScreen — skips TeamSetup + CategoryDraft
   const handleDirectStart = useCallback(
     (name: string, startMode: StartMode) => {
@@ -729,6 +740,7 @@ export function GameApp() {
         onCreateRoom={(name, isTrial, cats, gm) => handleCreateRoom(name, isTrial, cats, gm)}
         onJoinRoom={(name, code) => handleJoinRoom(name, code)}
         onQuickPlay={handleQuickPlay}
+        onCustomGame={handleCustomGame}
         accountName={account?.name}
         accountAvatar={account?.avatar}
       />

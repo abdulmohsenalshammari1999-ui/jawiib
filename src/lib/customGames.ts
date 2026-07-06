@@ -28,6 +28,7 @@ const STORAGE_KEY = 'jawib_custom_games';
 
 export function loadCustomGames(): CustomGame[] {
   try {
+    if (typeof localStorage === 'undefined') return [];
     return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
   } catch {
     return [];
@@ -116,7 +117,10 @@ export interface AdminImage {
 }
 
 export function loadAdminImages(): AdminImage[] {
-  try { return JSON.parse(localStorage.getItem(IMG_KEY) ?? '[]'); } catch { return []; }
+  try {
+    if (typeof localStorage === 'undefined') return [];
+    return JSON.parse(localStorage.getItem(IMG_KEY) ?? '[]');
+  } catch { return []; }
 }
 
 export function saveAdminImage(img: AdminImage): void {

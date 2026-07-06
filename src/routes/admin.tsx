@@ -111,16 +111,18 @@ function BarChart({ data }: { data: Array<{ label: string; value: number; color?
 }
 
 // ── Tab: Analytics ─────────────────────────────────────────────────────────────
+const _ls = (key: string) => (typeof localStorage !== 'undefined' ? localStorage.getItem(key) : null)
+
 function TabAnalytics() {
-  const gamesPlayed    = Number(localStorage.getItem('games_played') ?? 0)
-  const totalQ         = Number(localStorage.getItem('total_questions_answered') ?? 0)
-  const correct        = Number(localStorage.getItem('correct_answers') ?? 0)
+  const gamesPlayed    = Number(_ls('games_played') ?? 0)
+  const totalQ         = Number(_ls('total_questions_answered') ?? 0)
+  const correct        = Number(_ls('correct_answers') ?? 0)
   const accuracy       = totalQ ? Math.round((correct / totalQ) * 100) : 0
-  const sessionCount   = Number(localStorage.getItem('session_count') ?? 0)
+  const sessionCount   = Number(_ls('session_count') ?? 0)
 
   // Category play counts (stored by game engine if wired)
   const catCounts: Record<string, number> = (() => {
-    try { return JSON.parse(localStorage.getItem('cat_plays') ?? '{}') } catch { return {} }
+    try { return JSON.parse(_ls('cat_plays') ?? '{}') } catch { return {} }
   })()
   const catData = ALL_CATS
     .filter((c) => catCounts[c.id])
@@ -166,14 +168,14 @@ function TabAnalytics() {
 // ── Tab: Categories ────────────────────────────────────────────────────────────
 function TabCategories() {
   const [customCats, setCustomCats] = useState<Array<{ id: string; name: string; icon: string; color: string }>>(() => {
-    try { return JSON.parse(localStorage.getItem('jawib_custom_cats') ?? '[]') } catch { return [] }
+    try { return JSON.parse(_ls('jawib_custom_cats') ?? '[]') } catch { return [] }
   })
   const [form, setForm] = useState({ name: '', icon: '🎯', color: '#E9A23C' })
   const [adding, setAdding] = useState(false)
 
   const save = (cats: typeof customCats) => {
     setCustomCats(cats)
-    localStorage.setItem('jawib_custom_cats', JSON.stringify(cats))
+    if (typeof localStorage !== 'undefined') localStorage.setItem('jawib_custom_cats', JSON.stringify(cats))
   }
 
   const add = () => {
@@ -423,15 +425,15 @@ function TabPayments() {
     { id: 'premium_pack',  label: 'الباقة المميزة (الكل)',          price: 'KD 3.99', desc: 'جميع المحتوى + التحديثات' },
   ]
   const [config, setConfig] = useState<Record<string, { enabled: boolean; price: string }>>(() => {
-    try { return JSON.parse(localStorage.getItem('jawib_payment_config') ?? '{}') } catch { return {} }
+    try { return JSON.parse(_ls('jawib_payment_config') ?? '{}') } catch { return {} }
   })
   const save = (next: typeof config) => {
     setConfig(next)
-    localStorage.setItem('jawib_payment_config', JSON.stringify(next))
+    if (typeof localStorage !== 'undefined') localStorage.setItem('jawib_payment_config', JSON.stringify(next))
   }
 
   const purchases: Array<{ id: string; feature: string; ts: number }> = (() => {
-    try { return JSON.parse(localStorage.getItem('jawib_purchases') ?? '[]') } catch { return [] }
+    try { return JSON.parse(_ls('jawib_purchases') ?? '[]') } catch { return [] }
   })()
 
   return (

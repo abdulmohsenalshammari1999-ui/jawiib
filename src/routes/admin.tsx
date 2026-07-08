@@ -1,7 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect, useRef } from 'react'
-import { login, requestPasswordRecovery } from '@netlify/identity'
-import { useIdentity } from '@/lib/identity-context'
+import { adminLogin, verifyAdminToken } from '@/serverFunctions/adminAuth'
 import { getVisits, getReviews } from '@/serverFunctions/analytics'
 import type { VisitEntry } from '@/serverFunctions/analytics'
 import type { SurveyPayload } from '@/serverFunctions/survey'
@@ -782,11 +781,17 @@ function TabVisitors() {
   const [errMsg,  setErrMsg]    = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([getVisits(), getReviews()])
+    const token    = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('jawib_admin_token') ?? '' : '';
+    const clientId = typeof localStorage   !== 'undefined' ? localStorage.getItem('jawib_admin_cid')    ?? '' : '';
+    if (!token || !clientId) { setErrMsg('لا يوجد رمز مصادقة — سجّل دخولك أولاً'); setLoading(false); return; }
+    Promise.all([
+      getVisits ({ data: { token, clientId } }),
+      getReviews({ data: { token, clientId } }),
+    ])
       .then(([v, r]) => {
         if (v.ok) setVisits(v.visits.slice().reverse());
         if (r.ok) setReviews(r.reviews.slice().reverse());
-        if (!v.ok && !r.ok) setErrMsg('غير مصرح — سجّل دخولك أولاً');
+        if (!v.ok && !r.ok) setErrMsg('انتهت الجلسة — سجّل دخولك مجدداً');
       })
       .catch(() => setErrMsg('خطأ في الاتصال بالخادم'))
       .finally(() => setLoading(false));
@@ -967,76 +972,62 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   )
 }
 
+// ── Client ID helper ──────────────────────────────────────────────────────────
+function getOrCreateClientId(): string {
+  const KEY = 'jawib_admin_cid'
+  let id = typeof localStorage !== 'undefined' ? localStorage.getItem(KEY) : null
+  if (!id) {
+    id = `cid-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    if (typeof localStorage !== 'undefined') localStorage.setItem(KEY, id)
+  }
+  return id
+}
+
 // ── Login Portal ──────────────────────────────────────────────────────────────
-function LoginPortal() {
-  const [email,       setEmail]      = useState('')
-  const [password,    setPassword]   = useState('')
-  const [error,       setError]      = useState<string | null>(null)
-  const [submitting,  setSubmitting] = useState(false)
-  const [recovering,  setRecovering] = useState(false)
-  const [recoverSent, setRecoverSent] = useState(false)
+function LoginPortal({ onAuthed }: { onAuthed: (token: string, clientId: string) => void }) {
+  const [username,   setUsername]  = useState('')
+  const [password,   setPassword]  = useState('')
+  const [error,      setError]     = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [locked,     setLocked]    = useState(false)
+  const [lockMin,    setLockMin]   = useState(0)
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email || !password || submitting) return
+    if (!username || !password || submitting || locked) return
     setSubmitting(true)
     setError(null)
     try {
-      await login(email, password)
-      // auth state updates via onAuthChange → AdminPage re-renders automatically
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err)
-      setError(msg.includes('Invalid') || msg.includes('400')
-        ? 'البريد أو كلمة المرور غير صحيحة'
-        : 'خطأ في الاتصال — حاول مجدداً')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleRecover = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!email || submitting) return
-    setSubmitting(true)
-    setError(null)
-    try {
-      await requestPasswordRecovery(email)
-      setRecoverSent(true)
+      const clientId = getOrCreateClientId()
+      const result   = await adminLogin({ data: { username: username.trim(), password, clientId } })
+      if (result.ok) {
+        sessionStorage.setItem('jawib_admin_token', result.token)
+        onAuthed(result.token, clientId)
+      } else if (result.error === 'not_configured') {
+        setError('أضف ADMIN_PASSWORD في إعدادات Netlify أولاً')
+      } else if (result.error === 'locked') {
+        setLocked(true)
+        setLockMin(result.retryAfterMin ?? 15)
+        setError(`محاولات كثيرة — حاول بعد ${result.retryAfterMin ?? 15} دقيقة`)
+      } else {
+        const left = ('attemptsLeft' in result ? result.attemptsLeft : undefined) ?? 0
+        setError(left > 0 ? `اسم المستخدم أو كلمة المرور غير صحيحة — ${left} محاولة متبقية` : 'اسم المستخدم أو كلمة المرور غير صحيحة')
+      }
     } catch {
-      setError('تعذّر إرسال رسالة الاسترداد — تحقق من البريد')
+      setError('خطأ في الاتصال — حاول مجدداً')
     } finally {
       setSubmitting(false)
     }
-  }
-
-  const pageStyle: React.CSSProperties = {
-    minHeight: '100vh',
-    background: `radial-gradient(ellipse at 60% 0%, rgba(233,162,60,0.07) 0%, transparent 60%), ${T.bg}`,
-    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-    fontFamily: T.font, direction: 'rtl', padding: '1rem',
-  }
-
-  if (recoverSent) {
-    return (
-      <div style={pageStyle}>
-        <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '1.25rem', padding: '2.5rem 2rem', width: '100%', maxWidth: '360px', textAlign: 'center' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📬</div>
-          <h2 style={{ color: T.gold, fontFamily: "'Reem Kufi', sans-serif", fontSize: '1.3rem', margin: '0 0 0.5rem' }}>تم الإرسال</h2>
-          <p style={{ color: T.dim, fontSize: '0.88rem', lineHeight: 1.6 }}>
-            أُرسل رابط إعادة تعيين كلمة المرور إلى<br />
-            <strong style={{ color: T.text }}>{email}</strong>
-          </p>
-          <button style={{ ...css.btn('ghost'), marginTop: '1.5rem', width: '100%' }} onClick={() => { setRecovering(false); setRecoverSent(false) }}>
-            العودة لتسجيل الدخول
-          </button>
-        </div>
-      </div>
-    )
   }
 
   return (
-    <div style={pageStyle}>
-      {/* Brand mark */}
+    <div style={{
+      minHeight: '100vh',
+      background: `radial-gradient(ellipse at 60% 0%, rgba(233,162,60,0.07) 0%, transparent 60%), ${T.bg}`,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      fontFamily: T.font, direction: 'rtl', padding: '1rem',
+    }}>
+      {/* Brand */}
       <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
         <p style={{ fontFamily: "'Reem Kufi', sans-serif", fontSize: 'clamp(3rem, 12vw, 5rem)', color: T.gold, margin: 0, lineHeight: 1, textShadow: '0 0 40px rgba(233,162,60,0.3)' }}>
           جاوب
@@ -1048,37 +1039,33 @@ function LoginPortal() {
 
       {/* Card */}
       <div style={{ background: T.card, border: `1px solid ${T.border}`, borderRadius: '1.25rem', padding: '2rem 1.75rem', width: '100%', maxWidth: '360px', boxShadow: '0 24px 48px rgba(0,0,0,0.4)' }}>
-        <h2 style={{ color: T.text, fontWeight: 700, fontSize: '1.1rem', margin: '0 0 1.5rem', textAlign: 'center' }}>
-          {recovering ? 'استعادة كلمة المرور' : 'تسجيل الدخول'}
-        </h2>
-
-        <form onSubmit={recovering ? handleRecover : handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
           <div>
-            <label style={css.label}>البريد الإلكتروني</label>
+            <label style={css.label}>اسم المستخدم</label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => { setError(null); setEmail(e.target.value) }}
-              placeholder="you@example.com"
+              type="text"
+              value={username}
+              disabled={locked}
+              onChange={(e) => { setError(null); setUsername(e.target.value) }}
+              placeholder="admin"
               style={{ ...css.input, direction: 'ltr', textAlign: 'right' }}
-              autoComplete="email"
+              autoComplete="username"
               autoFocus
             />
           </div>
 
-          {!recovering && (
-            <div>
-              <label style={css.label}>كلمة المرور</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => { setError(null); setPassword(e.target.value) }}
-                placeholder="••••••••"
-                style={{ ...css.input, direction: 'ltr', textAlign: 'right' }}
-                autoComplete="current-password"
-              />
-            </div>
-          )}
+          <div>
+            <label style={css.label}>كلمة المرور</label>
+            <input
+              type="password"
+              value={password}
+              disabled={locked}
+              onChange={(e) => { setError(null); setPassword(e.target.value) }}
+              placeholder="••••••••"
+              style={{ ...css.input, direction: 'ltr', textAlign: 'right', border: `1px solid ${error ? T.terra : T.border}` }}
+              autoComplete="current-password"
+            />
+          </div>
 
           {error && (
             <p style={{ color: T.terra, fontSize: '0.82rem', margin: 0, textAlign: 'center' }}>
@@ -1088,44 +1075,58 @@ function LoginPortal() {
 
           <button
             type="submit"
-            disabled={submitting || !email || (!recovering && !password)}
+            disabled={submitting || locked || !username || !password}
             style={{
-              marginTop: '0.25rem',
-              background: (!submitting && email && (recovering || password)) ? T.gold : 'rgba(233,162,60,0.2)',
-              color: (!submitting && email && (recovering || password)) ? T.bg : T.muted,
-              border: 'none', borderRadius: '0.65rem', padding: '0.85rem',
-              fontWeight: 800, fontSize: '1rem', cursor: submitting ? 'wait' : 'pointer',
+              marginTop: '0.15rem',
+              background: (!submitting && !locked && username && password) ? T.gold : 'rgba(233,162,60,0.2)',
+              color: (!submitting && !locked && username && password) ? T.bg : T.muted,
+              border: 'none', borderRadius: '0.65rem', padding: '0.9rem',
+              fontWeight: 800, fontSize: '1rem',
+              cursor: (submitting || locked || !username || !password) ? 'not-allowed' : 'pointer',
               transition: 'all 0.18s', fontFamily: T.font,
             }}>
-            {submitting ? '...' : recovering ? 'إرسال رابط الاسترداد' : 'دخول →'}
+            {submitting ? '...' : locked ? `مقفل ${lockMin} دق` : 'دخول ←'}
           </button>
         </form>
-
-        <div style={{ marginTop: '1.25rem', textAlign: 'center' }}>
-          <button
-            onClick={() => { setRecovering((v) => !v); setError(null) }}
-            style={{ background: 'none', border: 'none', color: T.muted, fontSize: '0.8rem', cursor: 'pointer', textDecoration: 'underline', fontFamily: T.font }}>
-            {recovering ? 'رجوع لتسجيل الدخول' : 'نسيت كلمة المرور؟'}
-          </button>
-        </div>
       </div>
 
-      <p style={{ color: T.muted, fontSize: '0.72rem', marginTop: '1.5rem', opacity: 0.5 }}>
-        للوصول الأول: Netlify → Identity → Invite user
+      <p style={{ color: T.muted, fontSize: '0.72rem', marginTop: '1.5rem', opacity: 0.45, textAlign: 'center', lineHeight: 1.5 }}>
+        عيّن اسم المستخدم وكلمة المرور في Netlify<br />
+        ADMIN_USERNAME · ADMIN_PASSWORD
       </p>
     </div>
   )
 }
 
-// ── Admin Page (Identity-gated) ────────────────────────────────────────────────
+// ── Admin Page ─────────────────────────────────────────────────────────────────
 function AdminPage() {
-  const { user, ready, logout: identityLogout } = useIdentity()
+  const [checking, setChecking] = useState(true)
+  const [authed,   setAuthed]   = useState(false)
+  const [token,    setToken]    = useState('')
+  const [clientId, setClientId] = useState('')
 
-  const handleLogout = async () => {
-    await identityLogout()
+  useEffect(() => {
+    const cid = getOrCreateClientId()
+    const tok  = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('jawib_admin_token') ?? '' : ''
+    setClientId(cid)
+    setToken(tok)
+    if (!tok) { setChecking(false); return }
+    verifyAdminToken({ data: { token: tok, clientId: cid } })
+      .then((r) => { if (r.ok) setAuthed(true) })
+      .catch(() => {})
+      .finally(() => setChecking(false))
+  }, [])
+
+  const handleAuthed = (tok: string, cid: string) => {
+    setToken(tok); setClientId(cid); setAuthed(true)
   }
 
-  if (!ready) {
+  const handleLogout = () => {
+    sessionStorage.removeItem('jawib_admin_token')
+    setAuthed(false); setToken('')
+  }
+
+  if (checking) {
     return (
       <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: T.muted, fontFamily: T.font, fontSize: '1.5rem' }}>...</p>
@@ -1133,7 +1134,7 @@ function AdminPage() {
     )
   }
 
-  if (!user) return <LoginPortal />
-
+  if (!authed) return <LoginPortal onAuthed={handleAuthed} />
+  void token; void clientId
   return <AdminDashboard onLogout={handleLogout} />
 }

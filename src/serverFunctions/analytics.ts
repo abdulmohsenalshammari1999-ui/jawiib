@@ -1,6 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { getRequestHeader } from '@tanstack/react-start/server';
-import { getUser } from '@netlify/identity';
+import { validateAdminToken } from './adminAuth';
 import { _getLocalReviews } from './survey';
 
 // ── In-memory visit log ───────────────────────────────────────────────────────
@@ -49,16 +49,18 @@ export const recordVisit = createServerFn({ method: 'POST' })
     return { ok: true as const };
   });
 
-export const getVisits = createServerFn({ method: 'GET' })
-  .handler(async () => {
-    const user = await getUser();
-    if (!user) return { ok: false as const, visits: [] as VisitEntry[] };
+export const getVisits = createServerFn({ method: 'POST' })
+  .inputValidator((data: unknown) => data as { token: string; clientId: string })
+  .handler(async ({ data }) => {
+    const valid = await validateAdminToken(data.token, data.clientId);
+    if (!valid) return { ok: false as const, visits: [] as VisitEntry[] };
     return { ok: true as const, visits: [..._visits] };
   });
 
-export const getReviews = createServerFn({ method: 'GET' })
-  .handler(async () => {
-    const user = await getUser();
-    if (!user) return { ok: false as const, reviews: _getLocalReviews().slice(0, 0) };
+export const getReviews = createServerFn({ method: 'POST' })
+  .inputValidator((data: unknown) => data as { token: string; clientId: string })
+  .handler(async ({ data }) => {
+    const valid = await validateAdminToken(data.token, data.clientId);
+    if (!valid) return { ok: false as const, reviews: _getLocalReviews().slice(0, 0) };
     return { ok: true as const, reviews: _getLocalReviews() };
   });

@@ -1,6 +1,7 @@
 import { getCategoryById } from '@/lib/categories';
 import { TRIAL_QUESTION_LIMIT } from '@/store/gameStore';
 import { CATEGORY_CONTEXT_IMAGES } from '@/lib/categoryMedia';
+import { getAdminImageForCategory } from '@/lib/customGames';
 import type { GameBoardCell, CategoryId } from '@/lib/types';
 
 interface GameBoardProps {
@@ -72,7 +73,10 @@ export function GameBoard({
             >
               {/* Category label — with image background when available */}
               {(() => {
-                const catImg = CATEGORY_CONTEXT_IMAGES[cat.id];
+                const adminImgUrl = getAdminImageForCategory(cat.id);
+                const catImg = adminImgUrl
+                  ? { url: adminImgUrl, alt: cat.name as string, position: 'center' }
+                  : CATEGORY_CONTEXT_IMAGES[cat.id as keyof typeof CATEGORY_CONTEXT_IMAGES];
                 return (
                   <div
                     className={`board-category-col relative overflow-hidden rounded-lg min-w-0 ${tvMode ? 'min-h-[56px]' : 'min-h-[44px]'} ${

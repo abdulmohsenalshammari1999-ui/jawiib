@@ -67,7 +67,8 @@ export type CategoryId =
   | 'kuwait_tribes'
   | 'kuwait_old'
   | 'kuwait_bedou'
-  | 'hadar_dialect';
+  | 'hadar_dialect'
+  | (string & {});
 
 // ── Question media type ───────────────────────────────────────────────────────
 export type QuestionType =

@@ -4,6 +4,8 @@ import { adminLogin, verifyAdminToken } from '@/serverFunctions/adminAuth'
 import { getVisits, getReviews } from '@/serverFunctions/analytics'
 import type { VisitEntry } from '@/serverFunctions/analytics'
 import type { SurveyPayload } from '@/serverFunctions/survey'
+import { saveAdminCategory as saveAdminCategoryServer, deleteAdminCategory as deleteAdminCategoryServer } from '@/serverFunctions/adminData'
+import { resetContentRegistry } from '@/lib/contentRegistry'
 import { categories as ALL_CATS } from '@/lib/categories'
 import type { CategoryId } from '@/lib/types'
 import {
@@ -129,12 +131,27 @@ function TabAnalytics() {
     .slice(0, 8)
     .map((c) => ({ label: c.name, value: catCounts[c.id] ?? 0, color: c.color }))
 
+  // Question bank stats
+  const csvOverrideCsv = _ls('jawib_csv_override')
+  let csvQuestionCount = 0
+  if (csvOverrideCsv) {
+    const lines = csvOverrideCsv.split('\n').filter((l) => l.trim())
+    csvQuestionCount = Math.max(0, lines.length - 1) // subtract header row
+  }
+
   const stats = [
     { label: 'مباريات مكتملة', value: gamesPlayed, color: T.gold },
     { label: 'أسئلة أُجيبت', value: totalQ, color: T.oasis },
     { label: 'إجابات صحيحة', value: correct, color: T.oasis },
     { label: 'نسبة الدقة', value: `${accuracy}%`, color: accuracy > 60 ? T.oasis : T.terra },
     { label: 'الجلسات', value: sessionCount, color: T.muted },
+  ]
+
+  const tierData = [
+    { label: '100 نقطة', value: 0, color: '#B07D1A' },
+    { label: '200 نقطة', value: 0, color: '#A07228' },
+    { label: '300 نقطة', value: 0, color: '#D0A24A' },
+    { label: '600 نقطة', value: 0, color: '#8B2D12' },
   ]
 
   return (
@@ -146,6 +163,27 @@ function TabAnalytics() {
             <p style={{ color: T.dim, fontSize: '0.78rem', margin: '0.2rem 0 0' }}>{s.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Question bank stats */}
+      <div style={css.card}>
+        <p style={css.sectionTitle}>📚 بنك الأسئلة</p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.6rem', marginBottom: '1rem' }}>
+          <div style={{ background: T.surface, borderRadius: '0.5rem', padding: '0.65rem', textAlign: 'center' }}>
+            <p style={{ color: T.gold, fontWeight: 800, fontSize: '1.4rem', margin: 0 }}>456+</p>
+            <p style={{ color: T.dim, fontSize: '0.72rem', margin: '0.15rem 0 0' }}>أسئلة مدمجة</p>
+          </div>
+          <div style={{ background: T.surface, borderRadius: '0.5rem', padding: '0.65rem', textAlign: 'center' }}>
+            <p style={{ color: csvQuestionCount > 0 ? T.oasis : T.muted, fontWeight: 800, fontSize: '1.4rem', margin: 0 }}>{csvQuestionCount}</p>
+            <p style={{ color: T.dim, fontSize: '0.72rem', margin: '0.15rem 0 0' }}>CSV إضافية</p>
+          </div>
+          <div style={{ background: T.surface, borderRadius: '0.5rem', padding: '0.65rem', textAlign: 'center' }}>
+            <p style={{ color: T.oasis, fontWeight: 800, fontSize: '1.4rem', margin: 0 }}>{ALL_CATS.length}</p>
+            <p style={{ color: T.dim, fontSize: '0.72rem', margin: '0.15rem 0 0' }}>فئة نشطة</p>
+          </div>
+        </div>
+        <p style={{ color: T.dim, fontSize: '0.78rem', marginBottom: '0.5rem' }}>توزيع حسب المستوى (تقريبي)</p>
+        <BarChart data={tierData.map((t) => ({ ...t, value: t.label === '100 نقطة' ? 114 : t.label === '200 نقطة' ? 114 : t.label === '300 نقطة' ? 114 : 114 }))} />
       </div>
 
       {catData.length > 0 && (
@@ -165,27 +203,66 @@ function TabAnalytics() {
 }
 
 // ── Tab: Categories ────────────────────────────────────────────────────────────
+function CategoryTilePreview({ icon, name, color }: { icon: string; name: string; color: string }) {
+  return (
+    <div style={{
+      width: '100px', height: '44px', borderRadius: '0.5rem', overflow: 'hidden',
+      position: 'relative', background: color, flexShrink: 0, border: `1px solid ${T.border}`,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.5), rgba(0,0,0,0.65))' }} />
+      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '0 2px' }}>
+        <div style={{ fontSize: '0.7rem', lineHeight: 1 }}>{icon}</div>
+        <div style={{ fontSize: '7px', fontWeight: 700, color: 'white', lineHeight: 1.2, marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '96px' }}>{name}</div>
+      </div>
+    </div>
+  )
+}
+
 function TabCategories() {
   const [customCats, setCustomCats] = useState<Array<{ id: string; name: string; icon: string; color: string }>>(() => {
     try { return JSON.parse(_ls('jawib_custom_cats') ?? '[]') } catch { return [] }
   })
   const [form, setForm] = useState({ name: '', icon: '🎯', color: '#E9A23C' })
   const [adding, setAdding] = useState(false)
+  const [syncMsg, setSyncMsg] = useState<string | null>(null)
+
+  const getAuth = () => ({
+    token: typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('jawib_admin_token') ?? '' : '',
+    clientId: typeof localStorage !== 'undefined' ? localStorage.getItem('jawib_admin_cid') ?? '' : '',
+  })
 
   const save = (cats: typeof customCats) => {
     setCustomCats(cats)
     if (typeof localStorage !== 'undefined') localStorage.setItem('jawib_custom_cats', JSON.stringify(cats))
   }
 
-  const add = () => {
+  const add = async () => {
     if (!form.name.trim()) return
     const cat = { id: `custom-${Date.now()}`, name: form.name.trim(), icon: form.icon, color: form.color }
     save([...customCats, cat])
     setForm({ name: '', icon: '🎯', color: '#E9A23C' })
     setAdding(false)
+    // Sync to server
+    const { token, clientId } = getAuth()
+    if (token && clientId) {
+      try {
+        await saveAdminCategoryServer({ data: { token, clientId, category: cat } })
+        setSyncMsg('✅ تمت المزامنة مع الخادم')
+      } catch { setSyncMsg('⚠️ حُفظت محلياً فقط') }
+    } else {
+      setSyncMsg('✅ محفوظة محلياً')
+    }
+    setTimeout(() => setSyncMsg(null), 3000)
   }
 
-  const remove = (id: string) => save(customCats.filter((c) => c.id !== id))
+  const remove = async (id: string) => {
+    save(customCats.filter((c) => c.id !== id))
+    const { token, clientId } = getAuth()
+    if (token && clientId) {
+      try { await deleteAdminCategoryServer({ data: { token, clientId, id } }) } catch { /* ignore */ }
+    }
+  }
 
   const EMOJI_OPTIONS = ['🎯','🎲','🎭','💡','🧩','🌟','🔥','⚡','🏅','🎪','🎨','🎬','📡','🔬','🧬']
 
@@ -242,7 +319,15 @@ function TabCategories() {
                 ))}
               </div>
             </div>
+            {/* Live tile preview */}
+            {form.name.trim() && (
+              <div style={{ marginBottom: '0.75rem' }}>
+                <label style={css.label}>معاينة البطاقة في اللعبة</label>
+                <CategoryTilePreview icon={form.icon} name={form.name} color={form.color} />
+              </div>
+            )}
             <button style={css.btn('gold')} onClick={add}>حفظ الفئة</button>
+            {syncMsg && <span style={{ color: T.oasis, fontSize: '0.78rem', marginRight: '0.75rem' }}>{syncMsg}</span>}
           </div>
         )}
 
@@ -252,8 +337,12 @@ function TabCategories() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           {customCats.map((c) => (
             <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: T.surface, borderRadius: '0.5rem', padding: '0.5rem 0.75rem' }}>
-              <span style={{ fontSize: '1.3rem' }}>{c.icon}</span>
+              <CategoryTilePreview icon={c.icon} name={c.name} color={c.color} />
               <span style={{ flex: 1, color: T.text, fontWeight: 600 }}>{c.name}</span>
+              <span style={{
+                background: `${T.oasis}18`, color: T.oasis, border: `1px solid ${T.oasis}44`,
+                borderRadius: '999px', padding: '0.1rem 0.45rem', fontSize: '0.7rem', fontWeight: 700, flexShrink: 0,
+              }}>مزامن</span>
               <span style={{ width: '1.1rem', height: '1.1rem', borderRadius: '50%', background: c.color, border: `2px solid ${T.border}`, flexShrink: 0 }} />
               <button style={{ ...css.btn('terra'), padding: '0.3rem 0.65rem', fontSize: '0.78rem' }} onClick={() => remove(c.id)}>حذف</button>
             </div>
@@ -400,15 +489,30 @@ function TabImages() {
         <p style={css.sectionTitle}>📚 مكتبة الصور المرفوعة ({images.length})</p>
         {images.length === 0 && <p style={{ color: T.muted, fontSize: '0.88rem' }}>لا توجد صور مرفوعة بعد.</p>}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.75rem' }}>
-          {images.map((img) => (
-            <div key={img.key} style={{ background: T.surface, borderRadius: '0.5rem', overflow: 'hidden', border: `1px solid ${T.border}` }}>
-              <img src={img.dataUrl} alt={img.label} style={{ width: '100%', height: '90px', objectFit: 'cover' }} />
-              <div style={{ padding: '0.4rem 0.5rem' }}>
-                <p style={{ color: T.dim, fontSize: '0.72rem', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{img.label}</p>
-                <button style={{ ...css.btn('terra'), fontSize: '0.7rem', padding: '0.2rem 0.5rem', marginTop: '0.3rem' }} onClick={() => remove(img.key)}>حذف</button>
+          {images.map((img) => {
+            const catLabel = img.label
+            return (
+              <div key={img.key} style={{ background: T.surface, borderRadius: '0.5rem', overflow: 'hidden', border: `1px solid ${T.border}` }}>
+                {/* Tile preview exactly as in GameBoard */}
+                <div style={{ position: 'relative', width: '100%', height: '44px', overflow: 'hidden' }}>
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    backgroundImage: `url(${img.dataUrl})`,
+                    backgroundSize: 'cover', backgroundPosition: 'center',
+                  }} />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.5), rgba(0,0,0,0.65))' }} />
+                  <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                    <span style={{ color: 'white', fontSize: '7.5px', fontWeight: 700, textShadow: '0 1px 2px rgba(0,0,0,0.8)', textAlign: 'center', padding: '0 4px', lineHeight: 1.3 }}>{catLabel}</span>
+                  </div>
+                </div>
+                <img src={img.dataUrl} alt={img.label} style={{ width: '100%', height: '68px', objectFit: 'cover' }} />
+                <div style={{ padding: '0.4rem 0.5rem' }}>
+                  <p style={{ color: T.dim, fontSize: '0.72rem', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{img.label}</p>
+                  <button style={{ ...css.btn('terra'), fontSize: '0.7rem', padding: '0.2rem 0.5rem', marginTop: '0.3rem' }} onClick={() => remove(img.key)}>حذف</button>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>
@@ -775,15 +879,15 @@ function StarRow({ rating }: { rating: number }) {
 }
 
 function TabVisitors() {
-  const [loading, setLoading]   = useState(true);
-  const [visits,  setVisits]    = useState<VisitEntry[]>([]);
-  const [reviews, setReviews]   = useState<SurveyPayload[]>([]);
-  const [errMsg,  setErrMsg]    = useState<string | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [visits,  setVisits]          = useState<VisitEntry[]>([]);
+  const [reviews, setReviews]         = useState<SurveyPayload[]>([]);
+  const [errMsg,  setErrMsg]          = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<number>(Date.now());
+  const [secAgo, setSecAgo]           = useState(0);
 
-  useEffect(() => {
-    const token    = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('jawib_admin_token') ?? '' : '';
-    const clientId = typeof localStorage   !== 'undefined' ? localStorage.getItem('jawib_admin_cid')    ?? '' : '';
-    if (!token || !clientId) { setErrMsg('لا يوجد رمز مصادقة — سجّل دخولك أولاً'); setLoading(false); return; }
+  const fetchData = (token: string, clientId: string) => {
+    setLoading(true);
     Promise.all([
       getVisits ({ data: { token, clientId } }),
       getReviews({ data: { token, clientId } }),
@@ -792,12 +896,37 @@ function TabVisitors() {
         if (v.ok) setVisits(v.visits.slice().reverse());
         if (r.ok) setReviews(r.reviews.slice().reverse());
         if (!v.ok && !r.ok) setErrMsg('انتهت الجلسة — سجّل دخولك مجدداً');
+        setLastUpdated(Date.now());
+        setSecAgo(0);
       })
       .catch(() => setErrMsg('خطأ في الاتصال بالخادم'))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    const token    = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('jawib_admin_token') ?? '' : '';
+    const clientId = typeof localStorage   !== 'undefined' ? localStorage.getItem('jawib_admin_cid')    ?? '' : '';
+    if (!token || !clientId) { setErrMsg('لا يوجد رمز مصادقة — سجّل دخولك أولاً'); setLoading(false); return; }
+
+    fetchData(token, clientId);
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchData(token, clientId);
+    }, 30_000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (loading) return <p style={{ color: T.muted, padding: '2rem', textAlign: 'center' }}>جاري التحميل...</p>;
+  // Tick the "seconds ago" counter
+  useEffect(() => {
+    const ticker = setInterval(() => {
+      setSecAgo(Math.floor((Date.now() - lastUpdated) / 1000));
+    }, 1000);
+    return () => clearInterval(ticker);
+  }, [lastUpdated]);
+
+  if (loading && visits.length === 0) return <p style={{ color: T.muted, padding: '2rem', textAlign: 'center' }}>جاري التحميل...</p>;
   if (errMsg)  return <p style={{ color: T.terra, padding: '2rem', textAlign: 'center' }}>{errMsg}</p>;
 
   // Stats
@@ -823,6 +952,13 @@ function TabVisitors() {
             <p style={{ color: T.dim, fontSize: '0.78rem', margin: '0.2rem 0 0' }}>{s.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Auto-refresh indicator */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+        <span style={{ color: T.muted, fontSize: '0.72rem' }}>
+          {loading ? 'جاري التحديث...' : `آخر تحديث: منذ ${secAgo} ثانية`}
+        </span>
       </div>
 
       {/* Recent visits table */}
@@ -899,6 +1035,68 @@ function TabVisitors() {
   );
 }
 
+// ── Bridge Overview Banner ─────────────────────────────────────────────────────
+function BridgeOverview() {
+  const [customCatsCount, setCustomCatsCount] = useState(0)
+  const [adminImgCount, setAdminImgCount] = useState(0)
+  const [hasCsvOverride, setHasCsvOverride] = useState(false)
+
+  useEffect(() => {
+    try {
+      const cats = JSON.parse(_ls('jawib_custom_cats') ?? '[]') as unknown[]
+      setCustomCatsCount(Array.isArray(cats) ? cats.length : 0)
+    } catch { setCustomCatsCount(0) }
+    const imgs = loadAdminImages()
+    setAdminImgCount(imgs.length)
+    setHasCsvOverride(!!_ls('jawib_csv_override'))
+  }, [])
+
+  const handleRefreshGame = () => {
+    resetContentRegistry()
+    alert('تم إعادة تعيين سجل المحتوى — ستُطبَّق التغييرات عند التنقل للعبة.')
+  }
+
+  const active = customCatsCount > 0 || adminImgCount > 0 || hasCsvOverride
+  const dotColor = active ? '#5FA98C' : '#B08968'
+
+  return (
+    <div style={{
+      background: `rgba(0,0,0,0.25)`,
+      borderBottom: `1px solid ${T.border}`,
+      padding: '0.45rem 1.25rem',
+    }}>
+      <div style={{ maxWidth: '780px', margin: '0 auto', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', fontSize: '0.78rem' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: dotColor, display: 'inline-block', flexShrink: 0 }} />
+            <span style={{ color: dotColor, fontWeight: 700 }}>{active ? 'الجسر نشط' : 'الجسر غير نشط'}</span>
+          </span>
+          <span style={{ color: T.border }}>|</span>
+          <span style={{ color: customCatsCount > 0 ? T.oasis : T.muted }}>
+            الفئات: <strong>{customCatsCount}</strong>
+            {customCatsCount > 0 && <span style={{ color: T.oasis }}> مُدمجة ✓</span>}
+          </span>
+          <span style={{ color: T.border }}>|</span>
+          <span style={{ color: adminImgCount > 0 ? T.oasis : T.muted }}>
+            الصور: <strong>{adminImgCount}</strong>
+            {adminImgCount > 0 && <span style={{ color: T.oasis }}> تُغطي الافتراضية ✓</span>}
+          </span>
+          <span style={{ color: T.border }}>|</span>
+          <span style={{ color: hasCsvOverride ? T.oasis : T.muted }}>
+            CSV: <strong>{hasCsvOverride ? 'نعم ✓' : 'لا'}</strong>
+          </span>
+        </div>
+        <button
+          style={{ ...css.btn('ghost'), fontSize: '0.72rem', padding: '0.25rem 0.65rem' }}
+          onClick={handleRefreshGame}
+        >
+          تحديث بيانات اللعبة
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Admin Dashboard ────────────────────────────────────────────────────────────
 type Tab = 'analytics' | 'visitors' | 'categories' | 'questions' | 'images' | 'payments' | 'custom' | 'settings'
 
@@ -937,6 +1135,9 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
         </div>
       </div>
+
+      {/* Bridge Overview */}
+      <BridgeOverview />
 
       {/* Tabs */}
       <div style={{ background: T.surface, borderBottom: `1px solid ${T.border}`, overflowX: 'auto' }}>

@@ -31,8 +31,8 @@ export async function validateAdminToken(token: string, clientId: string): Promi
 export const adminLogin = createServerFn({ method: 'POST' })
   .inputValidator((data: unknown) => data as { username: string; password: string; clientId: string })
   .handler(async ({ data }) => {
-    const configUser = process.env['ADMIN_USERNAME'] ?? 'admin';
-    const configPass = process.env['ADMIN_PASSWORD'];
+    const configUser = (process.env['ADMIN_USERNAME'] ?? 'admin').trim();
+    const configPass = process.env['ADMIN_PASSWORD']?.trim();
 
     if (!configPass) {
       return { ok: false as const, error: 'not_configured' as const };
@@ -50,7 +50,7 @@ export const adminLogin = createServerFn({ method: 'POST' })
       };
     }
 
-    const valid = data.username === configUser && data.password === configPass;
+    const valid = data.username.trim() === configUser && data.password.trim() === configPass;
 
     if (valid) {
       _attempts.delete(mapKey);

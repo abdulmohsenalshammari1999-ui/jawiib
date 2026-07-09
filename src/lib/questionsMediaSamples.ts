@@ -1330,28 +1330,41 @@ export const MEDIA_SAMPLE_QUESTIONS: Question[] = [
 
   // ══════════════════════════════════════════════════════════════════════════
   // CHARADES — مثّل بدون كلام (QR private reveal)
-  // correctIndex: 0 = correct team guessed it
-  // options kept minimal — judging is done by host via CharadesQRScreen
+  // Words are SHORT and OBVIOUS so the actor can mime them immediately.
   // ══════════════════════════════════════════════════════════════════════════
-  qs({ id: 'ch-sports-1',   category: 'sport',       tier: 1, points: 100, type: 'charades', text: 'كرة القدم',        options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-sports-2',   category: 'sport',       tier: 2, points: 200, type: 'charades', text: 'السباحة',          options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-sports-3',   category: 'sport',       tier: 3, points: 300, type: 'charades', text: 'الجودو',           options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-animals-1',  category: 'animals',      tier: 1, points: 100, type: 'charades', text: 'الفيل',            options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-animals-2',  category: 'animals',      tier: 2, points: 200, type: 'charades', text: 'النسر',            options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-animals-3',  category: 'animals',      tier: 3, points: 300, type: 'charades', text: 'الحرباء',          options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-food-1',     category: 'food',         tier: 1, points: 100, type: 'charades', text: 'طبخ المجبوس',      options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-food-2',     category: 'food',         tier: 2, points: 200, type: 'charades', text: 'أكل الخبز بالتمر', options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-jobs-1',     category: 'culture',      tier: 1, points: 100, type: 'charades', text: 'الطبيب',           options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-jobs-2',     category: 'culture',      tier: 2, points: 200, type: 'charades', text: 'الغواص',           options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-jobs-3',     category: 'culture',      tier: 3, points: 300, type: 'charades', text: 'المصارع',          options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-hist-1',     category: 'world_history',tier: 2, points: 200, type: 'charades', text: 'نابليون بونابرت',  options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-hist-2',     category: 'world_history',tier: 3, points: 300, type: 'charades', text: 'يولي قيصر',        options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-tech-1',     category: 'science',         tier: 2, points: 200, type: 'charades', text: 'التصوير الفوتوغرافي', options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-tech-2',     category: 'science',         tier: 3, points: 300, type: 'charades', text: 'برمجة الكمبيوتر',  options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-music-1',    category: 'music',        tier: 1, points: 100, type: 'charades', text: 'العزف على العود',  options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-music-2',    category: 'music',        tier: 2, points: 200, type: 'charades', text: 'الغناء بميكروفون', options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-travel-1',   category: 'travel',       tier: 2, points: 200, type: 'charades', text: 'ركوب الجمل',       options: ['صح', 'غلط'], correctIndex: 0 }),
-  qs({ id: 'ch-travel-2',   category: 'travel',       tier: 3, points: 300, type: 'charades', text: 'التزلج على الجليد',options: ['صح', 'غلط'], correctIndex: 0 }),
+  // ── سهل جداً (100 نقطة) ─────────────────────────────────────────────────
+  qs({ id: 'ch-e-01', category: 'sport',        tier: 1, points: 100, type: 'charades', text: 'كرة القدم ⚽',    options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-02', category: 'animals',      tier: 1, points: 100, type: 'charades', text: 'قطة 🐱',          options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-03', category: 'food',         tier: 1, points: 100, type: 'charades', text: 'نوم 😴',           options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-04', category: 'culture',      tier: 1, points: 100, type: 'charades', text: 'طبيب 👨‍⚕️',         options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-05', category: 'sport',        tier: 1, points: 100, type: 'charades', text: 'سباحة 🏊',         options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-06', category: 'animals',      tier: 1, points: 100, type: 'charades', text: 'فيل 🐘',           options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-07', category: 'food',         tier: 1, points: 100, type: 'charades', text: 'بكاء 😢',          options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-08', category: 'culture',      tier: 1, points: 100, type: 'charades', text: 'طيار ✈️',          options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-09', category: 'music',        tier: 1, points: 100, type: 'charades', text: 'غناء 🎤',          options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-10', category: 'travel',       tier: 1, points: 100, type: 'charades', text: 'ركوب الجمل 🐪',    options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-11', category: 'sport',        tier: 1, points: 100, type: 'charades', text: 'تنس 🎾',           options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-12', category: 'animals',      tier: 1, points: 100, type: 'charades', text: 'سمكة 🐟',          options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-13', category: 'food',         tier: 1, points: 100, type: 'charades', text: 'أكل 🍽️',          options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-14', category: 'culture',      tier: 1, points: 100, type: 'charades', text: 'ضحك 😂',           options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-e-15', category: 'kuwait_history',tier:1, points: 100, type: 'charades', text: 'غواص لؤلؤ 🤿',     options: ['صح','غلط'], correctIndex: 0 }),
+  // ── متوسط (200 نقطة) ──────────────────────────────────────────────────
+  qs({ id: 'ch-m-01', category: 'sport',        tier: 2, points: 200, type: 'charades', text: 'رفع أثقال 🏋️',   options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-m-02', category: 'animals',      tier: 2, points: 200, type: 'charades', text: 'نسر 🦅',           options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-m-03', category: 'food',         tier: 2, points: 200, type: 'charades', text: 'طبخ المچبوس 🍛',   options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-m-04', category: 'culture',      tier: 2, points: 200, type: 'charades', text: 'مصارع 🤼',         options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-m-05', category: 'music',        tier: 2, points: 200, type: 'charades', text: 'عزف عود 🎸',       options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-m-06', category: 'travel',       tier: 2, points: 200, type: 'charades', text: 'تزلج 🎿',          options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-m-07', category: 'science',      tier: 2, points: 200, type: 'charades', text: 'تصوير 📷',         options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-m-08', category: 'kuwait_food',  tier: 2, points: 200, type: 'charades', text: 'شرب قهوة ☕',      options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-m-09', category: 'diwaniya',     tier: 2, points: 200, type: 'charades', text: 'لعب ورق 🃏',       options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-m-10', category: 'sport',        tier: 2, points: 200, type: 'charades', text: 'كرة سلة 🏀',       options: ['صح','غلط'], correctIndex: 0 }),
+  // ── صعب (300 نقطة) ────────────────────────────────────────────────────
+  qs({ id: 'ch-h-01', category: 'world_history',tier: 3, points: 300, type: 'charades', text: 'نابليون بونابرت 👑', options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-h-02', category: 'science',      tier: 3, points: 300, type: 'charades', text: 'برمجة كمبيوتر 💻',  options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-h-03', category: 'sport',        tier: 3, points: 300, type: 'charades', text: 'جودو 🥋',           options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-h-04', category: 'animals',      tier: 3, points: 300, type: 'charades', text: 'حرباء 🦎',          options: ['صح','غلط'], correctIndex: 0 }),
+  qs({ id: 'ch-h-05', category: 'science',      tier: 3, points: 300, type: 'charades', text: 'علاج نفسي 🧠',      options: ['صح','غلط'], correctIndex: 0 }),
   // visual charades — image shown on actor's phone via QR
   qs({
     id: 'ch-vis-1', category: 'flags_maps', tier: 2, points: 200, type: 'charades',

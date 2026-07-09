@@ -36,6 +36,7 @@ export function loadCustomGames(): CustomGame[] {
 }
 
 export function saveCustomGames(games: CustomGame[]): void {
+  if (typeof localStorage === 'undefined') return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(games));
 }
 
@@ -124,11 +125,13 @@ export function loadAdminImages(): AdminImage[] {
 }
 
 export function saveAdminImage(img: AdminImage): void {
+  if (typeof localStorage === 'undefined') return;
   const all = loadAdminImages().filter((i) => i.key !== img.key);
   localStorage.setItem(IMG_KEY, JSON.stringify([...all, img]));
 }
 
 export function deleteAdminImage(key: string): void {
+  if (typeof localStorage === 'undefined') return;
   localStorage.setItem(IMG_KEY, JSON.stringify(loadAdminImages().filter((i) => i.key !== key)));
 }
 

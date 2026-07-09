@@ -6,28 +6,46 @@ interface ImageMediaProps {
   src: string;
   alt?: string;
   caption?: string;
+  /** When provided alongside maxTimer, image starts blurred and clears as timer counts down */
+  progressive?: boolean;
+  timer?: number;
+  maxTimer?: number;
 }
 
-export function ImageMedia({ src, alt = '', caption }: ImageMediaProps) {
+export function ImageMedia({ src, alt = '', caption, progressive, timer, maxTimer }: ImageMediaProps) {
   const [zoomed, setZoomed] = useState(false);
+
+  // Progressive reveal: blur starts at 18px when timer = maxTimer, reaches 0 when timer ≤ 20% remaining
+  const blurPx = progressive && timer != null && maxTimer
+    ? Math.max(0, Math.round(18 * (timer / maxTimer) * 1.25))
+    : 0;
 
   return (
     <>
       <div
-        className="relative w-full rounded-2xl overflow-hidden cursor-zoom-in border border-jawwib-border shadow-sm"
-        onClick={() => setZoomed(true)}
-        style={{ maxHeight: '240px' }}
+        className="relative w-full rounded-2xl overflow-hidden border border-jawwib-border shadow-sm"
+        onClick={blurPx === 0 ? () => setZoomed(true) : undefined}
+        style={{ maxHeight: '240px', cursor: blurPx === 0 ? 'zoom-in' : 'default' }}
       >
         <img
           src={src}
           alt={alt}
           className="w-full h-full object-cover"
-          style={{ maxHeight: '240px' }}
+          style={{ maxHeight: '240px', filter: blurPx > 0 ? `blur(${blurPx}px)` : 'none', transition: 'filter 1s linear' }}
           loading="lazy"
         />
-        <div className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-          🔍 اضغط للتكبير
-        </div>
+        {blurPx > 0 && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-white/80 font-black text-sm bg-black/40 px-3 py-1 rounded-full">
+              🔍 الصورة تتضح مع الوقت...
+            </span>
+          </div>
+        )}
+        {blurPx === 0 && (
+          <div className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+            🔍 اضغط للتكبير
+          </div>
+        )}
       </div>
       {caption && (
         <p className="text-center text-xs text-jawwib-text-dim mt-1">{caption}</p>
@@ -103,12 +121,16 @@ export function AudioMedia({ src, duration, autoPlay = false, label }: AudioMedi
     else { el.play().then(() => setPlaying(true)).catch(() => {}); }
   };
 
-  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
+  const seekTo = (clientX: number, rect: DOMRect) => {
     const el = audioRef.current;
     if (!el || !total) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / rect.width;
-    el.currentTime = ratio * el.duration;
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const target = ratio * total;
+    if (isFinite(target)) el.currentTime = target;
+  };
+
+  const seek = (e: React.MouseEvent<HTMLDivElement>) => {
+    seekTo(e.clientX, e.currentTarget.getBoundingClientRect());
   };
 
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
@@ -232,7 +254,7 @@ export function VideoMedia({ src, caption, muted = false }: VideoMediaProps) {
             {playing ? '⏸ إيقاف' : '▶ تشغيل'}
           </button>
           <button
-            onClick={() => setFullscreen(true)}
+            onClick={() => { videoRef.current?.pause(); setPlaying(false); setFullscreen(true); }}
             className="text-white text-sm tap-target"
           >
             ⛶

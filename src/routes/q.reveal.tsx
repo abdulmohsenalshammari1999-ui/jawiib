@@ -15,7 +15,7 @@ interface RevealData {
 function decode(hash: string): RevealData | null {
   try {
     const raw = hash.startsWith('#') ? hash.slice(1) : hash
-    return JSON.parse(atob(raw)) as RevealData
+    return JSON.parse(decodeURIComponent(escape(atob(raw)))) as RevealData
   } catch {
     return null
   }

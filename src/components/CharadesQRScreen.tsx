@@ -71,7 +71,7 @@ export function CharadesQRScreen({
   disabled = false,
 }: CharadesQRScreenProps) {
   // QR URL is stable for the lifetime of this question instance
-  const revealUrl = useRef(buildRevealUrl(question, Date.now() + 90_000))
+  const revealUrl = useRef(typeof window !== 'undefined' ? buildRevealUrl(question, Date.now() + 90_000) : '')
   const [phase, setPhase] = useState<'scan' | 'acting'>('scan')
 
   // Auto-advance to acting after 30s (in case actor can't scan)

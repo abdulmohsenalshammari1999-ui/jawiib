@@ -313,8 +313,15 @@ export function QuestionCard({
         )}
 
         {/* Media */}
-        {question.mediaUrl && (qType === 'image' || qType === 'guess' || qType === 'scene' || qType === 'map') && (
+        {question.mediaUrl && (qType === 'image' || qType === 'guess' || qType === 'map') && (
           <div className="mb-4"><ImageMedia src={question.mediaUrl} alt={question.mediaAlt ?? question.text} /></div>
+        )}
+        {question.mediaUrl && qType === 'scene' && (
+          <div className="mb-4">
+            {/\.(mp4|webm|mov|ogg)(\?|$)/i.test(question.mediaUrl)
+              ? <VideoMedia src={question.mediaUrl} caption={question.mediaAlt} />
+              : <ImageMedia src={question.mediaUrl} alt={question.mediaAlt ?? question.text} progressive timer={timer} maxTimer={maxTimer} />}
+          </div>
         )}
         {question.mediaUrl && (qType === 'audio' || qType === 'identify') && (
           <div className="mb-4">
@@ -354,6 +361,7 @@ export function QuestionCard({
         {/* Ordering UI */}
         {qType === 'ordering' && (
           <OrderingUI
+            key={question.id}
             items={question.options}
             correctOrder={question.correctOrder ?? question.options.map((_, i) => i)}
             onResult={handleOrderingResult}

@@ -456,7 +456,12 @@ export function GameApp() {
       setPendingFullGame(null);
     } else if (game && localPlayerId) {
       const host = game.room.players.find((p) => p.id === localPlayerId);
-      if (host) { resetGame(); createRoom(host.name, false); }
+      if (host) {
+        const shuffled = [...ALL_CATS].sort(() => Math.random() - 0.5);
+        const fullCats = shuffled.slice(0, 5).map((c) => c.id) as CategoryId[];
+        resetGame();
+        createRoom(host.name, false, fullCats);
+      }
     }
   }, [pendingFullGame, game, localPlayerId, resetGame, createRoom, setMode, initTeams, assignTeam]);
 

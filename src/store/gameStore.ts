@@ -75,7 +75,7 @@ function buildBoard(selectedCategories: CategoryId[]): GameBoardCell[][] {
     const hardQ = globalPool.drawFromBuckets(cat, [4, 5, 6]);
     if (hardQ) row.push({ questionId: hardQ.id, category: cat, tier: 4, points: 600, answered: false });
     return row;
-  });
+  }).filter((row) => row.length > 0); // drop categories with no available questions
 }
 
 function buildCustomBoard(customQuestions: Question[]): { board: GameBoardCell[][]; cats: CategoryId[] } {
@@ -344,7 +344,8 @@ export const useGameStore = create<GameStoreState>()(
         if (current.timer <= 0) {
           // Delegate to answerQuestion so steal logic fires and board cell is marked answered.
           // Any answerIndex works — timeRemaining=0 forces timedOut=true in validateAnswer.
-          get().answerQuestion(current.activePlayer ?? '', 0);
+          const fallbackPlayer = current.activePlayer ?? current.room.players[0]?.id ?? '';
+          get().answerQuestion(fallbackPlayer, 0);
           return;
         }
         set({ game: { ...current, timer: current.timer - 1 } });
@@ -359,6 +360,7 @@ export const useGameStore = create<GameStoreState>()(
 
       // ── Steal phase answer ────────────────────────────────────────────────────
       if (game.phase === 'steal') {
+        if (_stealTimerRef !== null) { clearTimeout(_stealTimerRef); _stealTimerRef = null; }
         const question  = game.currentQuestion;
         const stealTeamId = game.stealOpponentTeamId;
         if (!stealTeamId) return;
@@ -558,14 +560,21 @@ export const useGameStore = create<GameStoreState>()(
         }
       }
 
+      // If immunity triggered, revert individual player score too (bomb/penalty must not apply)
+      if (immunityMsg) {
+        updatedPlayers = updatedPlayers.map((p) =>
+          p.id === playerId ? { ...p, score: player.score, streak: result.newStreak } : p
+        );
+      }
+
       // Toggle which team picks next
       const nextTeamId: TeamId | null = game.activeTeamId === 'alpha' ? 'beta'
         : game.activeTeamId === 'beta' ? 'alpha'
         : null;
 
-      // If immunity was active and wrong answer, override points to 0
+      // If immunity was active and wrong answer, override team and individual points to 0
       let adjustedFinalPoints = finalPoints;
-      if (immunityMsg && !result.correct && answeringTeamId && game.activeImmunity[answeringTeamId]) {
+      if (immunityMsg) {
         adjustedFinalPoints = 0;
       }
 
@@ -790,14 +799,15 @@ export const useGameStore = create<GameStoreState>()(
       const players = game.room.players.map((p) => ({ ...p, score: 0, streak: 0 }));
       const cats = game.room.categories;
       const playerIds = players.map((p) => p.id);
+      const rematchMode: 'ffa' | 'teams' = game.teamMembership ? 'teams' : 'ffa';
       globalPool.reset();
       const board = buildBoard(cats);
       engine.newGame(
         playerIds.map((id) => ({ id, teamId: null, streak: 0, coldStreak: 0, score: 0 })),
-        'ffa',
+        rematchMode,
         cats,
       );
-      useSabotageStore.getState().initGame('ffa', playerIds);
+      useSabotageStore.getState().initGame(rematchMode, playerIds);
       set({
         game: {
           ...game,

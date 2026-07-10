@@ -213,6 +213,12 @@ export function GameApp() {
     const g = useGameStore.getState().game;
     return !g || g.phase === 'lobby';
   });
+  // True when app launched into a persisted in-progress game — offer resume vs. fresh start
+  const [showResumePrompt, setShowResumePrompt] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const g = useGameStore.getState().game;
+    return !!g && g.phase !== 'lobby' && g.phase !== 'finished';
+  });
   const [scorePopup, setScorePopup]     = useState<{ points: number; color?: string } | null>(null);
   const [crowdVotes, setCrowdVotes]     = useState<{ correct: number; wrong: number }>({ correct: 0, wrong: 0 });
   const [volume, setVolume]             = useState(0.85);
@@ -771,6 +777,57 @@ export function GameApp() {
           >
             إلغاء والعودة
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Resume prompt — shown when app opens into a saved in-progress game ──────────
+  if (showResumePrompt && game && game.phase !== 'lobby' && game.phase !== 'finished') {
+    const isTeams = !!game.teamMembership;
+    const playerCount = game.room.players.length;
+    const phaseLabel: Record<string, string> = {
+      board: 'اختيار سؤال',
+      question: 'سؤال جارٍ',
+      steal: 'مرحلة السرقة',
+      result: 'نتيجة',
+    };
+    return (
+      <div className="min-h-screen bg-jawwib-bg flex flex-col items-center justify-center p-6 text-center" dir="rtl">
+        <div className="game-card p-8 max-w-sm w-full animate-fade-in space-y-4">
+          <div className="text-5xl">🎮</div>
+          <h2 className="font-black text-2xl text-jawwib-text">لعبة محفوظة</h2>
+          <div className="rounded-xl p-4 space-y-1" style={{ background: 'rgba(212,169,74,0.08)', border: '1px solid rgba(212,169,74,0.2)' }}>
+            <p className="text-jawwib-gold font-black text-sm">
+              {isTeams
+                ? `${game.teamDisplay?.alpha?.name ?? 'الفريق أ'} ضد ${game.teamDisplay?.beta?.name ?? 'الفريق ب'}`
+                : `${playerCount} لاعبين`}
+            </p>
+            <p className="text-jawwib-text-dim text-xs">
+              المرحلة: {phaseLabel[game.phase] ?? game.phase} · {game.room.categories.length} فئة
+            </p>
+          </div>
+          <p className="text-jawwib-text-dim text-sm">
+            هل تريد متابعة اللعبة المحفوظة أم تبدأ من جديد؟
+          </p>
+          <div className="flex flex-col gap-2 pt-1">
+            <button
+              onClick={() => setShowResumePrompt(false)}
+              className="btn-gold w-full py-3 text-base font-black"
+            >
+              ▶ متابعة اللعبة
+            </button>
+            <button
+              onClick={() => {
+                resetGame();
+                setShowResumePrompt(false);
+                setShowEntry(true);
+              }}
+              className="w-full py-2.5 rounded-xl text-sm font-bold text-jawwib-text-dim border border-jawwib-border tap-target"
+            >
+              بدء لعبة جديدة 🔄
+            </button>
+          </div>
         </div>
       </div>
     );

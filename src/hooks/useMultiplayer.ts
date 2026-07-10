@@ -66,8 +66,14 @@ export function useMultiplayer(
   const roleRef    = useRef(role);
   const optionsRef = useRef(options);
   const snapshotDone = useRef(false);
+  // Cache guest credentials so reconnect can re-announce even after
+  // guestName/guestId are cleared from parent state post-join
+  const cachedGuestRef = useRef<{ name: string; id: string } | null>(null);
   roleRef.current    = role;
   optionsRef.current = options;
+  if (options.guestName && options.guestId && !cachedGuestRef.current) {
+    cachedGuestRef.current = { name: options.guestName, id: options.guestId };
+  }
 
   // ── Message handler (same protocol regardless of transport) ──────────────
   const handleMessage = useCallback((msg: Record<string, unknown>) => {
@@ -153,13 +159,31 @@ export function useMultiplayer(
               const { type, ...payload } = msg;
               void ch.send({ type: 'broadcast', event: type as string, payload });
             };
-            // Guest announces itself
-            if (role === 'guest' && options.guestId && options.guestName) {
-              void ch.send({
-                type: 'broadcast',
-                event: 'GUEST_JOIN',
-                payload: { name: options.guestName, guestId: options.guestId, ts: Date.now() },
-              });
+
+            if (roleRef.current === 'host') {
+              // Re-broadcast current state immediately so any waiting guests catch up.
+              // This fires on both initial connect and reconnect after offline period.
+              const currentGame = useGameStore.getState().game;
+              if (currentGame) {
+                void ch.send({
+                  type: 'broadcast',
+                  event: 'HOST_SYNC',
+                  payload: { game: currentGame, playerId: localPlayerId },
+                });
+              }
+            } else if (roleRef.current === 'guest') {
+              // Announce (or re-announce after reconnect) using cached credentials
+              const guest = cachedGuestRef.current
+                ?? (options.guestId && options.guestName
+                  ? { id: options.guestId, name: options.guestName }
+                  : null);
+              if (guest) {
+                void ch.send({
+                  type: 'broadcast',
+                  event: 'GUEST_JOIN',
+                  payload: { name: guest.name, guestId: guest.id, ts: Date.now() },
+                });
+              }
             }
           } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
             setIsOnline(false);
@@ -178,13 +202,23 @@ export function useMultiplayer(
             if (socket.readyState === WebSocket.OPEN)
               socket.send(JSON.stringify(msg));
           };
-          if (role === 'guest' && options.guestId && options.guestName) {
-            socket.send(JSON.stringify({
-              type: 'GUEST_JOIN',
-              name: options.guestName,
-              guestId: options.guestId,
-              ts: Date.now(),
-            }));
+          if (roleRef.current === 'host') {
+            const currentGame = useGameStore.getState().game;
+            if (currentGame)
+              socket.send(JSON.stringify({ type: 'HOST_SYNC', game: currentGame, playerId: localPlayerId }));
+          } else if (roleRef.current === 'guest') {
+            const guest = cachedGuestRef.current
+              ?? (options.guestId && options.guestName
+                ? { id: options.guestId, name: options.guestName }
+                : null);
+            if (guest) {
+              socket.send(JSON.stringify({
+                type: 'GUEST_JOIN',
+                name: guest.name,
+                guestId: guest.id,
+                ts: Date.now(),
+              }));
+            }
           }
         });
         socket.addEventListener('close', () => setIsOnline(false));

@@ -128,6 +128,9 @@ export function GameApp() {
     if (typeof window === 'undefined') return false;
     return !!new URLSearchParams(window.location.search).get('join');
   });
+  // 'offline' = server not configured, 'timeout' = no response in 15 s
+  const [guestConnectError, setGuestConnectError] = useState<'offline' | 'timeout' | null>(null);
+
   // Stable guest ID that stays the same for this join session
   const guestIdRef = useRef<string>((() => {
     if (typeof window === 'undefined') return '';
@@ -143,6 +146,16 @@ export function GameApp() {
       window.history.replaceState({}, '', clean);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Connection error detection: immediately flag if server not configured,
+  // otherwise start a 15-second timeout so guests never spin forever.
+  useEffect(() => {
+    if (!guestConnecting) { setGuestConnectError(null); return; }
+    const partyHost = import.meta.env['VITE_PARTYKIT_HOST'] as string | undefined;
+    if (!partyHost) { setGuestConnectError('offline'); return; }
+    const id = setTimeout(() => setGuestConnectError('timeout'), 15_000);
+    return () => clearTimeout(id);
+  }, [guestConnecting]);
 
   // Multiplayer role: host if this device created the room, guest if joining via link
   const effectiveRoomCode = game?.room.code ?? guestJoinCode ?? undefined;
@@ -687,6 +700,51 @@ export function GameApp() {
 
   // ── Guest connecting screen ───────────────────────────────────────────────────
   if (guestConnecting) {
+    const cancelJoin = () => {
+      setGuestConnecting(false);
+      setGuestJoinCode(null);
+      setGuestJoinName(null);
+      setGuestConnectError(null);
+    };
+
+    if (guestConnectError) {
+      const isOffline = guestConnectError === 'offline';
+      return (
+        <div className="min-h-screen bg-jawwib-bg flex flex-col items-center justify-center p-6 text-center" dir="rtl">
+          <div className="game-card p-8 max-w-sm w-full animate-fade-in space-y-4">
+            <div className="text-5xl">{isOffline ? '📵' : '⏱️'}</div>
+            <h2 className="font-black text-xl text-jawwib-text">
+              {isOffline ? 'اللعب الأونلاين غير متاح' : 'تعذّر الاتصال'}
+            </h2>
+            <p className="text-jawwib-text-dim text-sm leading-relaxed">
+              {isOffline
+                ? 'خاصية اللعب عبر الإنترنت قيد التفعيل. يمكنك اللعب على نفس الجهاز في الوقت الحالي.'
+                : 'لم يستجب المضيف. قد تكون الغرفة مغلقة أو انتهت صلاحية الرمز.'}
+            </p>
+            {!isOffline && (
+              <p className="text-jawwib-gold text-sm font-bold tracking-widest">{guestJoinCode}</p>
+            )}
+            <div className="flex flex-col gap-2 pt-2">
+              {!isOffline && (
+                <button
+                  onClick={() => setGuestConnectError(null)}
+                  className="btn-gold w-full py-3 text-base font-black"
+                >
+                  حاول مجددًا
+                </button>
+              )}
+              <button
+                onClick={cancelJoin}
+                className="w-full py-2.5 rounded-xl text-sm font-bold text-jawwib-text-dim border border-jawwib-border tap-target"
+              >
+                العودة للرئيسية
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-jawwib-bg flex flex-col items-center justify-center p-6 text-center" dir="rtl">
         <div className="game-card p-8 max-w-sm w-full animate-fade-in">
@@ -698,7 +756,7 @@ export function GameApp() {
               {guestJoinCode}
             </span>
           </p>
-          <div className="flex justify-center gap-1.5">
+          <div className="flex justify-center gap-1.5 mb-6">
             {[0, 1, 2].map((i) => (
               <span
                 key={i}
@@ -708,8 +766,8 @@ export function GameApp() {
             ))}
           </div>
           <button
-            onClick={() => { setGuestConnecting(false); setGuestJoinCode(null); setGuestJoinName(null); }}
-            className="mt-6 text-xs text-jawwib-text-muted underline underline-offset-2 tap-target"
+            onClick={cancelJoin}
+            className="text-xs text-jawwib-text-muted underline underline-offset-2 tap-target"
           >
             إلغاء والعودة
           </button>

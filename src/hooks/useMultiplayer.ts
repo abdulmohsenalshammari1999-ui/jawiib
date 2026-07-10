@@ -2,24 +2,22 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import type { GameState } from '@/lib/types';
 
-const PARTYKIT_HOST = import.meta.env['VITE_PARTYKIT_HOST'] as string | undefined;
+const SUPABASE_URL      = import.meta.env['VITE_SUPABASE_URL']      as string | undefined;
+const SUPABASE_ANON_KEY = import.meta.env['VITE_SUPABASE_ANON_KEY'] as string | undefined;
+const PARTYKIT_HOST     = import.meta.env['VITE_PARTYKIT_HOST']     as string | undefined;
+
+// True when at least one backend is configured
+const ONLINE_CAPABLE = !!(SUPABASE_URL && SUPABASE_ANON_KEY) || !!PARTYKIT_HOST;
 
 export type MultiplayerRole = 'host' | 'guest' | 'offline';
 
 interface UseMultiplayerOptions {
-  /** Guest's display name — sent as GUEST_JOIN on connect */
   guestName?: string;
-  /** Guest's stable player ID — same ID used on host side */
   guestId?: string;
-  /** Host: called when a guest announces themselves */
   onGuestJoined?: (name: string, guestId: string) => void;
-  /** Guest: called once after the guest's ID appears in game.room.players */
   onSnapshotReceived?: () => void;
-  /** Host: guest relayed an answer — apply it to the game */
   onGuestAnswer?: (playerId: string, answerIndex: number) => void;
-  /** Host: guest selected a board question */
   onGuestSelectQuestion?: (playerId: string, questionId: string) => void;
-  /** Host: guest picked a draft category */
   onGuestDraftPick?: (categoryId: string) => void;
 }
 
@@ -33,207 +31,215 @@ interface UseMultiplayerResult {
   sendReaction: (emoji: string) => void;
 }
 
-/**
- * Manages online sync when VITE_PARTYKIT_HOST is set.
- *
- * Host: subscribes to game state changes and broadcasts via PartyKit.
- * Guest: receives HOST_SYNC and patches local game state from server.
- *   On connect, guest sends GUEST_JOIN so the host can register them.
- *   Host calls onGuestJoined() which triggers addPlayer() with the same ID.
- *
- * When VITE_PARTYKIT_HOST is not set, returns offline role with no-ops.
- */
+// ── Supabase Realtime transport ───────────────────────────────────────────────
+
+async function createSupabaseChannel(roomCode: string) {
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!);
+  return supabase.channel(`jawib-${roomCode.toLowerCase()}`, {
+    config: { broadcast: { self: false } }, // don't echo back to sender
+  });
+}
+
+type RealtimeChannel = Awaited<ReturnType<typeof createSupabaseChannel>>;
+
+// ── PartyKit transport ────────────────────────────────────────────────────────
+
+async function createPartySocket(host: string, roomCode: string) {
+  const PartySocket = (await import('partysocket')).default;
+  return new PartySocket({ host, room: roomCode.toLowerCase(), maxRetries: 10 });
+}
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
+
 export function useMultiplayer(
   roomCode: string | undefined,
   localPlayerId: string | undefined,
   role: MultiplayerRole,
   options: UseMultiplayerOptions = {},
 ): UseMultiplayerResult {
-  const [isOnline, setIsOnline]       = useState(false);
+  const [isOnline, setIsOnline]           = useState(false);
   const [onlinePlayers, setOnlinePlayers] = useState(1);
-  const socketRef  = useRef<import('partysocket').default | null>(null);
+
+  // Generic send function — swapped in once the channel is ready
+  const sendRef    = useRef<((msg: Record<string, unknown>) => void) | null>(null);
   const roleRef    = useRef(role);
   const optionsRef = useRef(options);
+  const snapshotDone = useRef(false);
   roleRef.current    = role;
   optionsRef.current = options;
-  const snapshotDone = useRef(false);
 
-  // ── Connect / disconnect ──────────────────────────────────────────────────
+  // ── Message handler (same protocol regardless of transport) ──────────────
+  const handleMessage = useCallback((msg: Record<string, unknown>) => {
+    switch (msg['type']) {
+      case 'ROOM_SNAPSHOT':
+      case 'HOST_SYNC': {
+        if (roleRef.current !== 'guest' || !msg['game']) break;
+        const incoming = msg['game'] as GameState;
+        useGameStore.setState({ game: incoming });
+        if (!snapshotDone.current) {
+          const guestId = optionsRef.current.guestId;
+          const confirmed = guestId
+            ? incoming.room.players.some((p) => p.id === guestId)
+            : true;
+          if (confirmed) {
+            snapshotDone.current = true;
+            optionsRef.current.onSnapshotReceived?.();
+          }
+        }
+        break;
+      }
+      case 'GUEST_JOIN': {
+        if (roleRef.current !== 'host') break;
+        const name    = msg['name']    as string | undefined;
+        const guestId = msg['guestId'] as string | undefined;
+        if (name && guestId) optionsRef.current.onGuestJoined?.(name, guestId);
+        break;
+      }
+      case 'GUEST_ANSWER': {
+        if (roleRef.current !== 'host') break;
+        const playerId    = msg['playerId']    as string | undefined;
+        const answerIndex = msg['answerIndex'] as number | undefined;
+        if (playerId && answerIndex !== undefined)
+          optionsRef.current.onGuestAnswer?.(playerId, answerIndex);
+        break;
+      }
+      case 'GUEST_SELECT_QUESTION': {
+        if (roleRef.current !== 'host') break;
+        const playerId   = msg['playerId']   as string | undefined;
+        const questionId = msg['questionId'] as string | undefined;
+        if (playerId && questionId)
+          optionsRef.current.onGuestSelectQuestion?.(playerId, questionId);
+        break;
+      }
+      case 'GUEST_DRAFT_PICK': {
+        if (roleRef.current !== 'host') break;
+        const categoryId = msg['categoryId'] as string | undefined;
+        if (categoryId) optionsRef.current.onGuestDraftPick?.(categoryId);
+        break;
+      }
+      case 'PLAYER_COUNT':
+        setOnlinePlayers(Number(msg['count']) || 1);
+        break;
+      default:
+        break;
+    }
+  }, []);
+
+  // ── Connect ───────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!PARTYKIT_HOST || !roomCode) return;
+    if (!ONLINE_CAPABLE || !roomCode) return;
 
-    let socket: import('partysocket').default;
+    let destroyed = false;
+    let supaChannel: RealtimeChannel | null = null;
+    let partySocket: import('partysocket').default | null = null;
 
     async function connect() {
-      const PartySocket = (await import('partysocket')).default;
-      socket = new PartySocket({
-        host: PARTYKIT_HOST!,
-        room: roomCode!.toLowerCase(),
-        maxRetries: 10,
-      });
+      if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+        // ── Supabase Realtime ──────────────────────────────────────────────
+        const ch = await createSupabaseChannel(roomCode!);
+        if (destroyed) { await ch.unsubscribe(); return; }
+        supaChannel = ch;
 
-      socket.addEventListener('open', () => {
-        setIsOnline(true);
-        socketRef.current = socket;
+        ch.on('broadcast', { event: '*' }, ({ event, payload }) => {
+          handleMessage({ type: event, ...(payload as Record<string, unknown>) });
+        });
 
-        // Guest announces themselves immediately on connect
-        if (roleRef.current === 'guest' && optionsRef.current.guestId && optionsRef.current.guestName) {
-          socket.send(JSON.stringify({
-            type: 'GUEST_JOIN',
-            name: optionsRef.current.guestName,
-            guestId: optionsRef.current.guestId,
-            ts: Date.now(),
-          }));
-        }
-      });
+        ch.subscribe((status) => {
+          if (destroyed) { void ch.unsubscribe(); return; }
+          if (status === 'SUBSCRIBED') {
+            setIsOnline(true);
+            sendRef.current = (msg) => {
+              const { type, ...payload } = msg;
+              void ch.send({ type: 'broadcast', event: type as string, payload });
+            };
+            // Guest announces itself
+            if (role === 'guest' && options.guestId && options.guestName) {
+              void ch.send({
+                type: 'broadcast',
+                event: 'GUEST_JOIN',
+                payload: { name: options.guestName, guestId: options.guestId, ts: Date.now() },
+              });
+            }
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            setIsOnline(false);
+          }
+        });
 
-      socket.addEventListener('close', () => setIsOnline(false));
+      } else if (PARTYKIT_HOST) {
+        // ── PartyKit fallback ──────────────────────────────────────────────
+        const socket = await createPartySocket(PARTYKIT_HOST, roomCode!);
+        if (destroyed) { socket.close(); return; }
+        partySocket = socket;
 
-      socket.addEventListener('message', (e) => {
-        try {
-          const msg = JSON.parse(e.data as string) as Record<string, unknown>;
-          handleMessage(msg);
-        } catch { void 0; }
-      });
+        socket.addEventListener('open', () => {
+          setIsOnline(true);
+          sendRef.current = (msg) => {
+            if (socket.readyState === WebSocket.OPEN)
+              socket.send(JSON.stringify(msg));
+          };
+          if (role === 'guest' && options.guestId && options.guestName) {
+            socket.send(JSON.stringify({
+              type: 'GUEST_JOIN',
+              name: options.guestName,
+              guestId: options.guestId,
+              ts: Date.now(),
+            }));
+          }
+        });
+        socket.addEventListener('close', () => setIsOnline(false));
+        socket.addEventListener('message', (e) => {
+          try { handleMessage(JSON.parse(e.data as string) as Record<string, unknown>); }
+          catch { void 0; }
+        });
+      }
     }
 
     void connect();
 
     return () => {
-      socket?.close();
-      socketRef.current = null;
+      destroyed = true;
+      sendRef.current = null;
       setIsOnline(false);
       snapshotDone.current = false;
+      if (supaChannel) void supaChannel.unsubscribe();
+      if (partySocket) partySocket.close();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomCode]);
 
-  // ── Message handler ───────────────────────────────────────────────────────
-  function handleMessage(msg: Record<string, unknown>) {
-    switch (msg['type']) {
-      case 'ROOM_SNAPSHOT':
-      case 'HOST_SYNC': {
-        if (roleRef.current === 'guest' && msg['game']) {
-          const incoming = msg['game'] as GameState;
-          useGameStore.setState({ game: incoming });
-          // Fire once — but only after our player ID appears in the game,
-          // so we know the host has processed our GUEST_JOIN.
-          if (!snapshotDone.current) {
-            const guestId = optionsRef.current.guestId;
-            const confirmed = guestId
-              ? incoming.room.players.some((p) => p.id === guestId)
-              : true; // no guestId = offline spectator, fire immediately
-            if (confirmed) {
-              snapshotDone.current = true;
-              optionsRef.current.onSnapshotReceived?.();
-            }
-          }
-        }
-        break;
-      }
-
-      case 'GUEST_JOIN': {
-        if (roleRef.current === 'host') {
-          const name    = msg['name'] as string | undefined;
-          const guestId = msg['guestId'] as string | undefined;
-          if (name && guestId) optionsRef.current.onGuestJoined?.(name, guestId);
-        }
-        break;
-      }
-
-      case 'GUEST_ANSWER': {
-        if (roleRef.current === 'host') {
-          const playerId    = msg['playerId'] as string | undefined;
-          const answerIndex = msg['answerIndex'] as number | undefined;
-          if (playerId && answerIndex !== undefined) {
-            optionsRef.current.onGuestAnswer?.(playerId, answerIndex);
-          }
-        }
-        break;
-      }
-
-      case 'GUEST_SELECT_QUESTION': {
-        if (roleRef.current === 'host') {
-          const playerId   = msg['playerId'] as string | undefined;
-          const questionId = msg['questionId'] as string | undefined;
-          if (playerId && questionId) {
-            optionsRef.current.onGuestSelectQuestion?.(playerId, questionId);
-          }
-        }
-        break;
-      }
-
-      case 'GUEST_DRAFT_PICK': {
-        if (roleRef.current === 'host') {
-          const categoryId = msg['categoryId'] as string | undefined;
-          if (categoryId) optionsRef.current.onGuestDraftPick?.(categoryId);
-        }
-        break;
-      }
-
-      case 'PLAYER_COUNT': {
-        setOnlinePlayers(Number(msg['count']) || 1);
-        break;
-      }
-
-      default:
-        break;
-    }
-  }
-
-  // ── Host: broadcast state on every game change ─────────────────��──────────
+  // ── Host: broadcast every Zustand state change ───────────────────────────
   useEffect(() => {
-    if (role !== 'host' || !PARTYKIT_HOST) return;
-
+    if (role !== 'host' || !ONLINE_CAPABLE) return;
     const unsub = useGameStore.subscribe(
-      (state) => state.game,
+      (s) => s.game,
       (game) => {
-        if (!game || !socketRef.current) return;
-        const socket = socketRef.current;
-        if (socket.readyState !== WebSocket.OPEN) return;
-        socket.send(JSON.stringify({ type: 'HOST_SYNC', game, playerId: localPlayerId }));
+        if (!game || !sendRef.current) return;
+        sendRef.current({ type: 'HOST_SYNC', game, playerId: localPlayerId });
       },
     );
     return unsub;
   }, [role, localPlayerId]);
 
-  // ── Guest: send answer to host via relay ─────────────────────��────────────
+  // ── Guest action senders ──────────────────────────────────────────────────
   const sendAnswer = useCallback((answerIndex: number) => {
-    const socket = socketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN) return;
-    socket.send(JSON.stringify({
-      type: 'GUEST_ANSWER',
-      playerId: localPlayerId,
-      answerIndex,
-      ts: Date.now(),
-    }));
+    sendRef.current?.({ type: 'GUEST_ANSWER', playerId: localPlayerId, answerIndex, ts: Date.now() });
   }, [localPlayerId]);
 
   const sendSelectQuestion = useCallback((questionId: string) => {
-    const socket = socketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN) return;
-    socket.send(JSON.stringify({
-      type: 'GUEST_SELECT_QUESTION',
-      playerId: localPlayerId,
-      questionId,
-      ts: Date.now(),
-    }));
+    sendRef.current?.({ type: 'GUEST_SELECT_QUESTION', playerId: localPlayerId, questionId, ts: Date.now() });
   }, [localPlayerId]);
 
   const sendDraftPick = useCallback((categoryId: string) => {
-    const socket = socketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN) return;
-    socket.send(JSON.stringify({ type: 'GUEST_DRAFT_PICK', playerId: localPlayerId, categoryId, ts: Date.now() }));
+    sendRef.current?.({ type: 'GUEST_DRAFT_PICK', playerId: localPlayerId, categoryId, ts: Date.now() });
   }, [localPlayerId]);
 
   const sendReaction = useCallback((emoji: string) => {
-    const socket = socketRef.current;
-    if (!socket || socket.readyState !== WebSocket.OPEN) return;
-    socket.send(JSON.stringify({ type: 'REACTION', playerId: localPlayerId, emoji, ts: Date.now() }));
+    sendRef.current?.({ type: 'REACTION', playerId: localPlayerId, emoji, ts: Date.now() });
   }, [localPlayerId]);
 
   // ── Offline fallback ──────────────────────────────────────────────────────
-  if (!PARTYKIT_HOST) {
+  if (!ONLINE_CAPABLE) {
     return {
       role: 'offline',
       isOnline: false,

@@ -25,7 +25,7 @@ export function EvidenceCard({ evidence }: Props) {
 
       <div className="px-4 pt-3.5 pb-4">
         {/* Label */}
-        <p className="text-[10px] font-black tracking-wider text-jawwib-gold uppercase mb-3 flex items-center gap-1">
+        <p className="text-xs font-black tracking-wide mb-3 flex items-center gap-1" style={{ color: '#B07D1A' }}>
           <span>💡</span>
           <span>لماذا هذه الإجابة الصحيحة؟</span>
         </p>
@@ -59,13 +59,13 @@ export function EvidenceCard({ evidence }: Props) {
           )}
 
           <div className="flex-1 min-w-0">
-            {/* Title */}
-            <p className="text-sm font-black text-jawwib-text leading-snug mb-1.5">
+            {/* Title — explicit dark brown so it reads on the parchment background */}
+            <p className="text-sm font-black leading-snug mb-1.5" style={{ color: '#2D1A06' }}>
               {evidence.title}
             </p>
 
-            {/* Description */}
-            <p className="text-sm leading-relaxed text-jawwib-text/80">
+            {/* Description — readable dark text on cream */}
+            <p className="text-sm leading-relaxed" style={{ color: '#4A2E0A', lineHeight: '1.65' }}>
               {evidence.description}
             </p>
 

@@ -178,10 +178,24 @@ export function QuestionCard({
     return () => clearTimeout(t);
   }, [question.id]);
 
-  const displayOptions = useMemo(
-    () => scrambledOptions ?? question.options,
-    [scrambledOptions, question.options]
-  );
+  // Always shuffle options so the correct answer has no positional/length tell.
+  // Re-shuffle only when the question changes; scrambledOptions (sabotage) override the base order.
+  const { displayOptions, displayCorrectIndex } = useMemo(() => {
+    const base = scrambledOptions ?? question.options;
+    const indices = base.map((_, i) => i);
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    const shuffled = indices.map((i) => base[i]);
+    const correctText = question.options[question.correctIndex];
+    const displayCorrect = shuffled.indexOf(correctText);
+    return {
+      displayOptions: shuffled,
+      displayCorrectIndex: displayCorrect >= 0 ? displayCorrect : question.correctIndex,
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [question.id, scrambledOptions]);
 
   const qType = question.type ?? 'text';
   const typeInfo = TYPE_LABELS[qType];
@@ -191,17 +205,15 @@ export function QuestionCard({
   const handleAnswer = (displayIdx: number) => {
     if (selected !== null || isActuallyDisabled) return;
     setSelected(displayIdx);
-    let trueIdx = displayIdx;
-    if (scrambledOptions) {
-      const opt = scrambledOptions[displayIdx];
-      trueIdx = question.options.indexOf(opt);
-    }
+    // Map display index back to original options index
+    const opt = displayOptions[displayIdx];
+    const trueIdx = question.options.indexOf(opt);
     if (suppressCorrectReveal) {
-      setTimeout(() => onAnswer(trueIdx), 300);
+      setTimeout(() => onAnswer(trueIdx >= 0 ? trueIdx : displayIdx), 300);
     } else {
       setTimeout(() => {
         setRevealed(true);
-        setTimeout(() => onAnswer(trueIdx), 350);
+        setTimeout(() => onAnswer(trueIdx >= 0 ? trueIdx : displayIdx), 350);
       }, 220);
     }
   };
@@ -228,7 +240,7 @@ export function QuestionCard({
         ? `${base} border-yellow-400 scale-[0.97]`
         : `${base} opacity-25`;
     }
-    const isCorrect = idx === question.correctIndex;
+    const isCorrect = idx === displayCorrectIndex;
     if (isSelected && isCorrect)  return `${base} border-jawwib-oasis bg-jawwib-oasis/15`;
     if (isSelected && !isCorrect) return `${base} border-jawwib-terra bg-jawwib-terra/15 animate-shake`;
     if (!isSelected && isCorrect) return `${base} border-jawwib-oasis/70 bg-jawwib-oasis/10`;
@@ -387,10 +399,10 @@ export function QuestionCard({
                   {OPTION_LABELS[idx]}
                 </span>
                 <span className="font-bold text-sm sm:text-base text-jawwib-text flex-1 leading-snug">{option}</span>
-                {revealed && idx === question.correctIndex && (
+                {revealed && idx === displayCorrectIndex && (
                   <span className="mr-2 text-jawwib-oasis text-base shrink-0 font-black">✓</span>
                 )}
-                {revealed && selected === idx && idx !== question.correctIndex && (
+                {revealed && selected === idx && idx !== displayCorrectIndex && (
                   <span className="mr-2 text-jawwib-terra text-base shrink-0 font-black">✗</span>
                 )}
               </button>

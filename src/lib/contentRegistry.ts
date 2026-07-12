@@ -6,8 +6,10 @@ import { loadCsvContent, parseCsvContent } from './csvLoader';
 import { questions } from './questions';
 import { categories } from './categories';
 import { globalPool } from '@/engine/questionPool';
+import { GENERATED_QUESTIONS } from '@/content/generatedQuestions';
 
 let _initialized = false;
+let _generatedInjected = false;
 
 /** Reset the initialization flag so initCsvContent() runs again on next call. */
 export function resetContentRegistry(): void {
@@ -17,6 +19,14 @@ export function resetContentRegistry(): void {
 export async function initCsvContent(url?: string): Promise<void> {
   if (_initialized) return;
   _initialized = true;
+
+  // Inject factory-generated questions once
+  if (!_generatedInjected) {
+    _generatedInjected = true;
+    const existingGenIds = new Set(questions.map((q) => q.id));
+    const freshGen = GENERATED_QUESTIONS.filter((q) => !existingGenIds.has(q.id));
+    questions.push(...freshGen);
+  }
 
   // Check for admin CSV override first
   const overrideCsv =

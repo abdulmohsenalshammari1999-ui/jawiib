@@ -781,7 +781,7 @@ function TabCustomGames() {
   const [games,         setGames]         = useState<CustomGame[]>(loadCustomGames)
   const [selected,      setSelected]      = useState<CustomGame | null>(null)
   const [adding,        setAdding]        = useState(false)
-  const [newGameForm,   setNewGameForm]   = useState({ name: '', emoji: '🎮', color: T.gold, description: '' })
+  const [newGameForm,   setNewGameForm]   = useState({ name: '', emoji: '🎮', color: T.gold as string, description: '' })
   const [questionForm,  setQuestionForm]  = useState({ text: '', option0: '', option1: '', option2: '', option3: '', correctIndex: 0, points: 200, imageUrl: '' })
   const [qMsg,          setQMsg]          = useState<string | null>(null)
   const imgRef = useRef<HTMLInputElement>(null)

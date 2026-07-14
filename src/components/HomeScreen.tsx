@@ -124,14 +124,45 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, onCustomGame
           {onMysteryGame && (
             <button
               onClick={onMysteryGame}
-              className="w-full py-3 text-sm font-bold rounded-xl border-2 transition-all flex items-center justify-center gap-2"
-              style={{ borderColor: 'rgba(78,143,224,0.4)', color: '#4E8FE0', background: 'rgba(78,143,224,0.07)' }}
+              className="w-full rounded-2xl text-right transition-all hover:scale-[1.01] active:scale-[.99]"
+              style={{
+                background: 'linear-gradient(135deg,#120709 0%,#1A0B0E 60%,#0F1015 100%)',
+                border: '1.5px solid rgba(139,0,0,.55)',
+                boxShadow: '0 4px 24px rgba(139,0,0,.22), inset 0 1px 0 rgba(255,255,255,.04)',
+                padding: 0, overflow: 'hidden',
+              }}
             >
-              <span>🔍</span>
-              <span>مَن الفاعل؟</span>
-              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-black" style={{ background: '#4E8FE0', color: '#fff' }}>
-                جديد
-              </span>
+              {/* Crime tape stripe */}
+              <div style={{ height: '4px', background: 'repeating-linear-gradient(45deg,#8B0000 0,#8B0000 8px,transparent 8px,transparent 16px)' }} />
+              <div style={{ padding: '14px 16px 16px' }}>
+                {/* Header row */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '22px' }}>🔍</span>
+                    <div>
+                      <p style={{ fontSize: '15px', fontWeight: 900, color: '#EDEEF0', margin: 0, lineHeight: 1 }}>مَن الفاعل؟</p>
+                      <p style={{ fontSize: '9.5px', color: '#A6A9AE', margin: '2px 0 0' }}>لعبة تحقيق تعاونية</p>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '9px', fontWeight: 900, padding: '3px 7px', borderRadius: '5px', background: '#8B0000', color: '#fff', letterSpacing: '.04em' }}>جديد</span>
+                </div>
+                {/* Suspects row */}
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '10px' }}>
+                  {['👨‍💼','👩‍🏫','🧔','👩','👦','🤵'].map((e) => (
+                    <span key={e} style={{ fontSize: '16px', padding: '4px 5px', background: 'rgba(255,255,255,.04)', borderRadius: '7px', border: '1px solid rgba(255,255,255,.07)' }}>{e}</span>
+                  ))}
+                </div>
+                {/* Feature tags */}
+                <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                  {['🎙️ أصوات مجسّمة','📋 دفتر أدلة','🤝 تعاون الفريق','🎭 216 قضية'].map((tag) => (
+                    <span key={tag} style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '12px', background: 'rgba(255,255,255,.06)', color: '#A6A9AE', border: '1px solid rgba(255,255,255,.08)' }}>{tag}</span>
+                  ))}
+                </div>
+                {/* CTA */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '9px', borderRadius: '10px', background: 'linear-gradient(135deg,#8B0000,#5C0000)', boxShadow: '0 3px 12px rgba(139,0,0,.5)' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 900, color: '#fff' }}>ابدأ التحقيق</span>
+                </div>
+              </div>
             </button>
           )}
         </div>

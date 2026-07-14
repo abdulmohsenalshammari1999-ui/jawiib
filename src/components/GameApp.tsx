@@ -41,6 +41,7 @@ import { TeamWeaponInventory } from './game/TeamWeaponInventory';
 import { ConfirmModal } from './ConfirmModal';
 import { CharadesQRScreen } from './CharadesQRScreen';
 import { SplashScreen } from './SplashScreen';
+import { MurderMysteryScreen } from './screens/MurderMysteryScreen';
 
 type SubView = 'setup' | 'lobby' | 'teams' | 'draft';
 
@@ -201,6 +202,7 @@ export function GameApp() {
       setShowSplash(true);
     }
   }, []);
+  const [mysteryActive, setMysteryActive] = useState(false);
   const [subView, setSubView]           = useState<SubView>('lobby');
   const [showPayment, setShowPayment]   = useState(false);
   const [pendingFullGame, setPendingFullGame] = useState<{ name: string; cats?: CategoryId[]; mode: 'ffa' | 'teams'; isQuick?: boolean } | null>(null);
@@ -862,6 +864,17 @@ export function GameApp() {
     );
   }
 
+  // ── Mystery mode ──────────────────────────────────────────────────────────────
+  if (mysteryActive) {
+    return (
+      <MurderMysteryScreen
+        onExit={() => setMysteryActive(false)}
+        alphaName={teams.alpha.name}
+        betaName={teams.beta.name}
+      />
+    );
+  }
+
   // ── Guard: no game ────────────────────────────────────────────────────────────
   if (!game) {
     return (
@@ -870,6 +883,7 @@ export function GameApp() {
         onJoinRoom={(name, code) => handleJoinRoom(name, code)}
         onQuickPlay={handleQuickPlay}
         onCustomGame={handleCustomGame}
+        onMysteryGame={() => setMysteryActive(true)}
         accountName={account?.name}
         accountAvatar={account?.avatar}
       />

@@ -9,6 +9,7 @@ interface HomeScreenProps {
   onJoinRoom: (name: string, code: string) => void;
   onQuickPlay?: (name: string) => void;
   onCustomGame?: (game: CustomGame, playerName: string) => void;
+  onMysteryGame?: () => void;
   accountName?: string;
   accountAvatar?: string;
 }
@@ -16,7 +17,7 @@ interface HomeScreenProps {
 type View = 'main' | 'create' | 'join' | 'quickplay' | 'customgame';
 type GameMode = 'ffa' | 'teams';
 
-export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, onCustomGame, accountName, accountAvatar }: HomeScreenProps) {
+export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, onCustomGame, onMysteryGame, accountName, accountAvatar }: HomeScreenProps) {
   const [view, setView]               = useState<View>('main');
   const [playerName, setPlayerName]   = useState(accountName ?? '');
   const [roomCode, setRoomCode]       = useState('');
@@ -117,6 +118,19 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, onCustomGame
               <span>لعبة مخصصة</span>
               <span className="text-[9px] px-1.5 py-0.5 rounded-full font-black" style={{ background: '#C85A34', color: '#fff' }}>
                 مميز
+              </span>
+            </button>
+          )}
+          {onMysteryGame && (
+            <button
+              onClick={onMysteryGame}
+              className="w-full py-3 text-sm font-bold rounded-xl border-2 transition-all flex items-center justify-center gap-2"
+              style={{ borderColor: 'rgba(78,143,224,0.4)', color: '#4E8FE0', background: 'rgba(78,143,224,0.07)' }}
+            >
+              <span>🔍</span>
+              <span>مَن الفاعل؟</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-black" style={{ background: '#4E8FE0', color: '#fff' }}>
+                جديد
               </span>
             </button>
           )}

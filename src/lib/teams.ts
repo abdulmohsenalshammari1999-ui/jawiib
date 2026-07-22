@@ -1,8 +1,8 @@
 import type { Team, TeamId } from './types';
 
 export const TEAM_DEFS: Record<TeamId, Omit<Team, 'playerIds' | 'score'>> = {
-  alpha: { id: 'alpha', name: 'الفريق الأزرق', color: '#3B82F6', accent: 'blue', emoji: '🔵' },
-  beta:  { id: 'beta',  name: 'الفريق الأحمر', color: '#EF4444', accent: 'red',  emoji: '🔴' },
+  alpha: { id: 'alpha', name: 'الفريق الأزرق', color: '#1A5FA8', accent: 'blue', emoji: '🔵' },
+  beta:  { id: 'beta',  name: 'الفريق الأحمر', color: '#B82118', accent: 'red',  emoji: '🔴' },
 };
 
 export function createTeams(): Record<TeamId, Team> {

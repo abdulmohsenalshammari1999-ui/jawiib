@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Apple Privacy Manifest — required since May 2024 for apps that use
+  "required reason" APIs. This file must be copied into the Xcode project
+  at: App/App/PrivacyInfo.xcprivacy
+  Run: sh native/setup.sh   after every `npx cap sync ios`
+-->
+<plist version="1.0">
+<dict>
+  <!-- We do NOT track users across apps/websites -->
+  <key>NSPrivacyTracking</key>
+  <false/>
+
+  <!-- No tracking domains -->
+  <key>NSPrivacyTrackingDomains</key>
+  <array/>
+
+  <!-- No collected data types sent off-device -->
+  <key>NSPrivacyCollectedDataTypes</key>
+  <array/>
+
+  <!-- Required-reason APIs this app uses -->
+  <key>NSPrivacyAccessedAPITypes</key>
+  <array>
+    <dict>
+      <!-- UserDefaults / localStorage — used by Zustand persist (game state, settings) -->
+      <key>NSPrivacyAccessedAPIType</key>
+      <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+      <key>NSPrivacyAccessedAPITypeReasons</key>
+      <array>
+        <!-- CA92.1: read/write only values the app itself wrote -->
+        <string>CA92.1</string>
+      </array>
+    </dict>
+  </array>
+</dict>
+</plist>

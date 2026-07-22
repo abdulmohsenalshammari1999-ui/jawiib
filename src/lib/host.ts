@@ -98,6 +98,32 @@ function randomFrom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+// Simple post-processing to adapt masculine host messages to feminine/neutral forms
+const MALE_TO_FEMALE: [RegExp, string][] = [
+  [/يا بطل/g,         'يا بطلة'],
+  [/ذكي ذكي/g,        'ذكية ذكية'],
+  [/\bذكي\b/g,        'ذكية'],
+  [/عبقري/g,          'عبقرية'],
+  [/يا ولد/g,         'يا بنت'],
+  [/يا ذيب/g,         'يا ذيبة'],
+  [/حافظ مو/g,        'حافظة مو'],
+  [/\bحافظ\b/g,       'حافظة'],
+  [/مبدع/g,           'مبدعة'],
+  [/نايم/g,           'نايمة'],
+  [/تتفلسف علينا/g,   'تتفلسفين علينا'],
+  [/تستاهل/g,         'تستاهلين'],
+  [/ما تعلّم/g,       'ما تعلّمتي'],
+  [/يا بعدي/g,        'يا بعدي'],
+  [/يا قلبي عليك/g,   'يا قلبي عليكِ'],
+];
+
+export function genderize(msg: string, gender: 'male' | 'female' | 'neutral'): string {
+  if (gender !== 'female') return msg;
+  let out = msg;
+  for (const [pat, rep] of MALE_TO_FEMALE) out = out.replace(pat, rep);
+  return out;
+}
+
 export function getWelcomeMessage(): string {
   return randomFrom(welcomeMessages);
 }
@@ -148,4 +174,136 @@ export function getGameOverMessage(isWinner: boolean): string {
 
 export function getIdleMessage(): string {
   return randomFrom(idleMessages);
+}
+
+export function getMysteryBoxMessage(): string {
+  return randomFrom([
+    'ثلاثة صح ورا بعض! يستاهلون صندوق الغموض! 🎁',
+    'سلسلة ذهبية! الصندوق يفتح — الله يستر إيش فيه 🎲',
+    'ماشاء الله! سلسلة صح = صندوق أسلحة! 🏆',
+  ]);
+}
+
+export function getWeaponEarnedMessage(weapon: string): string {
+  const names: Record<string, string> = {
+    timer_bomb:      'قنبلة الوقت 💣',
+    immunity:        'درع الحصانة 🛡️',
+    forced_category: 'فرض الفئة 🎯',
+    ask_friend:      'اتصل بصديق 📞',
+    extra_time:      'وقت إضافي ⏱️',
+  };
+  return `كسبتم سلاح: ${names[weapon] ?? weapon}! استخدموه بحكمة 😈`;
+}
+
+export function getWeaponUsedTimerBomb(): string {
+  return randomFrom([
+    'قنبلة الوقت انطلقت! وقت الخصم نص! ⏱️💣',
+    'تكتك... الخصم بيجاوب بنص الوقت! 💥',
+  ]);
+}
+
+export function getWeaponUsedImmunity(): string {
+  return randomFrom([
+    'الحصانة نشطة! إذا غلطتوا المرة الجاية ما راح تخسرون شي 🛡️',
+    'درع الحماية جاهز! سؤال مضمون بدون خسارة 🔰',
+  ]);
+}
+
+export function getWeaponUsedForcedCategory(catName: string): string {
+  return `فرضتوا على الخصم: ${catName}! لازم يجاوب منها 🎯`;
+}
+
+export function getWeaponUsedAskFriend(): string {
+  return randomFrom([
+    'اتصلوا بصديق! +25 ثانية على الوقت 📞⏱️',
+    'صديق المشوار! الوقت زاد — استخدموه صح 🤝',
+  ]);
+}
+
+export function getWeaponUsedExtraTime(): string {
+  return randomFrom([
+    'تمديد الوقت! عندكم فرصة ذهبية ⏱️✨',
+    '+15 ثانية! استخدموها بحكمة 🕐💛',
+  ]);
+}
+
+export function getStealPhaseMessage(teamName: string): string {
+  return randomFrom([
+    `فرصة السرقة! ${teamName} عندهم 30 ثانية يجاوبون! 🎯⚡`,
+    `${teamName} يحاولون يسرقون النقاط — يلا اجاوبوا صح! 🏴‍☠️`,
+    `السرقة المشروعة! ${teamName} الفرصة جاءتكم! 👀`,
+  ]);
+}
+
+export function getStealSuccessMessage(teamName: string): string {
+  return randomFrom([
+    `سرقة ناجحة! ${teamName} خطفوا النقاط 🎉💰`,
+    `${teamName} اجابوا صح وسرقوا السؤال! 🏴‍☠️✅`,
+  ]);
+}
+
+export function getStealFailMessage(): string {
+  return randomFrom([
+    'انتهت فرصة السرقة — السؤال بلا نقاط! 💀',
+    'الاثنين غلطوا — السؤال يمشي بدون نقاط 😅',
+  ]);
+}
+
+export function getImmunityProtectedMessage(): string {
+  return randomFrom([
+    'الحصانة أنقذتكم! الغلطة راحت بدون عقوبة 🛡️✨',
+    'درع الحماية شتغل! ما خسرتوا شي 🔰',
+  ]);
+}
+
+export function getForcedCategoryActiveMessage(catName: string): string {
+  return `تحذير: الخصم فرض عليكم فئة "${catName}" — لازم تختارون منها! 🎯`;
+}
+
+export function getFinalQuestionMessage(): string {
+  return randomFrom([
+    'الآن أو لا! 🔥 هذا آخر سؤال والتاريخ بيُكتب الحين!',
+    'السؤال الأخير! 💀 كل شي بيتقرر — بدّ الله يا ناس!',
+    'الساعة الحاسمة! ⚡ آخر سؤال والنتيجة على الكف!',
+    'النهاية جاءت! 🏆 من بيثبّت قدمه في اللحظة الأخيرة؟',
+  ]);
+}
+
+export function getLastStandMessage(): string {
+  return randomFrom([
+    '🛡️ صمود أخير! الفريق يراهن كل شي — إذا صح 3 أضعاف!',
+    '💪 آخر رصاصة نشطة! اجاوبوا صح واقلبوا الطاولة!',
+    '🃏 الورقة الأخيرة! 3 أضعاف على المحك — يلا بقلب جريء!',
+  ]);
+}
+
+export function getBahrCelebrationMessage(): string {
+  return randomFrom([
+    'فريق البحر يهدر! 🌊 أبناء الغوص والتجارة ما يعرفون الخسارة!',
+    'البحر يلمع! 💎 مثل اللؤلؤ في الأعماق — نادر وثمين!',
+    'أبناء البحر! 🌊 رجال الموج والرياح والنجوم — ما ييخافون!',
+  ]);
+}
+
+export function getBurCelebrationMessage(): string {
+  return randomFrom([
+    'فريق البر يثور! 🐪 أبناء القوافل ما في طريق يوقفهم!',
+    'البر يصرخ! 🦅 مثل الصقر فوق الرمال — حاد وسريع!',
+    'أبناء البر! 🐪 رجال الصحراء والضيافة — كلامهم أقوى من الصخر!',
+  ]);
+}
+
+export function getStreakHypeMessage(streak: number): string {
+  if (streak >= 5) return randomFrom([
+    `👑 سلسلة ذهبية ${streak}! هذا مو إنسان هذا أسطورة!`,
+    `🔥×${streak} الصواريخ بلا توقف! المنافسين ابتكروا عذر جاهز 😂`,
+  ]);
+  if (streak >= 4) return randomFrom([
+    `💥 أربعة متتالية! الفريق المقابل يعيد حساباته 😤`,
+    `🔥🔥🔥🔥 ستريك ${streak}! وين هالعقل كان مختبي؟`,
+  ]);
+  return randomFrom([
+    `🔥 ثلاثة صح! شوفوا — عندهم نار الحين! 🏆`,
+    `ستريك ${streak}! المنافسين يبون يطقون الشاشة 💥`,
+  ]);
 }

@@ -36,6 +36,7 @@ export interface RoomStoreState {
   // Actions ─────────────────────────────────────────────────────────────────
   setMode: (mode: GameMode) => void;
   initTeams: () => void;
+  renameTeam: (teamId: TeamId, name: string) => void;
   assignTeam: (playerId: string, teamId: TeamId) => void;
   autoAssign: (playerId: string) => TeamId;
   removePlayer: (playerId: string) => void;
@@ -74,6 +75,9 @@ export const useRoomStore = create<RoomStoreState>()(
     setMode: (mode) => set({ mode }),
 
     initTeams: () => set({ teams: createTeams() }),
+
+    renameTeam: (teamId, name) =>
+      set((s) => ({ teams: { ...s.teams, [teamId]: { ...s.teams[teamId], name: name.trim() || s.teams[teamId].name } } })),
 
     assignTeam: (playerId, teamId) =>
       set((s) => ({ teams: applyTeamAssignment(s.teams, playerId, teamId) })),
@@ -152,6 +156,19 @@ export const useRoomStore = create<RoomStoreState>()(
             selectedSabotage: null,
             sabotageTarget: null,
             lastAnswer: snapshot.lastAnswer,
+            teamMembership: null,
+            activeTeamId: null,
+            teamStreaks: {},
+            teamWeapons: {},
+            pendingWeapon: null,
+            activeBomb: null,
+            activeImmunity: {},
+            forcedCategory: null,
+            stealOpponentTeamId: null,
+            lastStandActive: null,
+            lastStandUsed: {},
+            teamScores: {},
+            teamDisplay: null,
           },
         });
       }

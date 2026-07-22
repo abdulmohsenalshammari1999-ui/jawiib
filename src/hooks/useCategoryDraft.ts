@@ -11,8 +11,8 @@ export interface CategoryDraftHook {
   isDraftMode: boolean;
   isMyTeamsTurn: boolean;
   startDraft: (picksPerTeam?: number) => void;
-  pick: (categoryId: CategoryId) => void;
-  skipDraft: () => void;
+  pick: (categoryId: CategoryId) => DraftState | null;
+  skipDraft: () => CategoryId[];
   selectedCategories: CategoryId[];
   alphaCategories: CategoryId[];
   betaCategories: CategoryId[];
@@ -43,21 +43,27 @@ export function useCategoryDraft(): CategoryDraftHook {
     setDraft(mgr.state);
   }, []);
 
-  const pick = useCallback((categoryId: CategoryId) => {
-    if (!manager || !draft || draft.isComplete) return;
-    if (draft.currentTeam !== localTeamId) return; // not your turn
+  const pick = useCallback((categoryId: CategoryId): DraftState | null => {
+    if (!manager || !draft || draft.isComplete) return null;
+    const storeState = useGameStore.getState();
+    const isHost = storeState.localPlayerId
+      ? storeState.game?.room.hostId === storeState.localPlayerId
+      : false;
+    if (!isHost && draft.currentTeam !== localTeamId) return null;
     try {
       const next = manager.pick(draft.currentTeam, categoryId);
       setDraft({ ...next });
+      return next;
     } catch {
-      // invalid pick — ignore
+      return null;
     }
   }, [manager, draft, localTeamId]);
 
-  const skipDraft = useCallback(() => {
-    if (!manager) return;
+  const skipDraft = useCallback((): CategoryId[] => {
+    if (!manager) return [];
     const completed = manager.autoComplete(localTeamId ?? 'alpha');
     setDraft({ ...completed });
+    return completed.picks.map((p) => p.categoryId);
   }, [manager, localTeamId]);
 
   return {

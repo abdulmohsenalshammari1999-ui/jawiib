@@ -2,10 +2,20 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { useRoomStore } from '@/store/roomStore';
 import { useSabotageStore } from '@/store/sabotageStore';
+import { useUIStore } from '@/store/uiStore';
+import { useAccountStore } from '@/store/accountStore';
 import { useHostMessage } from '@/hooks/useHostMessage';
 import { useCategoryDraft } from '@/hooks/useCategoryDraft';
 import { useQuestionFlow } from '@/hooks/useQuestionFlow';
-import type { CategoryId } from '@/lib/types';
+import { audio } from '@/lib/audio';
+import { globalPool } from '@/engine/questionPool';
+import { initCsvContent } from '@/lib/contentRegistry';
+import { recordVisit } from '@/serverFunctions/analytics';
+import { customGameToQuestions, type CustomGame } from '@/lib/customGames';
+import { applySeasonalBodyClass, APP_CONFIG } from '@/lib/appConfig';
+import { hapticSuccess, hapticError, hapticSelection } from '@/lib/haptics';
+import { useMultiplayer } from '@/hooks/useMultiplayer';
+import type { CategoryId, TeamId } from '@/lib/types';
 import { categories as ALL_CATS } from '@/lib/categories';
 import { HomeScreen } from './HomeScreen';
 import { Lobby } from './Lobby';
@@ -20,35 +30,77 @@ import { SabotageControls } from './game/SabotageControls';
 import { EffectToast } from './game/EffectToast';
 import { ScorePopup } from './game/ScorePopup';
 import { CategoryDraftScreen } from './screens/CategoryDraftScreen';
+import { TeamSetupScreen } from './TeamSetupScreen';
+import { FeedbackModal } from './FeedbackModal';
+import type { GameContext } from './FeedbackModal';
+import { EntryScreen, type StartMode } from './EntryScreen';
+import { RegisterScreen } from './RegisterScreen';
+import { GameLoadingScreen } from './GameLoadingScreen';
+import { MysteryBoxOverlay } from './game/MysteryBoxOverlay';
+import { TeamWeaponInventory } from './game/TeamWeaponInventory';
+import { ConfirmModal } from './ConfirmModal';
+import { CharadesQRScreen } from './CharadesQRScreen';
+import { SplashScreen } from './SplashScreen';
+import { MurderMysteryScreen } from './screens/MurderMysteryScreen';
 
-type SubView = 'lobby' | 'teams' | 'draft';
+type SubView = 'setup' | 'lobby' | 'teams' | 'draft';
+
+// ── Team colors ───────────────────────────────────────────────────────────────
+const ALPHA_COLOR = '#5FA98C';
+const BETA_COLOR  = '#C85A34';
+function teamColor(id: TeamId | null | undefined): string | null {
+  if (id === 'alpha') return ALPHA_COLOR;
+  if (id === 'beta')  return BETA_COLOR;
+  return null;
+}
 
 export function GameApp() {
-  // ── Store slices ─────────────────────────────────────────────────────────────
-  const game            = useGameStore((s) => s.game);
-  const localPlayerId   = useGameStore((s) => s.localPlayerId);
-  const answeredCount   = useGameStore((s) => s.answeredCount);
-  const createRoom      = useGameStore((s) => s.createRoom);
-  const addPlayer       = useGameStore((s) => s.addPlayer);
-  const startGame       = useGameStore((s) => s.startGame);
-  const selectQuestion  = useGameStore((s) => s.selectQuestion);
-  const answerQuestion  = useGameStore((s) => s.answerQuestion);
-  const returnToBoard   = useGameStore((s) => s.returnToBoard);
-  const resetGame       = useGameStore((s) => s.resetGame);
-  const updateCategories = useGameStore((s) => s.updateCategories);
-  const rematch         = useGameStore((s) => s.rematch);
+  // ── Store slices ──────────────────────────────────────────────────────────────
+  const game             = useGameStore((s) => s.game);
+  const localPlayerId    = useGameStore((s) => s.localPlayerId);
+  const answeredCount    = useGameStore((s) => s.answeredCount);
+  const createRoom       = useGameStore((s) => s.createRoom);
+  const addPlayer        = useGameStore((s) => s.addPlayer);
+  const startGame        = useGameStore((s) => s.startGame);
+  const selectQuestion   = useGameStore((s) => s.selectQuestion);
+  const answerQuestion   = useGameStore((s) => s.answerQuestion);
+  const returnToBoard    = useGameStore((s) => s.returnToBoard);
+  const triggerStealPhase = useGameStore((s) => s.triggerStealPhase);
+  const resetGame        = useGameStore((s) => s.resetGame);
+  const updateCategories  = useGameStore((s) => s.updateCategories);
+  const updateDraftPhase  = useGameStore((s) => s.updateDraftPhase);
+  const setLocalPlayerId  = useGameStore((s) => s.setLocalPlayerId);
+  const rematch           = useGameStore((s) => s.rematch);
 
-  const mode       = useRoomStore((s) => s.mode);
-  const teams      = useRoomStore((s) => s.teams);
-  const setMode    = useRoomStore((s) => s.setMode);
-  const initTeams  = useRoomStore((s) => s.initTeams);
-  const assignTeam = useRoomStore((s) => s.assignTeam);
-  const autoAssign = useRoomStore((s) => s.autoAssign);
+  const setTeamMembership    = useGameStore((s) => s.setTeamMembership);
+  const dismissPendingWeapon = useGameStore((s) => s.dismissPendingWeapon);
+  const activateLastStand    = useGameStore((s) => s.activateLastStand);
+  const activateWeaponFromBox = useGameStore((s) => s.activateWeaponFromBox);
+  const skipSteal            = useGameStore((s) => s.skipSteal);
+  const resumeTimers         = useGameStore((s) => s.resumeTimers);
 
-  // Sabotage effects for question screen
+  const mode        = useRoomStore((s) => s.mode);
+  const teams       = useRoomStore((s) => s.teams);
+  const setMode     = useRoomStore((s) => s.setMode);
+  const initTeams   = useRoomStore((s) => s.initTeams);
+  const renameTeam  = useRoomStore((s) => s.renameTeam);
+  const assignTeam  = useRoomStore((s) => s.assignTeam);
+  const autoAssign  = useRoomStore((s) => s.autoAssign);
+  const resetRoom   = useRoomStore((s) => s.resetRoom);
+
   const activeEffects = useSabotageStore((s) => s.activeEffects);
   const lastResult    = useSabotageStore((s) => s.lastResult);
   const scrambles     = useSabotageStore((s) => s.scrambles);
+
+  const soundEnabled  = useUIStore((s) => s.soundEnabled);
+  const musicEnabled  = useUIStore((s) => s.musicEnabled);
+  const tvMode        = useUIStore((s) => s.tvMode);
+  const toggleSound   = useUIStore((s) => s.toggleSound);
+  const toggleMusic   = useUIStore((s) => s.toggleMusic);
+  const toggleTvMode  = useUIStore((s) => s.toggleTvMode);
+
+  const account       = useAccountStore((s) => s.account);
+  const recordGame    = useAccountStore((s) => s.recordGame);
 
   const hasBomb   = localPlayerId ? activeEffects.some((e) => e.type === 'bomb'   && e.targetPlayerId === localPlayerId) : false;
   const hasDouble = localPlayerId ? activeEffects.some((e) => e.type === 'double' && e.fromPlayerId   === localPlayerId) : false;
@@ -57,24 +109,229 @@ export function GameApp() {
     ? Object.values(scrambled).map((idx) => game.currentQuestion!.options[idx as number])
     : null;
 
-  // ── Hooks ────────────────────────────────────────────────────────────────────
+  // ── Hooks ─────────────────────────────────────────────────────────────────────
   useHostMessage();
   const qflow = useQuestionFlow();
   const draft  = useCategoryDraft();
 
+  // ── Remote-join via share link: read ?join=CODE&name=NAME from URL ────────────
+  const [guestJoinCode, setGuestJoinCode] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const p = new URLSearchParams(window.location.search);
+    return p.get('join')?.toUpperCase().replace(/\s/g, '') ?? null;
+  });
+  const [guestJoinName, setGuestJoinName] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const p = new URLSearchParams(window.location.search);
+    return p.get('name') ?? null;
+  });
+  const [guestConnecting, setGuestConnecting] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !!new URLSearchParams(window.location.search).get('join');
+  });
+  // 'offline' = server not configured, 'timeout' = no response in 15 s
+  const [guestConnectError, setGuestConnectError] = useState<'offline' | 'timeout' | null>(null);
+
+  // Stable guest ID that stays the same for this join session
+  const guestIdRef = useRef<string>((() => {
+    if (typeof window === 'undefined') return '';
+    const p = new URLSearchParams(window.location.search);
+    if (!p.get('join')) return '';
+    return `g-${Math.random().toString(36).slice(2, 9)}`;
+  })());
+
+  // Clear URL params after reading so refreshes don't re-join
+  useEffect(() => {
+    if (guestJoinCode) {
+      const clean = window.location.pathname;
+      window.history.replaceState({}, '', clean);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Connection error detection: immediately flag if server not configured,
+  // otherwise start a 15-second timeout so guests never spin forever.
+  useEffect(() => {
+    if (!guestConnecting) { setGuestConnectError(null); return; }
+    const partyHost = import.meta.env['VITE_PARTYKIT_HOST'] as string | undefined;
+    if (!partyHost) { setGuestConnectError('offline'); return; }
+    const id = setTimeout(() => setGuestConnectError('timeout'), 15_000);
+    return () => clearTimeout(id);
+  }, [guestConnecting]);
+
+  // Multiplayer role: host if this device created the room, guest if joining via link
+  const effectiveRoomCode = game?.room.code ?? guestJoinCode ?? undefined;
+  const isHost = !guestJoinCode && (!game || game.room.players[0]?.id === localPlayerId);
+  const mpRole = !effectiveRoomCode
+    ? 'offline' as const
+    : isHost ? 'host' as const : 'guest' as const;
+
+  const mp = useMultiplayer(effectiveRoomCode, localPlayerId ?? undefined, mpRole, {
+    guestName: guestJoinName ?? undefined,
+    guestId: guestIdRef.current || undefined,
+    onSnapshotReceived: () => {
+      // Guest is now confirmed in game — set their local identity then clear connecting state.
+      // Do NOT call addPlayer — host already added them; game state arrived via HOST_SYNC.
+      if (guestIdRef.current) setLocalPlayerId(guestIdRef.current);
+      setGuestConnecting(false);
+      setGuestJoinCode(null);
+      setGuestJoinName(null);
+      setShowEntry(false);
+    },
+    onGuestJoined: (name, id) => {
+      // Host received GUEST_JOIN — addPlayer with explicit ID so host's localPlayerId is NOT overwritten.
+      addPlayer(name, id);
+    },
+    onGuestAnswer: (playerId, answerIndex) => {
+      answerQuestion(playerId, answerIndex);
+    },
+    onGuestSelectQuestion: (_playerId, questionId) => {
+      selectQuestion(questionId);
+    },
+    onGuestDraftPick: (categoryId) => {
+      const next = draft.pick(categoryId as import('@/lib/types').CategoryId);
+      if (next) updateDraftPhase(next.picks, next.currentTeam, next.isComplete);
+    },
+  });
+
   // ── Local state ───────────────────────────────────────────────────────────────
-  const [subView, setSubView]         = useState<SubView>('lobby');
-  const [showPayment, setShowPayment] = useState(false);
-  // Score popup state
-  const [scorePopup, setScorePopup]   = useState<{ points: number; color?: string } | null>(null);
-  const prevLastAnswer = useRef(game?.lastAnswer);
+  // Always false on SSR to avoid hydration mismatch; set on client after mount
+  const [showSplash, setShowSplash]     = useState(false);
+  useEffect(() => {
+    if (!sessionStorage.getItem('jawib_splash_shown')) {
+      sessionStorage.setItem('jawib_splash_shown', '1');
+      setShowSplash(true);
+    }
+  }, []);
+  const [mysteryActive, setMysteryActive] = useState(false);
+  const [subView, setSubView]           = useState<SubView>('lobby');
+  const [showPayment, setShowPayment]   = useState(false);
+  const [pendingFullGame, setPendingFullGame] = useState<{ name: string; cats?: CategoryId[]; mode: 'ffa' | 'teams'; isQuick?: boolean } | null>(null);
+  const [showIntro, setShowIntro]       = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [picksPerTeam, setPicksPerTeam] = useState(3);
+  // Lazy-init: skip entry screen if a game is already in progress from persisted state
+  const [showEntry, setShowEntry]       = useState(() => {
+    const g = useGameStore.getState().game;
+    return !g || g.phase === 'lobby';
+  });
+  // True when app launched into a persisted in-progress game — offer resume vs. fresh start
+  const [showResumePrompt, setShowResumePrompt] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const g = useGameStore.getState().game;
+    return !!g && g.phase !== 'lobby' && g.phase !== 'finished';
+  });
+  const [scorePopup, setScorePopup]     = useState<{ points: number; color?: string } | null>(null);
+  const [crowdVotes, setCrowdVotes]     = useState<{ correct: number; wrong: number }>({ correct: 0, wrong: 0 });
+  const [volume, setVolume]             = useState(0.85);
+  const [showVolume, setShowVolume]     = useState(false);
+  // Board pick timer — 45s countdown during board phase in teams mode
+  const [boardPickTimer, setBoardPickTimer] = useState<number | null>(null);
+  // Steal handoff — host must tap "pass device" before steal answers are enabled
+  const [stealHandoffDone, setStealHandoffDone] = useState(false);
+
+  const prevLastAnswer    = useRef(game?.lastAnswer);
+  const prevPhase         = useRef(game?.phase);
+  const prevTimer         = useRef(game?.timer ?? 0);
+  const prevActiveTeamId  = useRef(game?.activeTeamId);
+
+  // Load CSV questions + apply seasonal theme + init IAP on native + record visit
+  useEffect(() => {
+    initCsvContent().catch(() => {});
+    applySeasonalBodyClass();
+    // Track this visit (fire-and-forget — never block the game)
+    recordVisit({
+      data: {
+        playerName: account?.name ?? 'زائر',
+        platform:   navigator.platform,
+        userAgent:  navigator.userAgent,
+      },
+    }).catch(() => {});
+    // Warm up RevenueCat on native so the first price fetch is instant
+    if (APP_CONFIG.platform !== 'web' && APP_CONFIG.revenueCatApiKey) {
+      import('@/lib/iap').then(({ fetchProductInfo }) => fetchProductInfo()).catch(() => {});
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep audio volume in sync
+  useEffect(() => { audio.setVolume(volume); }, [volume]);
+  useEffect(() => { audio.setSound(soundEnabled); }, [soundEnabled]);
+  useEffect(() => { audio.setMusic(musicEnabled); }, [musicEnabled]);
+
+  // TV mode is applied via data-tv prop on each game-wrapper div (see phase renders below)
+
+  // ── Restore persisted game session on mount ───────────────────────────────
+  useEffect(() => {
+    const g = useGameStore.getState().game;
+    if (!g) return;
+    if (g.teamMembership) {
+      setMode('teams');
+      initTeams();
+      if (g.teamDisplay) {
+        renameTeam('alpha', g.teamDisplay.alpha.name);
+        renameTeam('beta',  g.teamDisplay.beta.name);
+      }
+      g.teamMembership.alpha.forEach((id) => assignTeam(id, 'alpha'));
+      g.teamMembership.beta.forEach((id)  => assignTeam(id, 'beta'));
+    }
+    if (g.phase === 'question' || g.phase === 'steal') resumeTimers();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Board pick timer ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (game?.phase === 'board' && mode === 'teams') setBoardPickTimer(45);
+    else setBoardPickTimer(null);
+  }, [game?.phase, mode]);
+
+  useEffect(() => {
+    if (boardPickTimer === null || game?.phase !== 'board') return;
+    if (boardPickTimer <= 0) {
+      const forced = (game.forcedCategory?.targetTeamId === game.activeTeamId)
+        ? game.forcedCategory!.categoryId : null;
+      const pool = game.board.flatMap((row) =>
+        row.filter((c) => !c.answered && (!forced || c.category === forced))
+      );
+      const fallback = game.board.flatMap((r) => r.filter((c) => !c.answered));
+      const candidates = pool.length > 0 ? pool : fallback;
+      if (candidates.length > 0) {
+        const cell = candidates[Math.floor(Math.random() * candidates.length)];
+        audio.playTick();
+        selectQuestion(cell.questionId);
+      }
+      return;
+    }
+    const t = setTimeout(() => setBoardPickTimer((n) => (n !== null ? n - 1 : null)), 1000);
+    return () => clearTimeout(t);
+  }, [boardPickTimer, game?.phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset steal handoff gate when steal phase begins
+  useEffect(() => {
+    if (game?.phase === 'steal') setStealHandoffDone(false);
+  }, [game?.phase]);
+
+  // Reset crowd votes on each new question
+  useEffect(() => {
+    if (game?.phase === 'question') setCrowdVotes({ correct: 0, wrong: 0 });
+  }, [game?.currentQuestion?.id, game?.phase]);
+
+  // Steal phase audio cue
+  useEffect(() => {
+    if (game?.phase === 'steal') audio.playStealPhase();
+  }, [game?.phase]);
 
   // Reset sub-view when game starts
   useEffect(() => {
     if (game?.phase === 'board') setSubView('lobby');
   }, [game?.phase]);
 
-  // Show score popup on answer result
+  // Auto-start draft when entering draft subView
+  useEffect(() => {
+    if (subView === 'draft' && mode === 'teams' && draft.draft === null) {
+      draft.startDraft(picksPerTeam);
+    }
+  }, [subView]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Score popup + audio on answer result
   useEffect(() => {
     if (game?.lastAnswer && game.lastAnswer !== prevLastAnswer.current) {
       prevLastAnswer.current = game.lastAnswer;
@@ -84,22 +341,109 @@ export function GameApp() {
         setScorePopup({ points: pts, color });
         setTimeout(() => setScorePopup(null), 1800);
       }
+      if (game.lastAnswer.correct) {
+        audio.playCorrect();
+        void hapticSuccess();
+        if (Math.abs(pts) >= 400) setTimeout(() => audio.playScore(true), 300);
+        else audio.playScore(false);
+      } else {
+        audio.playWrong();
+        void hapticError();
+      }
     }
   }, [game?.lastAnswer]);
 
+  // Timer ticking audio
+  useEffect(() => {
+    const t = game?.timer ?? 0;
+    if ((game?.phase === 'question' || game?.phase === 'steal') && t < prevTimer.current && t > 0) {
+      if (t <= 5) audio.playFinalTick();
+      else if (t <= 9) audio.playTick();
+    }
+    prevTimer.current = t;
+  }, [game?.timer, game?.phase]);
+
+  // Winner fanfare + persist seen questions + record account stats
+  useEffect(() => {
+    if (game?.phase === 'finished' && prevPhase.current !== 'finished') {
+      setTimeout(() => audio.playWinner(), 400);
+      audio.stopTeamBGM();
+      audio.stopBGM();
+      globalPool.persistAndReset();
+
+      // Record game result to account stats
+      if (account && localPlayerId) {
+        const myPlayer = game.room.players.find((p) => p.id === localPlayerId);
+        const myPoints = myPlayer?.score ?? 0;
+        let won = false;
+        if (mode === 'teams' && game.teamMembership && game.teamScores) {
+          const myTeam = game.teamMembership.alpha.includes(localPlayerId) ? 'alpha' : 'beta';
+          const oppTeam = myTeam === 'alpha' ? 'beta' : 'alpha';
+          won = (game.teamScores[myTeam] ?? 0) > (game.teamScores[oppTeam] ?? 0);
+        } else {
+          const sorted = [...game.room.players].sort((a, b) => b.score - a.score);
+          won = sorted[0]?.id === localPlayerId;
+        }
+        recordGame(won, myPoints);
+      }
+    }
+    prevPhase.current = game?.phase;
+  }, [game?.phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Team BGM: switch loops on active team change ───────────────────────────
+  useEffect(() => {
+    const prev = prevActiveTeamId.current;
+    const next = game?.activeTeamId;
+
+    if (prev !== next) {
+      if (prev && next && game?.phase === 'board' && mode === 'teams') {
+        audio.playTurnChange();
+      }
+      if (next && mode === 'teams' && game?.phase === 'board') {
+        if (musicEnabled) audio.playTeamBGM(next);
+      }
+    }
+    prevActiveTeamId.current = next;
+  }, [game?.activeTeamId, game?.phase, mode, musicEnabled]);
+
+  // Also start team BGM when entering question/steal phase for the active team
+  useEffect(() => {
+    if (!game || mode !== 'teams') return;
+    const tid = game.activeTeamId ?? (game.phase === 'steal' ? game.stealOpponentTeamId : null);
+    if ((game.phase === 'question' || game.phase === 'steal') && tid && musicEnabled) {
+      audio.playTeamBGM(tid);
+    }
+    if (game.phase === 'board' && !game.activeTeamId) {
+      audio.stopTeamBGM();
+    }
+  }, [game?.phase, musicEnabled, mode]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Callbacks ─────────────────────────────────────────────────────────────────
+  // Payment is active only on web builds with a payment channel configured.
+  // On native (ios/android), IAP is handled by purchaseGame() directly — this
+  // flag stays false so the external-URL paths are dead code Vite can eliminate.
+  const paymentConfigured = APP_CONFIG.platform === 'web' &&
+    !!(APP_CONFIG.supportWhatsApp || import.meta.env['VITE_PAYMENT_URL']);
+
   const handleCreateRoom = useCallback(
     (name: string, isTrial: boolean, cats?: CategoryId[], gameMode?: 'ffa' | 'teams') => {
-      const m = gameMode ?? 'ffa';
+      const m = gameMode ?? 'teams';
+      if (!isTrial && paymentConfigured) {
+        // Gate full game behind payment — store pending params and show modal
+        setPendingFullGame({ name, cats, mode: m });
+        setShowPayment(true);
+        return { playerId: '' };
+      }
       setMode(m);
-      const result = createRoom(name, isTrial, cats);
+      const result = createRoom(name, false, cats);
       if (m === 'teams') {
         initTeams();
         assignTeam(result.playerId, 'alpha');
+        setSubView('setup');
       }
       return result;
     },
-    [createRoom, setMode, initTeams, assignTeam]
+    [createRoom, setMode, initTeams, assignTeam, paymentConfigured]
   );
 
   const handleJoinRoom = useCallback(
@@ -114,19 +458,118 @@ export function GameApp() {
   );
 
   const handlePurchase = useCallback(() => {
-    setShowPayment(false);
-    if (game && localPlayerId) {
-      const host = game.room.players.find((p) => p.id === localPlayerId);
-      if (host) { resetGame(); createRoom(host.name, false); }
-    }
-  }, [game, localPlayerId, resetGame, createRoom]);
+    const paymentUrl = import.meta.env['VITE_PAYMENT_URL'] as string | undefined;
+    if (paymentUrl) window.open(paymentUrl, '_blank', 'noopener,noreferrer');
+  }, []);
 
-  // Draft → update categories → back to lobby
+  const handlePurchaseConfirmed = useCallback(() => {
+    setShowPayment(false);
+    if (pendingFullGame) {
+      const { name, cats, mode: m, isQuick } = pendingFullGame;
+      setMode(m);
+      const result = createRoom(name, false, cats);
+      if (m === 'teams') {
+        initTeams();
+        assignTeam(result.playerId, 'alpha');
+        // Quick play skips naming/team-setup, goes straight to lobby
+        if (!isQuick) setSubView('setup');
+      }
+      setPendingFullGame(null);
+    } else if (game && localPlayerId) {
+      const host = game.room.players.find((p) => p.id === localPlayerId);
+      if (host) {
+        const shuffled = [...ALL_CATS].sort(() => Math.random() - 0.5);
+        const fullCats = shuffled.slice(0, 5).map((c) => c.id) as CategoryId[];
+        resetGame();
+        createRoom(host.name, false, fullCats);
+      }
+    }
+  }, [pendingFullGame, game, localPlayerId, resetGame, createRoom, setMode, initTeams, assignTeam]);
+
+  const handleQuickPlay = useCallback(
+    (name: string) => {
+      const shuffled = [...ALL_CATS].sort(() => Math.random() - 0.5);
+      const cats = shuffled.slice(0, 5).map((c) => c.id) as CategoryId[];
+      if (paymentConfigured) {
+        setPendingFullGame({ name, cats, mode: 'teams', isQuick: true });
+        setShowPayment(true);
+        return;
+      }
+      setMode('teams');
+      const result = createRoom(name, false, cats);
+      initTeams();
+      assignTeam(result.playerId, 'alpha');
+      // Don't go to setup — jump straight to lobby
+    },
+    [createRoom, setMode, initTeams, assignTeam, paymentConfigured]
+  );
+
+  const handleCustomGame = useCallback(
+    (customGame: CustomGame, playerName: string) => {
+      const qs = customGameToQuestions(customGame);
+      if (qs.length === 0) return;
+      setMode('ffa');
+      createRoom(playerName, false, undefined, qs);
+    },
+    [createRoom, setMode]
+  );
+
+  // Direct-start from the new compact EntryScreen — skips TeamSetup + CategoryDraft
+  const handleDirectStart = useCallback(
+    (name: string, startMode: StartMode) => {
+      setShowEntry(false);
+      if (startMode === 'quick') {
+        handleQuickPlay(name);
+        return;
+      }
+      const shuffled = [...ALL_CATS].sort(() => Math.random() - 0.5);
+      const cats = shuffled.slice(0, 6).map((c) => c.id) as CategoryId[];
+      if (!paymentConfigured) {
+        setMode(startMode);
+        const result = createRoom(name, false, cats);
+        if (startMode === 'teams') {
+          initTeams();
+          assignTeam(result.playerId, 'alpha');
+          // stay at subView='lobby' — no setup screen
+        }
+      } else {
+        setPendingFullGame({ name, cats, mode: startMode });
+        setShowPayment(true);
+      }
+    },
+    [handleQuickPlay, createRoom, setMode, initTeams, assignTeam, paymentConfigured]
+  );
+
   const handleDraftComplete = useCallback(() => {
     const cats = draft.selectedCategories as CategoryId[];
     if (cats.length >= 2) updateCategories(cats);
+    // Clear draftPhase from game state so guests leave the draft screen
+    updateDraftPhase([], 'alpha', true);
     setSubView('lobby');
-  }, [draft.selectedCategories, updateCategories]);
+  }, [draft.selectedCategories, updateCategories, updateDraftPhase]);
+
+  const handleStartGame = useCallback(() => { setShowIntro(true); }, []);
+
+  const handleIntroDone = useCallback(() => {
+    setShowIntro(false);
+    if (mode === 'teams') {
+      setTeamMembership(
+        teams.alpha.playerIds, teams.beta.playerIds,
+        teams.alpha.name, (teams.alpha as any).emoji,
+        teams.beta.name,  (teams.beta  as any).emoji,
+      );
+    }
+    startGame();
+  }, [startGame, mode, teams, setTeamMembership]);
+
+  const handleSelectQuestion = useCallback(
+    (qid: string) => {
+      audio.playTick();
+      void hapticSelection();
+      selectQuestion(qid);
+    },
+    [selectQuestion]
+  );
 
   // ── Derived ───────────────────────────────────────────────────────────────────
   const teamData = mode === 'teams' ? {
@@ -141,25 +584,308 @@ export function GameApp() {
     return null;
   })();
 
-  const activeTeamColor = localTeamId === 'alpha' ? '#3B82F6' : localTeamId === 'beta' ? '#EF4444' : null;
+  const activeTeamColor = mode === 'teams' && game?.activeTeamId
+    ? teamColor(game.activeTeamId)
+    : localTeamId === 'alpha' ? ALPHA_COLOR : localTeamId === 'beta' ? BETA_COLOR : null;
 
-  // ── Winner team (for finished phase) ──────────────────────────────────────────
   const winnerTeamData = (() => {
     if (!game || mode !== 'teams' || !teamData) return null;
-    const alphaScore = game.room.players.filter((p) => teamData.alpha.playerIds.includes(p.id)).reduce((s, p) => s + p.score, 0);
-    const betaScore  = game.room.players.filter((p) => teamData.beta.playerIds.includes(p.id)).reduce((s, p) => s + p.score, 0);
+    const alphaScore = game.teamScores?.alpha
+      ?? game.room.players.filter((p) => teamData.alpha.playerIds.includes(p.id)).reduce((s, p) => s + p.score, 0);
+    const betaScore  = game.teamScores?.beta
+      ?? game.room.players.filter((p) => teamData.beta.playerIds.includes(p.id)).reduce((s, p) => s + p.score, 0);
     return {
       alpha: { ...teamData.alpha, score: alphaScore },
       beta:  { ...teamData.beta,  score: betaScore  },
     };
   })();
 
-  // ── Guard ─────────────────────────────────────────────────────────────────────
+  // ── Mystery Box overlay ───────────────────────────────────────────────────────
+  const MysteryBox = game?.pendingWeapon && mode === 'teams' ? (
+    <MysteryBoxOverlay
+      teamId={game.pendingWeapon.teamId}
+      teamName={teams[game.pendingWeapon.teamId]?.name ?? ''}
+      teamColor={game.pendingWeapon.teamId === 'alpha' ? ALPHA_COLOR : BETA_COLOR}
+      teamEmoji={(teams[game.pendingWeapon.teamId] as any)?.emoji}
+      weapon={game.pendingWeapon.weapon}
+      onCollect={dismissPendingWeapon}
+      onActivate={(w) => activateWeaponFromBox(game.pendingWeapon!.teamId, w)}
+    />
+  ) : null;
+
+  // ── Leave game / go home ──────────────────────────────────────────────────────
+  const handleLeaveGame = () => {
+    resetGame();
+    resetRoom();
+    setSubView('lobby');
+    setShowLeaveConfirm(false);
+  };
+
+  const HomeButton = () => (
+    <button
+      onClick={() => setShowLeaveConfirm(true)}
+      className="text-sm px-2 py-1 rounded-lg border border-jawwib-border text-jawwib-text-dim hover:text-jawwib-red hover:border-jawwib-red/40 transition-all tap-target"
+      title="الرجوع للرئيسية"
+    >
+      🏠
+    </button>
+  );
+
+  // ── Audio controls bar ────────────────────────────────────────────────────────
+  const AudioControls = () => (
+    <div className="flex items-center gap-1">
+      <button
+        onClick={toggleSound}
+        className={`text-sm px-2 py-1 rounded-lg border transition-all tap-target ${
+          soundEnabled
+            ? 'border-jawwib-gold/40 text-jawwib-gold bg-jawwib-gold/8'
+            : 'border-jawwib-border text-jawwib-text-dim opacity-50'
+        }`}
+        title={soundEnabled ? 'كتم الصوت' : 'تشغيل الصوت'}
+      >
+        {soundEnabled ? '🔊' : '🔇'}
+      </button>
+      <button
+        onClick={toggleMusic}
+        className={`text-sm px-2 py-1 rounded-lg border transition-all tap-target ${
+          musicEnabled
+            ? 'border-jawwib-gold/40 text-jawwib-gold bg-jawwib-gold/8'
+            : 'border-jawwib-border text-jawwib-text-dim opacity-50'
+        }`}
+        title={musicEnabled ? 'إيقاف الموسيقى' : 'تشغيل الموسيقى'}
+      >
+        {musicEnabled ? '🎵' : '🔕'}
+      </button>
+      {/* Volume control */}
+      <div className="relative">
+        <button
+          onClick={() => setShowVolume((v) => !v)}
+          className="text-sm px-2 py-1 rounded-lg border border-jawwib-border text-jawwib-text-dim hover:text-jawwib-gold hover:border-jawwib-gold/40 transition-all tap-target"
+          title="مستوى الصوت"
+        >
+          🎚️
+        </button>
+        {showVolume && (
+          <div className="absolute left-0 top-full mt-1 p-2 bg-white rounded-xl border border-jawwib-border shadow-lg z-50 flex items-center gap-2 min-w-[120px]">
+            <span className="text-xs text-jawwib-text-dim shrink-0">🔉</span>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              className="volume-slider flex-1"
+            />
+            <span className="text-xs text-jawwib-text-dim shrink-0">{Math.round(volume * 100)}%</span>
+          </div>
+        )}
+      </div>
+      {/* TV mode toggle */}
+      <button
+        onClick={toggleTvMode}
+        className={`text-sm px-2 py-1 rounded-lg border transition-all tap-target ${
+          tvMode
+            ? 'border-jawwib-gold/40 text-jawwib-gold bg-jawwib-gold/8'
+            : 'border-jawwib-border text-jawwib-text-dim opacity-50'
+        }`}
+        title={tvMode ? 'إيقاف وضع التلفزيون' : 'وضع التلفزيون'}
+      >
+        📺
+      </button>
+    </div>
+  );
+
+  // ── Splash screen — shown once per session ───────────────────────────────────
+  if (showSplash) {
+    return <SplashScreen onDone={() => setShowSplash(false)} />;
+  }
+
+  // ── Registration gate — shown once when no account exists ────────────────────
+  if (!account) {
+    return <RegisterScreen onComplete={() => {}} />;
+  }
+
+  // ── Guest connecting screen ───────────────────────────────────────────────────
+  if (guestConnecting) {
+    const cancelJoin = () => {
+      setGuestConnecting(false);
+      setGuestJoinCode(null);
+      setGuestJoinName(null);
+      setGuestConnectError(null);
+    };
+
+    if (guestConnectError) {
+      const isOffline = guestConnectError === 'offline';
+      return (
+        <div className="min-h-screen bg-jawwib-bg flex flex-col items-center justify-center p-6 text-center" dir="rtl">
+          <div className="game-card p-8 max-w-sm w-full animate-fade-in space-y-4">
+            <div className="text-5xl">{isOffline ? '📵' : '⏱️'}</div>
+            <h2 className="font-black text-xl text-jawwib-text">
+              {isOffline ? 'اللعب الأونلاين غير متاح' : 'تعذّر الاتصال'}
+            </h2>
+            <p className="text-jawwib-text-dim text-sm leading-relaxed">
+              {isOffline
+                ? 'خاصية اللعب عبر الإنترنت قيد التفعيل. يمكنك اللعب على نفس الجهاز في الوقت الحالي.'
+                : 'لم يستجب المضيف. قد تكون الغرفة مغلقة أو انتهت صلاحية الرمز.'}
+            </p>
+            {!isOffline && (
+              <p className="text-jawwib-gold text-sm font-bold tracking-widest">{guestJoinCode}</p>
+            )}
+            <div className="flex flex-col gap-2 pt-2">
+              {!isOffline && (
+                <button
+                  onClick={() => setGuestConnectError(null)}
+                  className="btn-gold w-full py-3 text-base font-black"
+                >
+                  حاول مجددًا
+                </button>
+              )}
+              <button
+                onClick={cancelJoin}
+                className="w-full py-2.5 rounded-xl text-sm font-bold text-jawwib-text-dim border border-jawwib-border tap-target"
+              >
+                العودة للرئيسية
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-jawwib-bg flex flex-col items-center justify-center p-6 text-center" dir="rtl">
+        <div className="game-card p-8 max-w-sm w-full animate-fade-in">
+          <div className="text-5xl mb-4 animate-spin" style={{ animationDuration: '2s' }}>🎮</div>
+          <h2 className="font-black text-2xl text-jawwib-text mb-2">جاري الاتصال...</h2>
+          <p className="text-jawwib-text-dim text-sm mb-4">
+            نتصل بغرفة{' '}
+            <span className="font-bold text-jawwib-gold tracking-widest">
+              {guestJoinCode}
+            </span>
+          </p>
+          <div className="flex justify-center gap-1.5 mb-6">
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                className="w-2 h-2 rounded-full bg-jawwib-gold animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }}
+              />
+            ))}
+          </div>
+          <button
+            onClick={cancelJoin}
+            className="text-xs text-jawwib-text-muted underline underline-offset-2 tap-target"
+          >
+            إلغاء والعودة
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Resume prompt — shown when app opens into a saved in-progress game ──────────
+  if (showResumePrompt && game && game.phase !== 'lobby' && game.phase !== 'finished') {
+    const isTeams = !!game.teamMembership;
+    const playerCount = game.room.players.length;
+    const phaseLabel: Record<string, string> = {
+      board: 'اختيار سؤال',
+      question: 'سؤال جارٍ',
+      steal: 'مرحلة السرقة',
+      result: 'نتيجة',
+    };
+    return (
+      <div className="min-h-screen bg-jawwib-bg flex flex-col items-center justify-center p-6 text-center" dir="rtl">
+        <div className="game-card p-8 max-w-sm w-full animate-fade-in space-y-4">
+          <div className="text-5xl">🎮</div>
+          <h2 className="font-black text-2xl text-jawwib-text">لعبة محفوظة</h2>
+          <div className="rounded-xl p-4 space-y-1" style={{ background: 'rgba(212,169,74,0.08)', border: '1px solid rgba(212,169,74,0.2)' }}>
+            <p className="text-jawwib-gold font-black text-sm">
+              {isTeams
+                ? `${game.teamDisplay?.alpha?.name ?? 'الفريق أ'} ضد ${game.teamDisplay?.beta?.name ?? 'الفريق ب'}`
+                : `${playerCount} لاعبين`}
+            </p>
+            <p className="text-jawwib-text-dim text-xs">
+              المرحلة: {phaseLabel[game.phase] ?? game.phase} · {game.room.categories.length} فئة
+            </p>
+          </div>
+          <p className="text-jawwib-text-dim text-sm">
+            هل تريد متابعة اللعبة المحفوظة أم تبدأ من جديد؟
+          </p>
+          <div className="flex flex-col gap-2 pt-1">
+            <button
+              onClick={() => setShowResumePrompt(false)}
+              className="btn-gold w-full py-3 text-base font-black"
+            >
+              ▶ متابعة اللعبة
+            </button>
+            <button
+              onClick={() => {
+                resetGame();
+                setShowResumePrompt(false);
+                setShowEntry(true);
+              }}
+              className="w-full py-2.5 rounded-xl text-sm font-bold text-jawwib-text-dim border border-jawwib-border tap-target"
+            >
+              بدء لعبة جديدة 🔄
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Entry screen ──────────────────────────────────────────────────────────────
+  if (showEntry) {
+    return (
+      <EntryScreen
+        onEnter={() => setShowEntry(false)}
+        onDirectStart={handleDirectStart}
+        soundEnabled={soundEnabled}
+        musicEnabled={musicEnabled}
+        onToggleSound={toggleSound}
+        onToggleMusic={toggleMusic}
+        account={account}
+      />
+    );
+  }
+
+  // ── Game loading (countdown) overlay ─────────────────────────────────────────
+  if (showIntro) {
+    return (
+      <GameLoadingScreen
+        onDone={handleIntroDone}
+        alphaTeam={mode === 'teams' ? { name: teams.alpha.name, color: '#1A5FA8', emoji: teams.alpha.emoji ?? '🔵' } : null}
+        betaTeam={mode === 'teams' ? { name: teams.beta.name,  color: '#B82118', emoji: teams.beta.emoji  ?? '🔴' } : null}
+        selectedCategories={(game?.room.categories ?? []) as CategoryId[]}
+        hostMessage={game?.hostMessage ?? ''}
+        mode={mode}
+      />
+    );
+  }
+
+  // ── Mystery mode ──────────────────────────────────────────────────────────────
+  if (mysteryActive) {
+    return (
+      <MurderMysteryScreen
+        onExit={() => setMysteryActive(false)}
+        alphaName={teams.alpha.name}
+        betaName={teams.beta.name}
+      />
+    );
+  }
+
+  // ── Guard: no game ────────────────────────────────────────────────────────────
   if (!game) {
     return (
       <HomeScreen
         onCreateRoom={(name, isTrial, cats, gm) => handleCreateRoom(name, isTrial, cats, gm)}
         onJoinRoom={(name, code) => handleJoinRoom(name, code)}
+        onQuickPlay={handleQuickPlay}
+        onCustomGame={handleCustomGame}
+        onMysteryGame={() => setMysteryActive(true)}
+        accountName={account?.name}
+        accountAvatar={account?.avatar}
       />
     );
   }
@@ -168,22 +894,43 @@ export function GameApp() {
     return (
       <>
         <div className="min-h-screen bg-jawwib-bg" />
-        <PaymentModal onClose={() => setShowPayment(false)} onPurchase={handlePurchase} />
+        <PaymentModal onClose={() => { setShowPayment(false); setPendingFullGame(null); }} onPurchase={handlePurchase} onConfirmed={handlePurchaseConfirmed} />
       </>
     );
   }
 
+  const isHostPlayer = game.room.hostId === localPlayerId;
+
   // ── Phase: finished ───────────────────────────────────────────────────────────
   if (game.phase === 'finished') {
+    const finishedCtx: GameContext = {
+      mode,
+      isTrial: game.room.isTrial,
+      alphaTeamName: teamData?.alpha.name,
+      betaTeamName: teamData?.beta.name,
+      alphaScore: winnerTeamData?.alpha.score,
+      betaScore: winnerTeamData?.beta.score,
+      questionsAnswered: game.room.answeredQuestions.length,
+      categoriesPlayed: game.room.categories as string[],
+    };
     return (
-      <GameOverScreen
-        players={game.room.players}
-        hostMessage={game.hostMessage}
-        onPlayAgain={rematch}
-        onNewGame={resetGame}
-        teams={winnerTeamData}
-        mode={mode}
-      />
+      <>
+        <GameOverScreen
+          players={game.room.players}
+          hostMessage={game.hostMessage}
+          onPlayAgain={rematch}
+          onNewGame={handleLeaveGame}
+          teams={winnerTeamData}
+          mode={mode}
+          onRateMatch={() => setShowFeedback(true)}
+        />
+        {showFeedback && (
+          <FeedbackModal
+            onClose={() => setShowFeedback(false)}
+            gameContext={finishedCtx}
+          />
+        )}
+      </>
     );
   }
 
@@ -194,7 +941,33 @@ export function GameApp() {
       : `https://jawwib.netlify.app/join/${game.room.code}`;
     const isHost = game.room.hostId === localPlayerId;
 
-    // Sub-view: team assignment
+    if (subView === 'setup' && mode === 'teams') {
+      return (
+        <>
+          <TeamSetupScreen
+            alphaName={teams.alpha.name}
+            betaName={teams.beta.name}
+            onConfirm={(a, b, picks) => {
+              renameTeam('alpha', a);
+              renameTeam('beta', b);
+              setPicksPerTeam(picks);
+              setSubView('draft');
+            }}
+            onHome={() => setShowLeaveConfirm(true)}
+          />
+          {showLeaveConfirm && (
+            <ConfirmModal
+              title="إنهاء المباراة؟"
+              message="إذا رجعت للرئيسية بتنتهي الجلسة الحالية ولازم تبدون مباراة جديدة."
+              confirmLabel="إنهاء والرجوع 🏠"
+              onConfirm={handleLeaveGame}
+              onCancel={() => setShowLeaveConfirm(false)}
+            />
+          )}
+        </>
+      );
+    }
+
     if (subView === 'teams' && mode === 'teams') {
       return (
         <div className="min-h-screen p-4">
@@ -203,22 +976,27 @@ export function GameApp() {
             <div className="flex items-center justify-between mb-4">
               <button onClick={() => setSubView('lobby')} className="text-jawwib-text-dim text-sm hover:text-jawwib-text transition-colors">← رجوع</button>
               <h2 className="text-lg font-bold text-gold-gradient">توزيع الفرق</h2>
-              <div />
+              <div className="flex items-center gap-1">
+                <HomeButton />
+                <AudioControls />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-4">
               {(['alpha', 'beta'] as const).map((tid) => {
                 const t = teams[tid];
-                const tc = tid === 'alpha';
+                const isBlue = tid === 'alpha';
                 return (
-                  <div key={tid} className={`game-card p-3 border ${tc ? 'border-blue-500/40 bg-blue-500/5' : 'border-red-500/40 bg-red-500/5'}`}>
-                    <p className={`font-bold text-sm mb-2 ${tc ? 'text-blue-400' : 'text-red-400'}`}>{tc ? '🛡️' : '⚔️'} {t.name}</p>
+                  <div key={tid} className={`game-card p-3 border-2 ${isBlue ? 'border-jawwib-blue/30 bg-blue-50/50' : 'border-jawwib-red/30 bg-red-50/50'}`}>
+                    <p className={`font-bold text-sm mb-2 ${isBlue ? 'text-jawwib-blue' : 'text-jawwib-red'}`}>
+                      {(t as any).emoji ?? (isBlue ? '🔵' : '🔴')} {t.name}
+                    </p>
                     <div className="space-y-1.5 min-h-[40px]">
                       {t.playerIds.map((pid) => {
                         const p = game.room.players.find((pl) => pl.id === pid);
                         if (!p) return null;
                         return (
-                          <div key={pid} className="flex items-center gap-2 bg-jawwib-surface/50 rounded-lg px-2 py-1">
+                          <div key={pid} className="flex items-center gap-2 bg-white/60 rounded-lg px-2 py-1">
                             <span>{p.avatar}</span>
                             <span className="text-xs font-bold truncate flex-1">{p.name}</span>
                             {pid === localPlayerId && <span className="text-[10px] text-jawwib-gold">أنت</span>}
@@ -227,7 +1005,12 @@ export function GameApp() {
                       })}
                     </div>
                     {localPlayerId && !t.playerIds.includes(localPlayerId) && (
-                      <button onClick={() => assignTeam(localPlayerId, tid)} className={`mt-2 w-full text-xs py-1.5 rounded-lg border ${tc ? 'border-blue-500/40 text-blue-400 hover:bg-blue-500/20' : 'border-red-500/40 text-red-400 hover:bg-red-500/20'} transition-all`}>
+                      <button
+                        onClick={() => assignTeam(localPlayerId, tid)}
+                        className={`mt-2 w-full text-xs py-1.5 rounded-lg border transition-all ${
+                          isBlue ? 'border-jawwib-blue/40 text-jawwib-blue hover:bg-blue-100' : 'border-jawwib-red/40 text-jawwib-red hover:bg-red-100'
+                        }`}
+                      >
                         انضم لهذا الفريق
                       </button>
                     )}
@@ -236,7 +1019,6 @@ export function GameApp() {
               })}
             </div>
 
-            {/* Unassigned */}
             {game.room.players.filter((p) => !teams.alpha.playerIds.includes(p.id) && !teams.beta.playerIds.includes(p.id)).length > 0 && (
               <div className="game-card p-3 mb-4">
                 <p className="text-jawwib-text-dim text-xs mb-2">بدون فريق بعد</p>
@@ -269,61 +1051,100 @@ export function GameApp() {
               <button onClick={() => setSubView('lobby')} className="btn-gold w-full">تأكيد الفرق ✓</button>
             </div>
           </div>
+          {showLeaveConfirm && (
+            <ConfirmModal
+              title="إنهاء المباراة؟"
+              message="إذا رجعت للرئيسية بتنتهي الجلسة الحالية ولازم تبدون مباراة جديدة."
+              confirmLabel="إنهاء والرجوع 🏠"
+              onConfirm={handleLeaveGame}
+              onCancel={() => setShowLeaveConfirm(false)}
+            />
+          )}
         </div>
       );
     }
 
-    // Sub-view: category draft
-    if (subView === 'draft' && !game.room.isTrial) {
-      return (
-        <div className="min-h-screen p-4">
-          <HostBubble message={game.hostMessage} compact />
-          <div className="max-w-xl mx-auto mt-4">
-            {draft.draft === null ? (
-              // Not started yet
-              <div className="text-center py-12">
-                <p className="text-jawwib-text-dim mb-4 text-sm">
-                  {mode === 'teams' ? 'كل فريق يختار فئاته بالتناوب (snake draft)' : 'اختر الفئات التي تريدها'}
-                </p>
-                {isHost ? (
-                  <button onClick={() => draft.startDraft(mode === 'teams' ? 3 : 6)} className="btn-gold px-8 py-3">
-                    ابدأ الـ Draft 🎯
-                  </button>
-                ) : (
-                  <p className="text-jawwib-text-dim text-sm">بانتظار المضيف لبدء الـ Draft...</p>
-                )}
-                <button onClick={() => setSubView('lobby')} className="mt-4 block mx-auto text-jawwib-text-dim text-sm hover:text-jawwib-text transition-colors">
-                  ← رجوع
-                </button>
-              </div>
-            ) : (
-              <CategoryDraftScreen
-                draftState={{
-                  picks: draft.draft.picks.map((p) => ({ teamId: p.teamId, categoryId: p.categoryId })),
-                  currentTeam: draft.draft.currentTeam,
-                  round: draft.draft.round,
-                  complete: draft.draft.isComplete,
-                  alphaCategories: draft.alphaCategories,
-                  betaCategories: draft.betaCategories,
-                }}
-                localTeamId={localTeamId}
-                isHost={isHost}
-                availableCategories={ALL_CATS.map((c) => ({ id: c.id, name: c.name, icon: c.icon, color: c.color }))}
-                onPick={(catId) => draft.pick(catId as CategoryId)}
-                onSkipDraft={() => { draft.skipDraft(); handleDraftComplete(); }}
-                onStartGame={() => { handleDraftComplete(); startGame(); }}
-              />
-            )}
+    // Show draft screen when host enters draft mode OR when guest receives draftPhase via HOST_SYNC
+    const showDraftView = (subView === 'draft' || (!!game.draftPhase && !game.draftPhase.isComplete)) && !game.room.isTrial;
+    if (showDraftView) {
+      // Guest uses remote draftPhase from game state; host uses local draft manager
+      const remoteDraft = !isHost && game.draftPhase;
+      const draftStateForScreen = remoteDraft
+        ? {
+            picks: remoteDraft.picks,
+            currentTeam: remoteDraft.currentTeam,
+            round: Math.floor(remoteDraft.picks.length / 2),
+            complete: remoteDraft.isComplete,
+            alphaCategories: remoteDraft.picks.filter((p) => p.teamId === 'alpha').map((p) => p.categoryId),
+            betaCategories: remoteDraft.picks.filter((p) => p.teamId === 'beta').map((p) => p.categoryId),
+          }
+        : draft.draft
+        ? {
+            picks: draft.draft.picks.map((p) => ({ teamId: p.teamId, categoryId: p.categoryId })),
+            currentTeam: draft.draft.currentTeam,
+            round: draft.draft.round,
+            complete: draft.draft.isComplete,
+            alphaCategories: draft.alphaCategories,
+            betaCategories: draft.betaCategories,
+          }
+        : null;
+
+      if (!draftStateForScreen) {
+        return (
+          <div className="min-h-screen bg-diwaniya flex items-center justify-center">
+            <p className="text-jawwib-text-dim text-sm animate-pulse-gold">جاري التحميل...</p>
           </div>
-        </div>
+        );
+      }
+      return (
+        <>
+          <CategoryDraftScreen
+            draftState={draftStateForScreen}
+            localTeamId={localTeamId}
+            isHost={isHost}
+            availableCategories={ALL_CATS.map((c) => ({ id: c.id, name: c.name, icon: c.icon, color: c.color }))}
+            requiredPerTeam={picksPerTeam}
+            alphaTeamName={teams.alpha.name}
+            betaTeamName={teams.beta.name}
+            onPick={(catId) => {
+              if (!isHost) {
+                // Guest relays pick to host via WebSocket
+                mp.sendDraftPick(catId);
+              } else {
+                // Host picks locally and syncs to game state
+                const next = draft.pick(catId as CategoryId);
+                if (next) updateDraftPhase(next.picks, next.currentTeam, next.isComplete);
+              }
+            }}
+            onSkipDraft={() => {
+              const cats = draft.skipDraft();
+              if (cats.length >= 2) updateCategories(cats as CategoryId[]);
+              setSubView('lobby');
+            }}
+            onStartGame={() => { handleDraftComplete(); handleStartGame(); }}
+            onHome={() => setShowLeaveConfirm(true)}
+          />
+          {showLeaveConfirm && (
+            <ConfirmModal
+              title="إنهاء المباراة؟"
+              message="إذا رجعت للرئيسية بتنتهي الجلسة الحالية ولازم تبدون مباراة جديدة."
+              confirmLabel="إنهاء والرجوع 🏠"
+              onConfirm={handleLeaveGame}
+              onCancel={() => setShowLeaveConfirm(false)}
+            />
+          )}
+        </>
       );
     }
 
-    // Main lobby
     return (
       <div className="min-h-screen p-4">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-2xl font-black text-gold-gradient">جاوب</h1>
+          <h1 className="text-2xl font-black text-gold-gradient font-display">جاوب</h1>
+          <div className="flex items-center gap-1">
+            <HomeButton />
+            <AudioControls />
+          </div>
         </div>
         <HostBubble message={game.hostMessage} />
         <Lobby
@@ -331,63 +1152,252 @@ export function GameApp() {
           players={game.room.players}
           isTrial={game.room.isTrial}
           selectedCategories={game.room.categories}
-          onStartGame={startGame}
+          onStartGame={handleStartGame}
           onShowPayment={() => setShowPayment(true)}
           onShowTeams={mode === 'teams' ? () => setSubView('teams') : undefined}
           onShowDraft={() => setSubView('draft')}
           isHost={isHost}
           qrUrl={qrUrl}
           mode={mode}
+          hostName={game.room.players.find((p) => p.id === localPlayerId)?.name ?? 'المضيف'}
+          alphaTeamName={mode === 'teams' ? teams.alpha.name : undefined}
+          alphaTeamEmoji={mode === 'teams' ? (teams.alpha as any).emoji : undefined}
+          betaTeamName={mode === 'teams' ? teams.beta.name : undefined}
+          betaTeamEmoji={mode === 'teams' ? (teams.beta as any).emoji : undefined}
+          onlinePlayers={mp.onlinePlayers}
+          isOnline={mp.isOnline}
         />
+        {showLeaveConfirm && (
+          <ConfirmModal
+            title="إنهاء المباراة؟"
+            message="إذا رجعت للرئيسية بتنتهي الجلسة الحالية ولازم تبدون مباراة جديدة."
+            confirmLabel="إنهاء والرجوع 🏠"
+            onConfirm={handleLeaveGame}
+            onCancel={() => setShowLeaveConfirm(false)}
+          />
+        )}
       </div>
     );
   }
 
-  // ── Phase: question ───────────────────────────────────────────────────────────
-  if (game.phase === 'question' && game.currentQuestion) {
-    const ap = game.activePlayer ? game.room.players.find((p) => p.id === game.activePlayer) : null;
-    const apTeamColor = ap && teamData
-      ? teamData.alpha.playerIds.includes(ap.id) ? '#3B82F6' : '#EF4444'
-      : null;
+  // ── Phase: question / steal ───────────────────────────────────────────────────
+  if ((game.phase === 'question' || game.phase === 'steal') && game.currentQuestion) {
+    const isSteal   = game.phase === 'steal';
+    const stealTeam = isSteal && game.stealOpponentTeamId;
+
+    const ap = isSteal
+      ? (game.stealOpponentTeamId && game.teamMembership
+          ? game.room.players.find((p) => game.teamMembership![game.stealOpponentTeamId!]?.includes(p.id))
+          : null)
+      : game.activePlayer ? game.room.players.find((p) => p.id === game.activePlayer) : null;
+
+    const apTeamId = isSteal
+      ? game.stealOpponentTeamId
+      : game.activeTeamId ?? (ap && teamData
+          ? teamData.alpha.playerIds.includes(ap.id) ? 'alpha' : 'beta'
+          : null);
+    const apTeamColor = teamColor(apTeamId);
+
+    const totalCells = game.board.reduce((a, r) => a + r.length, 0);
+    const isFinalQ   = !isSteal && (game.room.isTrial
+      ? game.room.answeredQuestions.length >= 8
+      : answeredCount >= totalCells - 1);
+
+    const canAnswer = isSteal ? (localPlayerId != null) : qflow.canAnswer;
+
+    const stealTeamName = stealTeam === 'alpha' ? (teamData?.alpha.name ?? 'الفريق الأزرق') : (teamData?.beta.name ?? 'الفريق الأحمر');
+    const stealEmoji    = stealTeam === 'alpha' ? (teamData?.alpha.emoji ?? '🔵') : (teamData?.beta.emoji ?? '🔴');
 
     return (
-      <div className="min-h-screen p-4 flex flex-col gap-3">
-        <HostBubble message={game.hostMessage} compact />
+      <div
+        className={`game-wrapper phase-question`}
+        data-tv={tvMode ? 'true' : undefined}
+        data-active-team={apTeamId ?? undefined}
+      >
+        <div className="min-h-screen p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <HostBubble message={game.hostMessage} compact />
+            <div className="flex items-center gap-1 shrink-0">
+              <HomeButton />
+              <AudioControls />
+            </div>
+          </div>
 
-        {ap && (
-          <div
-            className="flex items-center justify-center gap-2 py-2 rounded-xl border text-sm font-bold"
-            style={{
-              borderColor: apTeamColor ? `${apTeamColor}50` : '#D4A01740',
-              background:  apTeamColor ? `${apTeamColor}0D` : 'transparent',
-              color:       apTeamColor ?? '#D4A017',
-            }}
-          >
-            <span>{ap.avatar}</span>
-            <span>دور {ap.name}</span>
-            {!qflow.isMyTurn && (
-              <span className="text-jawwib-text-dim text-xs font-normal">(شاهد)</span>
+          {/* Phase indicator */}
+          {isSteal ? (
+            <div
+              className="animate-turn-banner rounded-2xl px-4 py-3 text-center border-2"
+              style={{
+                background: apTeamColor
+                  ? `linear-gradient(135deg, ${apTeamColor}14, ${apTeamColor}08)`
+                  : 'linear-gradient(135deg, rgba(124,58,237,0.12), rgba(168,85,247,0.08))',
+                borderColor: apTeamColor ?? '#7C3AED',
+                boxShadow: `0 0 28px ${apTeamColor ?? '#7C3AED'}30`,
+              }}
+            >
+              <p className="text-2xl mb-0.5">🏴‍☠️</p>
+              <p className="font-black text-lg" style={{ color: apTeamColor ?? '#7C3AED' }}>
+                {stealEmoji} {stealTeamName}
+              </p>
+              <p className="text-xs font-bold text-jawwib-text-dim mt-0.5">
+                فرصة السرقة! أجيبوا صح تكسبون النقاط
+              </p>
+            </div>
+          ) : isFinalQ ? (
+            <div className="text-center animate-final-flare">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black text-white"
+                style={{ background: 'linear-gradient(135deg,#B07D1A,#D4A94A)' }}>
+                ⚡ السؤال الأخير!
+              </span>
+            </div>
+          ) : null}
+
+          {/* Active player / team banner */}
+          {ap && (
+            <div
+              className="animate-turn-banner flex items-center justify-center gap-2 py-2.5 rounded-xl border text-sm font-bold"
+              style={{
+                borderColor: apTeamColor ? `${apTeamColor}40` : '#C8880A30',
+                background:  apTeamColor ? `${apTeamColor}0C` : 'transparent',
+                color:       apTeamColor ?? '#C8880A',
+              }}
+            >
+              <span className="text-lg">{ap.avatar}</span>
+              <span>{isSteal ? `سرقة: ${ap.name}` : `دور ${ap.name}`}</span>
+              {apTeamId && teamData && (
+                <span className="text-xs opacity-70">
+                  {apTeamId === 'alpha' ? `(${teamData.alpha.name})` : `(${teamData.beta.name})`}
+                </span>
+              )}
+              {!canAnswer && (
+                <span className="text-jawwib-text-dim text-xs font-normal">(شاهد)</span>
+              )}
+            </div>
+          )}
+
+          {/* Steal handoff gate — show "pass device" screen until host taps through */}
+          {isSteal && !stealHandoffDone && (
+            <div
+              className="rounded-2xl border-2 p-6 text-center animate-fade-in"
+              style={{
+                borderColor: apTeamColor ?? '#7C3AED',
+                background: apTeamColor ? `${apTeamColor}10` : 'rgba(124,58,237,0.08)',
+              }}
+            >
+              <p className="text-4xl mb-3">📱</p>
+              <p className="font-black text-lg mb-1" style={{ color: apTeamColor ?? '#7C3AED' }}>
+                مرّر الجهاز
+              </p>
+              <p className="text-sm text-jawwib-text-dim mb-4">
+                للـ {stealEmoji} {stealTeamName}
+              </p>
+              <button
+                className="btn-primary w-full py-3 font-black text-base tap-target"
+                style={{ background: apTeamColor ?? '#7C3AED' }}
+                onClick={() => setStealHandoffDone(true)}
+              >
+                جاهزين ✓
+              </button>
+            </div>
+          )}
+
+          <div className={`flex-1 flex items-center justify-center ${isSteal && !stealHandoffDone ? 'hidden' : ''}`}>
+            {game.currentQuestion.type === 'charades' ? (
+              <CharadesQRScreen
+                key={`${game.currentQuestion.id}-${game.phase}`}
+                question={game.currentQuestion}
+                timer={game.timer}
+                maxTimer={45}
+                actingTeamName={
+                  apTeamId === 'alpha'
+                    ? (teamData?.alpha.name ?? 'الفريق الأول')
+                    : apTeamId === 'beta'
+                    ? (teamData?.beta.name ?? 'الفريق الثاني')
+                    : (ap?.name ?? 'اللاعب')
+                }
+                actingTeamEmoji={
+                  apTeamId === 'alpha'
+                    ? (teamData?.alpha.emoji ?? '🌊')
+                    : apTeamId === 'beta'
+                    ? (teamData?.beta.emoji ?? '🐪')
+                    : '🎭'
+                }
+                actingTeamColor={apTeamColor ?? undefined}
+                onCorrect={() => {
+                  if (!canAnswer || !localPlayerId) return;
+                  answerQuestion(localPlayerId, game.currentQuestion!.correctIndex);
+                }}
+                onWrong={() => {
+                  if (!canAnswer || !localPlayerId) return;
+                  const wrongIdx = game.currentQuestion!.correctIndex === 0 ? 1 : 0;
+                  answerQuestion(localPlayerId, wrongIdx);
+                }}
+                disabled={!canAnswer}
+              />
+            ) : (
+              <QuestionCard
+                key={`${game.currentQuestion.id}-${game.phase}`}
+                question={game.currentQuestion}
+                timer={game.timer}
+                maxTimer={30}
+                onAnswer={(idx) => {
+                  if (!canAnswer) return;
+                  if (localPlayerId) answerQuestion(localPlayerId, idx);
+                }}
+                disabled={!canAnswer}
+                hasBomb={hasBomb}
+                hasDouble={hasDouble}
+                scrambledOptions={isSteal ? null : scrambledOptions}
+                teamColor={apTeamColor ?? undefined}
+                teamId={apTeamId ?? undefined}
+                suppressCorrectReveal={!isSteal && mode === 'teams'}
+              />
             )}
           </div>
-        )}
 
-        <div className="flex-1 flex items-center justify-center">
-          <QuestionCard
-            question={game.currentQuestion}
-            timer={game.timer}
-            maxTimer={15}
-            onAnswer={(idx) => {
-              if (!qflow.canAnswer) return;
-              if (localPlayerId) answerQuestion(localPlayerId, idx);
-            }}
-            disabled={!qflow.canAnswer}
-            hasBomb={hasBomb}
-            hasDouble={hasDouble}
-            scrambledOptions={scrambledOptions}
-          />
+          {/* Crowd prediction */}
+          {!isSteal && (
+            <div className="game-card p-3 animate-crowd-hype">
+              <p className="text-center text-xs font-bold text-jawwib-text-dim mb-2">
+                🙋 الجمهور يتوقع — ماذا سيجيب؟
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setCrowdVotes((v) => ({ ...v, correct: v.correct + 1 }))}
+                  className="py-3 rounded-xl border-2 border-jawwib-green/40 bg-jawwib-green/8 text-jawwib-green font-black text-sm tap-target"
+                >
+                  صح ✅ {crowdVotes.correct > 0 && <span className="text-xs opacity-70">({crowdVotes.correct})</span>}
+                </button>
+                <button
+                  onClick={() => setCrowdVotes((v) => ({ ...v, wrong: v.wrong + 1 }))}
+                  className="py-3 rounded-xl border-2 border-jawwib-red/40 bg-jawwib-red/8 text-jawwib-red font-black text-sm tap-target"
+                >
+                  غلط ❌ {crowdVotes.wrong > 0 && <span className="text-xs opacity-70">({crowdVotes.wrong})</span>}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <EffectToast lastResult={lastResult} />
+
+          {isSteal && isHostPlayer && (
+            <button
+              onClick={() => skipSteal()}
+              className="w-full py-2.5 rounded-xl border border-jawwib-border text-jawwib-text-dim text-xs font-bold hover:border-jawwib-red/50 hover:text-jawwib-red transition-all tap-target"
+            >
+              ⏭️ تجاوز السرقة — انتقل للسؤال الجاي
+            </button>
+          )}
         </div>
-
-        <EffectToast lastResult={lastResult} />
+        {showLeaveConfirm && (
+          <ConfirmModal
+            title="إنهاء المباراة؟"
+            message="إذا رجعت للرئيسية بتنتهي المباراة الحالية ولازم تبدون مباراة جديدة."
+            confirmLabel="إنهاء والرجوع 🏠"
+            onConfirm={handleLeaveGame}
+            onCancel={() => setShowLeaveConfirm(false)}
+          />
+        )}
       </div>
     );
   }
@@ -395,93 +1405,195 @@ export function GameApp() {
   // ── Phase: result ─────────────────────────────────────────────────────────────
   if (game.phase === 'result' && game.lastAnswer && game.currentQuestion) {
     const respPlayer = game.room.players.find((p) => p.id === game.lastAnswer?.playerId);
-    const tColor = respPlayer && teamData
-      ? teamData.alpha.playerIds.includes(respPlayer.id) ? '#3B82F6' : '#EF4444'
-      : null;
+    const respTeamId: TeamId | null = game.lastAnswer.teamId
+      ?? (respPlayer && teamData
+          ? teamData.alpha.playerIds.includes(respPlayer.id) ? 'alpha' : 'beta'
+          : null);
+    const tColor = teamColor(respTeamId);
+    const tEmoji = respTeamId === 'alpha' ? (teamData?.alpha.emoji ?? '🔵') : respTeamId === 'beta' ? (teamData?.beta.emoji ?? '🔴') : undefined;
+    const totalCells = game.board.reduce((a, r) => a + r.length, 0);
+    const isFinalQ   = game.room.isTrial
+      ? game.room.answeredQuestions.length >= 9
+      : answeredCount >= totalCells;
+    const respStreak = respPlayer?.streak ?? 0;
     return (
-      <>
+      <div className="game-wrapper" data-active-team={respTeamId ?? undefined} data-tv={tvMode ? 'true' : undefined}>
+        {MysteryBox}
         {scorePopup && <ScorePopup points={scorePopup.points} color={scorePopup.color} />}
         <div className="min-h-screen p-4 bg-jawwib-bg" />
         <ResultOverlay
           lastAnswer={game.lastAnswer}
           currentQuestion={game.currentQuestion}
           hostMessage={game.hostMessage}
-          onContinue={returnToBoard}
+          onContinue={game.lastAnswer?.pendingSteal ? triggerStealPhase : returnToBoard}
+          pendingSteal={game.lastAnswer?.pendingSteal}
           playerName={respPlayer?.name}
           teamColor={tColor ?? undefined}
+          teamEmoji={tEmoji}
+          isFinalQuestion={isFinalQ}
+          crowdVotes={crowdVotes}
+          playerStreak={respStreak}
         />
-      </>
+      </div>
     );
   }
 
   // ── Phase: board ──────────────────────────────────────────────────────────────
   const opponents = game.room.players.filter((p) => p.id !== localPlayerId);
   const ap = game.activePlayer ? game.room.players.find((p) => p.id === game.activePlayer) : null;
-  const apTeamColor = ap && teamData
-    ? teamData.alpha.playerIds.includes(ap.id) ? '#3B82F6' : '#EF4444'
+  const boardActiveTeamId = mode === 'teams' ? game.activeTeamId : null;
+  const apTeamColor = boardActiveTeamId
+    ? teamColor(boardActiveTeamId)
+    : ap && teamData
+    ? teamData.alpha.playerIds.includes(ap.id) ? ALPHA_COLOR : BETA_COLOR
     : null;
+  const isMyTurn = mode === 'teams' ? true : ap?.id === localPlayerId;
 
   return (
-    <div className="min-h-screen p-4">
-      {scorePopup && <ScorePopup points={scorePopup.points} color={scorePopup.color} />}
+    <div className="game-wrapper" data-active-team={boardActiveTeamId ?? undefined} data-tv={tvMode ? 'true' : undefined}>
+      <div className="min-h-screen p-4">
+        {MysteryBox}
+        {scorePopup && <ScorePopup points={scorePopup.points} color={scorePopup.color} />}
 
-      <div className="flex items-center justify-between mb-3">
-        <h1 className="text-xl font-black text-gold-gradient">جاوب</h1>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-jawwib-text-dim">كود:</span>
-          <span className="text-sm font-bold text-jawwib-gold tracking-wider">{game.room.code}</span>
+        <div className="flex items-center justify-between mb-3">
+          <h1 className="font-display text-xl font-black text-gold-gradient">جاوب</h1>
+          <div className="flex items-center gap-3">
+            <HomeButton />
+            <AudioControls />
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-jawwib-text-dim">كود:</span>
+              <span className="text-sm font-bold text-jawwib-gold tracking-wider">{game.room.code}</span>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <HostBubble message={game.hostMessage} compact />
+        <HostBubble message={game.hostMessage} compact />
 
-      {ap && (
-        <div
-          className="mb-3 px-4 py-2 rounded-xl text-center text-sm border transition-all"
-          style={{
-            borderColor: apTeamColor ? `${apTeamColor}40` : '#D4A01730',
-            background:  apTeamColor ? `${apTeamColor}0D` : '#D4A01708',
-          }}
-        >
-          <span className="text-jawwib-text-dim">دور: </span>
-          <span className="font-bold" style={{ color: apTeamColor ?? '#D4A017' }}>
-            {ap.avatar} {ap.name}
-          </span>
-        </div>
-      )}
+        {/* Active team turn banner — key forces remount so animation replays each turn */}
+        {(boardActiveTeamId || ap) && (
+          <div
+            key={boardActiveTeamId ?? ap?.id}
+            className="mb-3 px-4 py-3 rounded-xl text-center border-2 transition-all duration-500 animate-turn-banner"
+            style={{
+              borderColor: apTeamColor ? `${apTeamColor}40` : '#C8880A25',
+              background:  apTeamColor ? `${apTeamColor}0A` : '#C8880A05',
+            }}
+          >
+            <span className="text-jawwib-text-dim text-sm">دور: </span>
+            {boardActiveTeamId && teamData ? (
+              <span className="font-black text-base" style={{ color: apTeamColor ?? '#C8880A' }}>
+                {(teamData[boardActiveTeamId] as any).emoji ?? (boardActiveTeamId === 'alpha' ? '🌊' : '🐪')}{' '}
+                {teamData[boardActiveTeamId].name}
+              </span>
+            ) : ap ? (
+              <span className="font-black text-base" style={{ color: apTeamColor ?? '#C8880A' }}>
+                {ap.avatar} {ap.name}
+              </span>
+            ) : null}
+            <span className="mr-2 text-xs opacity-60" style={{ color: apTeamColor ?? '#C8880A' }}>
+              (اختر سؤالًا)
+            </span>
+          </div>
+        )}
 
-      <div className="mb-4 overflow-x-auto">
-        <GameBoard
-          board={game.board}
-          categories={game.room.categories}
-          onSelectQuestion={selectQuestion}
-          isTrial={game.room.isTrial}
-          answeredCount={answeredCount}
-          activeTeamColor={activeTeamColor}
-        />
-      </div>
+        {/* Board pick countdown bar */}
+        {boardPickTimer !== null && mode === 'teams' && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-bold" style={{ color: boardPickTimer <= 10 ? '#EF4444' : '#C8880A' }}>
+                ⏱ اختر سؤالًا خلال
+              </span>
+              <span
+                className="text-sm font-black tabular-nums"
+                style={{ color: boardPickTimer <= 10 ? '#EF4444' : '#C8880A' }}
+              >
+                {boardPickTimer}ث
+              </span>
+            </div>
+            <div className="h-1.5 rounded-full bg-jawwib-surface overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-1000"
+                style={{
+                  width: `${(boardPickTimer / 45) * 100}%`,
+                  background: boardPickTimer <= 10
+                    ? 'linear-gradient(90deg,#C85A34,#E07040)'
+                    : 'linear-gradient(90deg,#B07D1A,#D4A94A)',
+                }}
+              />
+            </div>
+          </div>
+        )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <TeamScoreboard
-          players={game.room.players}
-          teams={teamData}
-          activePlayerId={game.activePlayer}
-          mode={mode}
-        />
-        {!game.room.isTrial && localPlayerId && opponents.length > 0 && (
-          <SabotageControls
-            localPlayerId={localPlayerId}
-            opponents={opponents}
-            phase={game.phase}
+        <div className="mb-4 overflow-x-auto">
+          <GameBoard
+            board={game.board}
+            categories={game.room.categories}
+            onSelectQuestion={handleSelectQuestion}
+            isTrial={game.room.isTrial}
+            answeredCount={answeredCount}
+            activeTeamColor={activeTeamColor}
+            isMyTurn={isMyTurn}
+            tvMode={tvMode}
+            forcedCategoryId={
+              boardActiveTeamId && game.forcedCategory?.targetTeamId === boardActiveTeamId
+                ? game.forcedCategory.categoryId
+                : undefined
+            }
           />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          <TeamScoreboard
+            players={game.room.players}
+            teams={teamData}
+            activePlayerId={game.activePlayer}
+            activeTeamId={game.activeTeamId}
+            teamScores={game.teamScores}
+            mode={mode}
+            lastStandUsed={game.lastStandUsed}
+            onActivateLastStand={activateLastStand}
+          />
+          {/* Merged inventory panel: sabotages + weapons in one block */}
+          {(!game.room.isTrial && localPlayerId && opponents.length > 0) || (mode === 'teams' && game.activeTeamId) ? (
+            <div className="game-card p-3 space-y-3">
+              {!game.room.isTrial && localPlayerId && opponents.length > 0 && (
+                <SabotageControls
+                  localPlayerId={localPlayerId}
+                  opponents={opponents}
+                  phase={game.phase}
+                />
+              )}
+              {mode === 'teams' && game.activeTeamId && (
+                <TeamWeaponInventory
+                  localTeamId={game.activeTeamId}
+                  teamWeapons={game.teamWeapons}
+                  activeTeamId={game.activeTeamId}
+                  phase={game.phase}
+                  forcedCategory={game.forcedCategory}
+                  activeImmunity={game.activeImmunity}
+                  activeBomb={game.activeBomb}
+                  boardCategories={game.room.categories}
+                />
+              )}
+            </div>
+          ) : null}
+        </div>
+
+        {game.room.isTrial && answeredCount >= 6 && (
+          <div className="mt-4 p-4 rounded-xl bg-jawwib-gold/10 border border-jawwib-gold/30 text-center">
+            <p className="text-jawwib-gold font-bold mb-2">🔓 عجبتك؟ افتح النسخة الكاملة</p>
+            <button onClick={() => setShowPayment(true)} className="btn-gold text-sm px-6 py-2">ترقية 4 د.ك</button>
+          </div>
         )}
       </div>
-
-      {game.room.isTrial && answeredCount >= 6 && (
-        <div className="mt-4 p-4 rounded-xl bg-jawwib-gold/10 border border-jawwib-gold/30 text-center">
-          <p className="text-jawwib-gold font-bold mb-2">🔓 عجبتك؟ افتح النسخة الكاملة</p>
-          <button onClick={() => setShowPayment(true)} className="btn-gold text-sm px-6 py-2">ترقية 4 د.ك</button>
-        </div>
+      {showLeaveConfirm && (
+        <ConfirmModal
+          title="إنهاء المباراة؟"
+          message="إذا رجعت للرئيسية بتنتهي المباراة الحالية ولازم تبدون مباراة جديدة."
+          confirmLabel="إنهاء والرجوع 🏠"
+          onConfirm={handleLeaveGame}
+          onCancel={() => setShowLeaveConfirm(false)}
+        />
       )}
     </div>
   );

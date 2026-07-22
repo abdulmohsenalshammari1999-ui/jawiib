@@ -1,4 +1,5 @@
 export type CategoryId =
+  // ── Original 22 ──────────────────────────────────────────────────────────
   | 'culture'
   | 'sport'
   | 'history'
@@ -14,16 +15,101 @@ export type CategoryId =
   | 'social'
   | 'ramadan'
   | 'travel'
-  | 'family';
+  | 'family'
+  | 'kuwait_history'
+  | 'kuwait_dialect'
+  | 'gcc_football'
+  | 'diwaniya'
+  | 'kuwait_food'
+  | 'kuwait_celebs'
+  // ── Islamic ──────────────────────────────────────────────────────────────
+  | 'quran_tafsir'
+  | 'hadith'
+  | 'islamic_history'
+  | 'prophets'
+  // ── Arab & World ─────────────────────────────────────────────────────────
+  | 'arab_world'
+  | 'world_history'
+  | 'politics'
+  // ── Economy & Business ───────────────────────────────────────────────────
+  | 'economics'
+  | 'finance'
+  | 'entrepreneurship'
+  // ── Technology ───────────────────────────────────────────────────────────
+  | 'technology'
+  | 'ai_tech'
+  | 'cybersecurity'
+  | 'programming'
+  // ── Health & Mind ────────────────────────────────────────────────────────
+  | 'medicine'
+  | 'human_body'
+  | 'psychology'
+  // ── Nature & Universe ────────────────────────────────────────────────────
+  | 'space'
+  | 'environment'
+  | 'animals'
+  // ── Arts & Culture ───────────────────────────────────────────────────────
+  | 'architecture'
+  | 'literature'
+  | 'art_visual'
+  | 'arabic_language'
+  // ── Entertainment ────────────────────────────────────────────────────────
+  | 'movies_intl'
+  | 'tv_shows_intl'
+  | 'video_games'
+  | 'celebrities_intl'
+  | 'flags_maps'
+  // ── Challenge Modes ──────────────────────────────────────────────────────
+  | 'math_logic'
+  | 'riddles_ar'
+  // ── Gulf & Kuwait Heritage ───────────────────────────────────────────────
+  | 'gulf_dialect'
+  | 'kuwait_tribes'
+  | 'kuwait_old'
+  | 'kuwait_bedou'
+  | 'hadar_dialect'
+  | (string & {});
+
+// ── Question media type ───────────────────────────────────────────────────────
+export type QuestionType =
+  | 'text'
+  | 'image'
+  | 'audio'
+  | 'video'
+  | 'math'
+  | 'riddle'
+  | 'guess'      // "خمّن من/ماذا/أين" — identify a person / place / object
+  | 'scene'      // "ماذا حدث في هذا المشهد؟" — video/image scene question
+  | 'identify'   // "عرّف هذا الصوت/الأغنية/الصوت" — sound/voice identification
+  | 'ordering'   // "رتّب" — drag/tap items into the correct order
+  | 'map'        // "خريطة" — image of a map, zoom-tap to read it
+  | 'charades';  // مثّل بدون كلام — QR-delivered private prompt, host judges
 
 export interface Question {
   id: string;
   category: CategoryId;
-  tier: 1 | 2 | 3;
-  points: 100 | 200 | 300;
+  tier: 1 | 2 | 3 | 4 | 5 | 6;
+  points: 100 | 200 | 300 | 400 | 500 | 600;
   text: string;
   options: string[];
+  optionImages?: string[];     // parallel image URLs for each option (same index as options)
   correctIndex: number;
+  /** Ordering questions only: correct sequence as option indices e.g. [2,0,3,1] */
+  correctOrder?: number[];
+  // Multimedia
+  type?: QuestionType;        // defaults to 'text'
+  mediaUrl?: string;          // image / audio / video URL
+  mediaAlt?: string;          // accessible description of the media
+  mediaDuration?: number;     // seconds — relevant for audio/video clips
+  // Display helpers
+  teaser?: string;            // shown before question is answered (e.g. "هل تعرف هذا الوجه؟")
+  tags?: string[];            // optional taxonomy tags for filtering
+  // Educational reveal content
+  explanation?: string;       // why this answer is correct
+  funFact?: string;           // interesting related fact
+  didYouKnow?: string;        // extra knowledge nugget
+  source?: string;            // reference / attribution
+  evidence?: Evidence;
 }
 
 export interface Category {
@@ -58,21 +144,35 @@ export interface GameRoom {
 export interface GameBoardCell {
   questionId: string;
   category: CategoryId;
-  tier: 1 | 2 | 3;
-  points: 100 | 200 | 300;
+  tier: 1 | 2 | 3 | 4 | 5 | 6;
+  points: 100 | 200 | 300 | 400 | 500 | 600;
   answered: boolean;
   answeredBy?: string;
 }
 
 export type SabotageType =
-  | 'steal'    // immediate: take 20% of target's score
-  | 'block'    // defensive: deflect next incoming sabotage
-  | 'halve'    // immediate: halve target's score
-  | 'bomb'     // pending: target loses 150 extra if they answer wrong
-  | 'freeze'   // pending: target gets only 8s on their next question
-  | 'scramble' // pending: target's answer options are shuffled
-  | 'double'   // pending self: next correct = 2x points, wrong = -50
-  | 'mystery'; // random: one of 8 weighted outcomes
+  | 'steal'
+  | 'block'
+  | 'halve'
+  | 'bomb'
+  | 'freeze'
+  | 'scramble'
+  | 'double'
+  | 'mystery';
+
+// ─── Weapon / Mystery-Box system ─────────────────────────────────────────────
+
+export type WeaponType = 'timer_bomb' | 'immunity' | 'forced_category' | 'ask_friend' | 'extra_time';
+
+export interface Evidence {
+  title: string;
+  description: string;
+  visualIcon?: string;
+  imageUrl?: string;
+  audioUrl?: string;
+  videoUrl?: string;
+  sourceLink?: string;
+}
 
 export interface Sabotage {
   type: SabotageType;
@@ -87,17 +187,43 @@ export interface GameState {
   currentQuestion: Question | null;
   activePlayer: string | null;
   timer: number;
-  phase: 'lobby' | 'board' | 'question' | 'result' | 'sabotage' | 'finished';
+  phase: 'lobby' | 'board' | 'question' | 'steal' | 'result' | 'sabotage' | 'finished';
+  stealOpponentTeamId: TeamId | null;
   hostMessage: string;
   sabotages: Record<string, SabotageType[]>;
   selectedSabotage: SabotageType | null;
   sabotageTarget: string | null;
   lastAnswer: {
     playerId: string;
+    teamId?: TeamId | null;
     correct: boolean;
     points: number;
     timeBonus: number;
     streakMultiplier: number;
+    /** True when the opposing team still has a steal attempt pending — hide reveal until steal resolves */
+    pendingSteal?: boolean;
+  } | null;
+  // ── Teams weapon system ──
+  teamMembership: { alpha: string[]; beta: string[] } | null;
+  activeTeamId: TeamId | null;
+  teamStreaks: Partial<Record<TeamId, number>>;
+  teamWeapons: Partial<Record<TeamId, WeaponType[]>>;
+  pendingWeapon: { teamId: TeamId; weapon: WeaponType } | null;
+  activeBomb: TeamId | null;
+  activeImmunity: Partial<Record<TeamId, boolean>>;
+  forcedCategory: { targetTeamId: TeamId; categoryId: CategoryId } | null;
+  // ── Last Stand comeback mechanic ──
+  lastStandActive: TeamId | null;
+  lastStandUsed: Partial<Record<TeamId, boolean>>;
+  // ── Per-team score totals (single-device safe) ──
+  teamScores: Partial<Record<TeamId, number>>;
+  // ── Display info (persisted so names survive refresh) ──
+  teamDisplay: { alpha: { name: string; emoji: string }; beta: { name: string; emoji: string } } | null;
+  // ── Multiplayer category draft — synced via HOST_SYNC so guest sees live picks ──
+  draftPhase?: {
+    picks: Array<{ teamId: 'alpha' | 'beta'; categoryId: string }>;
+    currentTeam: 'alpha' | 'beta';
+    isComplete: boolean;
   } | null;
 }
 
@@ -108,10 +234,8 @@ export interface ActiveSabotageEffect {
   type: SabotageType;
   fromPlayerId: string;
   fromTeamId: TeamId | null;
-  /** The player the effect will fire on */
   targetPlayerId: string;
   plantedTurn: number;
-  /** If still pending after this many turns, auto-expire */
   expiresAfterTurns: number;
   resolved: boolean;
   data: {
@@ -125,9 +249,7 @@ export interface ActiveSabotageEffect {
 export interface ScrambleMap {
   targetPlayerId: string;
   questionId: string;
-  /** scrambledOptions[i] = original option text; displayIdx → original text */
   scrambledOptions: string[];
-  /** displayIndex → originalOptionIndex */
   indexMap: number[];
 }
 

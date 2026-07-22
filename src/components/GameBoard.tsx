@@ -1,4 +1,7 @@
 import { getCategoryById } from '@/lib/categories';
+import { TRIAL_QUESTION_LIMIT } from '@/store/gameStore';
+import { CATEGORY_CONTEXT_IMAGES } from '@/lib/categoryMedia';
+import { getAdminImageForCategory } from '@/lib/customGames';
 import type { GameBoardCell, CategoryId } from '@/lib/types';
 
 interface GameBoardProps {
@@ -8,10 +11,19 @@ interface GameBoardProps {
   isTrial: boolean;
   answeredCount: number;
   activeTeamColor?: string | null;
+  isMyTurn?: boolean;
+  forcedCategoryId?: CategoryId;
+  tvMode?: boolean;
 }
 
-const TIER_COLORS = ['text-emerald-400', 'text-yellow-400', 'text-orange-400'];
-const TIER_LABELS = ['⭐', '⭐⭐', '⭐⭐⭐'];
+const TIER_POINTS = [100, 200, 300, 600] as const;
+
+const TIER_STYLES: Record<number, { text: string; bg: string; glow: string }> = {
+  100: { text: '#F2E7D3', bg: '#3A2416', glow: 'rgba(176,137,104,0.40)' },
+  200: { text: '#16100B', bg: '#A07228', glow: 'rgba(208,162,74,0.50)' },
+  300: { text: '#16100B', bg: '#D0A24A', glow: 'rgba(233,162,60,0.55)' },
+  600: { text: '#F5D5C0', bg: '#8B2D12', glow: 'rgba(200,90,52,0.55)' },
+};
 
 export function GameBoard({
   board,
@@ -20,23 +32,29 @@ export function GameBoard({
   isTrial,
   answeredCount,
   activeTeamColor,
+  isMyTurn = true,
+  forcedCategoryId,
+  tvMode = false,
 }: GameBoardProps) {
-  const trialLimit = 9;
+  const trialLimit = TRIAL_QUESTION_LIMIT;
+  const catColWidth = tvMode ? '130px' : '100px';
+  const gridCols = `${catColWidth} repeat(4, 1fr)`;
 
   return (
     <div className="animate-fade-in w-full">
-      {/* Tier point headers */}
+      {/* Point column headers */}
       <div
         className="grid gap-1.5 mb-2 px-1"
-        style={{ gridTemplateColumns: '120px repeat(6, 1fr)' }}
+        style={{ gridTemplateColumns: gridCols }}
       >
         <div />
-        {[100, 100, 200, 200, 300, 300].map((pts, i) => (
+        {TIER_POINTS.map((pts) => (
           <div
-            key={i}
-            className={`text-center text-xs font-bold py-1 ${TIER_COLORS[Math.floor(i / 2)]}`}
+            key={pts}
+            className="text-center text-xs font-black py-1 tracking-tight"
+            style={{ color: TIER_STYLES[pts].bg }}
           >
-            {i % 2 === 0 ? pts : ''}
+            {pts}
           </div>
         ))}
       </div>
@@ -48,44 +66,95 @@ export function GameBoard({
           return (
             <div
               key={cat.id}
-              className="grid gap-1.5 items-center"
-              style={{ gridTemplateColumns: '120px repeat(6, 1fr)' }}
+              className={`grid gap-1.5 items-center rounded-lg transition-all ${
+                forcedCategoryId === cat.id ? 'bg-jawwib-amber/8 ring-1 ring-jawwib-amber/30' : ''
+              }`}
+              style={{ gridTemplateColumns: gridCols }}
             >
-              {/* Category */}
-              <div className="flex items-center gap-1.5 px-1 min-w-0">
-                <span className="text-base shrink-0">{cat.icon}</span>
-                <span className="text-xs font-bold text-jawwib-text-dim truncate">{cat.name}</span>
-              </div>
+              {/* Category label — with image background when available */}
+              {(() => {
+                const adminImgUrl = getAdminImageForCategory(cat.id);
+                const catImg = adminImgUrl
+                  ? { url: adminImgUrl, alt: cat.name as string, position: 'center' }
+                  : CATEGORY_CONTEXT_IMAGES[cat.id as keyof typeof CATEGORY_CONTEXT_IMAGES];
+                return (
+                  <div
+                    className={`board-category-col relative overflow-hidden rounded-lg min-w-0 ${tvMode ? 'min-h-[56px]' : 'min-h-[44px]'} ${
+                      forcedCategoryId === cat.id ? 'ring-1 ring-jawwib-amber/60' : ''
+                    }`}
+                  >
+                    {catImg ? (
+                      <>
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            backgroundImage: `url(${catImg.url})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: catImg.position ?? 'center',
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/35 via-black/50 to-black/65" />
+                      </>
+                    ) : (
+                      <div className="absolute inset-0 bg-jawwib-surface" />
+                    )}
+                    <div className="relative z-10 flex flex-col items-center justify-center h-full w-full px-0.5 py-1 text-center">
+                      <span className={`leading-none ${tvMode ? 'text-sm' : 'text-xs'}`}>{cat.icon}</span>
+                      <span
+                        className={`font-bold leading-tight mt-0.5 line-clamp-2 ${tvMode ? 'text-[10px]' : 'text-[8.5px]'} ${
+                          catImg ? 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]' :
+                          forcedCategoryId === cat.id ? 'text-jawwib-amber' : 'text-jawwib-text-dim'
+                        }`}
+                      >
+                        {cat.name}
+                      </span>
+                      {forcedCategoryId === cat.id && <span className="text-[9px] text-jawwib-amber font-black mt-0.5">🎯</span>}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Cells */}
               {row.map((cell, colIndex) => {
+                const pts = cell.points;
+                const style = TIER_STYLES[pts] ?? TIER_STYLES[TIER_POINTS[colIndex]];
                 const isLocked = isTrial && answeredCount >= trialLimit && !cell.answered;
-                const tierIdx = Math.floor(colIndex / 2);
+                const isForcedOut = !cell.answered && !!forcedCategoryId && cell.category !== forcedCategoryId;
+                const canClick = !cell.answered && !isLocked && !isForcedOut && isMyTurn;
+
                 return (
                   <button
                     key={`${rowIndex}-${colIndex}`}
-                    onClick={() => !cell.answered && !isLocked && onSelectQuestion(cell.questionId)}
-                    disabled={cell.answered || isLocked}
-                    className={`board-cell flex items-center justify-center py-3 min-h-[48px] text-center relative ${
+                    onClick={() => canClick && onSelectQuestion(cell.questionId)}
+                    disabled={cell.answered || isLocked || isForcedOut || !isMyTurn}
+                    className={`board-cell flex items-center justify-center py-2.5 text-center relative ${tvMode ? 'min-h-[56px]' : 'min-h-[44px]'} ${
                       cell.answered ? 'answered' : ''
-                    } ${isLocked ? '!opacity-20 cursor-not-allowed' : ''}`}
+                    } ${isLocked || isForcedOut ? '!opacity-20 cursor-not-allowed' : ''} ${
+                      !isMyTurn && !cell.answered ? 'cursor-default opacity-60' : ''
+                    }`}
+                    style={
+                      canClick
+                        ? ({
+                            '--cell-hover-color': style.text,
+                            '--cell-glow-color': style.glow,
+                            background: style.bg,
+                          } as React.CSSProperties)
+                        : { background: cell.answered ? undefined : style.bg }
+                    }
                   >
                     {cell.answered ? (
-                      <span className="text-jawwib-text-dim text-sm">✓</span>
+                      <span className="board-cell-check">✓</span>
                     ) : isLocked ? (
-                      <span className="text-jawwib-text-dim text-sm">🔒</span>
+                      <span className="text-jawwib-text-dim text-xs">🔒</span>
                     ) : (
                       <span
-                        className={`font-bold text-sm ${TIER_COLORS[tierIdx]}`}
-                        style={activeTeamColor ? { textShadow: `0 0 8px ${activeTeamColor}40` } : undefined}
+                        className="font-black text-sm tabular-nums"
+                        style={{
+                          color: style.text,
+                          textShadow: activeTeamColor ? `0 0 8px ${activeTeamColor}30` : undefined,
+                        }}
                       >
-                        {cell.points}
-                      </span>
-                    )}
-                    {/* Tier pip */}
-                    {!cell.answered && !isLocked && (
-                      <span className="absolute top-0.5 right-1 text-[8px] opacity-40">
-                        {TIER_LABELS[tierIdx]}
+                        {pts}
                       </span>
                     )}
                   </button>
@@ -99,7 +168,7 @@ export function GameBoard({
       {isTrial && (
         <div className="mt-3 p-2 rounded-xl bg-jawwib-gold/10 border border-jawwib-gold/20 text-center">
           <span className="text-jawwib-gold text-xs font-bold">
-            🔒 تجريبي: {answeredCount}/{trialLimit} أسئلة
+            🔒 تجريبي: {answeredCount}/{trialLimit} سؤال
           </span>
         </div>
       )}

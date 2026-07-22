@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { categories } from '@/lib/categories';
+import { CATEGORY_CONTEXT_IMAGES } from '@/lib/categoryMedia';
+import type { CategoryId } from '@/lib/types';
 
 interface DraftState {
   picks: Array<{ teamId: 'alpha' | 'beta'; categoryId: string }>;
@@ -15,86 +17,30 @@ interface CategoryDraftScreenProps {
   localTeamId: 'alpha' | 'beta' | null;
   isHost: boolean;
   availableCategories: Array<{ id: string; name: string; icon: string; color: string }>;
+  requiredPerTeam?: number;
+  alphaTeamName?: string;
+  betaTeamName?: string;
   onPick: (categoryId: string) => void;
   onSkipDraft: () => void;
   onStartGame: () => void;
+  onHome?: () => void;
 }
 
-const TOTAL_ROUNDS = 3;
-
-function TeamPill({
-  teamId,
-  active,
-}: {
-  teamId: 'alpha' | 'beta';
-  active: boolean;
-}) {
-  const isAlpha = teamId === 'alpha';
+function ProgressDots({ filled, total, color }: { filled: number; total: number; color: string }) {
   return (
-    <div
-      className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all duration-300 ${
-        isAlpha
-          ? active
-            ? 'border-blue-500 bg-blue-500/15 shadow-[0_0_20px_rgba(59,130,246,0.45)]'
-            : 'border-blue-500/25 bg-blue-500/5 opacity-45'
-          : active
-            ? 'border-red-500 bg-red-500/15 shadow-[0_0_20px_rgba(239,68,68,0.45)]'
-            : 'border-red-500/25 bg-red-500/5 opacity-45'
-      }`}
-    >
-      <span>{isAlpha ? '🛡️' : '⚔️'}</span>
-      <span className={`font-bold text-sm ${isAlpha ? 'text-blue-400' : 'text-red-400'}`}>
-        {isAlpha ? 'الفريق الأزرق' : 'الفريق الأحمر'}
-      </span>
-      {active && (
-        <span
-          className={`w-2 h-2 rounded-full animate-pulse ${isAlpha ? 'bg-blue-400' : 'bg-red-400'}`}
+    <div className="flex gap-1 items-center justify-center">
+      {Array.from({ length: total }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-full transition-all duration-300"
+          style={{
+            width: i < filled ? 10 : 8,
+            height: i < filled ? 10 : 8,
+            background: i < filled ? color : '#C9A87A',
+            opacity: i < filled ? 1 : 0.35,
+          }}
         />
-      )}
-    </div>
-  );
-}
-
-function DraftedList({
-  teamId,
-  categoryIds,
-  allCategories,
-}: {
-  teamId: 'alpha' | 'beta';
-  categoryIds: string[];
-  allCategories: Array<{ id: string; name: string; icon: string; color: string }>;
-}) {
-  const isAlpha = teamId === 'alpha';
-  const borderColor = isAlpha ? 'border-blue-500/35' : 'border-red-500/35';
-  const labelColor = isAlpha ? 'text-blue-400' : 'text-red-400';
-  const bgColor = isAlpha ? 'bg-blue-500/5' : 'bg-red-500/5';
-
-  return (
-    <div className={`flex-1 rounded-2xl border ${borderColor} ${bgColor} p-3`}>
-      <p className={`text-xs font-bold mb-2 flex items-center gap-1.5 ${labelColor}`}>
-        <span>{isAlpha ? '🛡️' : '⚔️'}</span>
-        <span>{isAlpha ? 'الأزرق' : 'الأحمر'}</span>
-        <span className="opacity-60">({categoryIds.length})</span>
-      </p>
-      <div className="flex flex-col gap-1.5">
-        {categoryIds.map((cid, i) => {
-          const cat = allCategories.find((c) => c.id === cid);
-          if (!cat) return null;
-          return (
-            <div
-              key={cid}
-              className="animate-slide-up flex items-center gap-2 px-2 py-1.5 rounded-lg bg-jawwib-card border border-jawwib-border/40"
-              style={{ animationDelay: `${i * 40}ms` }}
-            >
-              <span className="text-sm">{cat.icon}</span>
-              <span className="text-xs font-bold text-jawwib-text truncate">{cat.name}</span>
-            </div>
-          );
-        })}
-        {categoryIds.length === 0 && (
-          <p className="text-xs text-jawwib-text-dim opacity-40 text-center py-3">—</p>
-        )}
-      </div>
+      ))}
     </div>
   );
 }
@@ -104,103 +50,153 @@ export function CategoryDraftScreen({
   localTeamId,
   isHost,
   availableCategories,
+  requiredPerTeam = 3,
+  alphaTeamName = 'الفريق الأزرق',
+  betaTeamName  = 'الفريق الأحمر',
   onPick,
   onSkipDraft,
   onStartGame,
+  onHome,
 }: CategoryDraftScreenProps) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
-  const { picks, currentTeam, round, complete, alphaCategories, betaCategories } = draftState;
-
+  const { picks, currentTeam, complete, alphaCategories, betaCategories } = draftState;
   const pickedIds = new Set(picks.map((p) => p.categoryId));
-  const pickMap = new Map(picks.map((p) => [p.categoryId, p.teamId]));
+  const pickMap   = new Map(picks.map((p) => [p.categoryId, p.teamId]));
+
+  const alphaCount = alphaCategories.length;
+  const betaCount  = betaCategories.length;
+  const alphaDone  = alphaCount >= requiredPerTeam;
+  const betaDone   = betaCount  >= requiredPerTeam;
+  const bothDone   = alphaDone && betaDone;
 
   const isMyTurn = localTeamId === currentTeam;
-  const canPick = !complete && (isHost || isMyTurn);
-
-  const snakeLabel =
-    'اختار فريق، اختار فريق، اختار اثنين... (snake draft)';
+  const canPick  = !complete && !bothDone && (isHost || isMyTurn);
+  const canStart = bothDone && isHost;
 
   if (!mounted) return null;
 
   return (
-    <div className="animate-fade-in min-h-screen p-4 flex flex-col" dir="rtl">
-      <div className="max-w-3xl mx-auto w-full flex flex-col gap-4 flex-1">
+    <div className="min-h-screen bg-diwaniya p-4 flex flex-col" dir="rtl">
+      <div className="max-w-2xl mx-auto w-full flex flex-col gap-4 flex-1">
 
         {/* Header */}
-        <div className="text-center animate-slide-up">
-          <h1 className="text-3xl font-black text-gold-gradient mb-1">Draft الفئات</h1>
-          <p className="text-xs text-jawwib-text-dim">{snakeLabel}</p>
-        </div>
-
-        {/* Round indicator */}
-        <div
-          className="flex items-center justify-center gap-3 animate-slide-up"
-          style={{ animationDelay: '60ms' }}
-        >
-          {Array.from({ length: TOTAL_ROUNDS }).map((_, i) => (
-            <div
-              key={i}
-              className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-black border-2 transition-all duration-300 ${
-                i + 1 < round
-                  ? 'border-jawwib-gold bg-jawwib-gold/20 text-jawwib-gold'
-                  : i + 1 === round
-                    ? 'border-jawwib-gold bg-jawwib-gold text-jawwib-bg animate-pulse-gold'
-                    : 'border-jawwib-border text-jawwib-text-dim opacity-35'
-              }`}
+        <div className="text-center animate-slide-up relative">
+          {onHome && (
+            <button
+              onClick={onHome}
+              className="absolute top-0 left-0 text-sm px-2 py-1 rounded-lg border border-jawwib-border text-jawwib-text-dim hover:text-jawwib-red hover:border-jawwib-red/40 transition-all tap-target"
+              title="الرجوع للرئيسية"
             >
-              {i + 1 < round ? '✓' : i + 1}
-            </div>
-          ))}
-          <span className="text-xs text-jawwib-text-dim">
-            جولة {round} من {TOTAL_ROUNDS}
-          </span>
+              🏠
+            </button>
+          )}
+          <h1 className="text-2xl font-black text-gold-gradient mb-0.5">اختر الفئات</h1>
+          <p className="text-xs text-jawwib-text-dim">كل فريق يختار {requiredPerTeam} فئات بالتناوب</p>
+          <div className="sadu-accent mx-auto mt-2 max-w-xs" />
         </div>
 
-        {/* Turn indicator */}
-        {!complete && (
+        {/* Team counters */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Alpha */}
           <div
-            className="flex items-center justify-center gap-3 animate-bounce-in"
-            style={{ animationDelay: '80ms' }}
+            className={`rounded-2xl p-3 border-2 transition-all ${
+              currentTeam === 'alpha' && !bothDone
+                ? 'border-jawwib-blue bg-blue-50/70 shadow-sm'
+                : alphaDone
+                ? 'border-jawwib-green/50 bg-green-50/50'
+                : 'border-jawwib-border bg-jawwib-surface opacity-80'
+            }`}
           >
-            <TeamPill teamId="alpha" active={currentTeam === 'alpha'} />
-            <span className="text-jawwib-text-dim text-xs font-bold">دور</span>
-            <TeamPill teamId="beta" active={currentTeam === 'beta'} />
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-bold text-sm" style={{ color: '#1A5FA8' }}>
+                {currentTeam === 'alpha' && !bothDone && '◉ '}{alphaTeamName}
+              </span>
+              <span className={`text-xs font-black ${alphaDone ? 'text-jawwib-green' : 'text-jawwib-text-dim'}`}>
+                {alphaDone ? '✓ اكتمل' : `${alphaCount}/${requiredPerTeam}`}
+              </span>
+            </div>
+            <ProgressDots filled={alphaCount} total={requiredPerTeam} color="#1A5FA8" />
+            {/* Picked categories mini-list */}
+            <div className="flex flex-wrap gap-1 mt-2">
+              {alphaCategories.map((cid) => {
+                const cat = availableCategories.find((c) => c.id === cid);
+                return cat ? (
+                  <span key={cid} className="text-[10px] bg-blue-100 text-jawwib-blue px-1.5 py-0.5 rounded-full font-bold">
+                    {cat.icon} {cat.name}
+                  </span>
+                ) : null;
+              })}
+            </div>
           </div>
-        )}
 
-        {/* My turn prompt */}
-        {!complete && isMyTurn && !isHost && (
-          <div className="animate-bounce-in text-center">
-            <span className="inline-block px-4 py-2 rounded-full bg-jawwib-gold/10 border border-jawwib-gold/40 text-jawwib-gold text-sm font-black animate-pulse-gold">
-              ⚡ دورك! اختر فئة
+          {/* Beta */}
+          <div
+            className={`rounded-2xl p-3 border-2 transition-all ${
+              currentTeam === 'beta' && !bothDone
+                ? 'border-jawwib-red bg-red-50/70 shadow-sm'
+                : betaDone
+                ? 'border-jawwib-green/50 bg-green-50/50'
+                : 'border-jawwib-border bg-jawwib-surface opacity-80'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-bold text-sm" style={{ color: '#B82118' }}>
+                {currentTeam === 'beta' && !bothDone && '◉ '}{betaTeamName}
+              </span>
+              <span className={`text-xs font-black ${betaDone ? 'text-jawwib-green' : 'text-jawwib-text-dim'}`}>
+                {betaDone ? '✓ اكتمل' : `${betaCount}/${requiredPerTeam}`}
+              </span>
+            </div>
+            <ProgressDots filled={betaCount} total={requiredPerTeam} color="#B82118" />
+            <div className="flex flex-wrap gap-1 mt-2">
+              {betaCategories.map((cid) => {
+                const cat = availableCategories.find((c) => c.id === cid);
+                return cat ? (
+                  <span key={cid} className="text-[10px] bg-red-100 text-jawwib-red px-1.5 py-0.5 rounded-full font-bold">
+                    {cat.icon} {cat.name}
+                  </span>
+                ) : null;
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Turn prompt */}
+        {!bothDone && (
+          <div className="text-center">
+            <span
+              className="inline-block px-4 py-2 rounded-full text-sm font-black animate-pulse-gold"
+              style={{
+                background: currentTeam === 'alpha' ? 'rgba(26,95,168,0.1)' : 'rgba(184,33,24,0.1)',
+                border: `2px solid ${currentTeam === 'alpha' ? 'rgba(26,95,168,0.4)' : 'rgba(184,33,24,0.4)'}`,
+                color: currentTeam === 'alpha' ? '#1A5FA8' : '#B82118',
+              }}
+            >
+              {currentTeam === 'alpha' ? alphaDone ? `دور ${betaTeamName}` : `دور ${alphaTeamName}` : betaDone ? `دور ${alphaTeamName}` : `دور ${betaTeamName}`}
+              {` — اختر فئة`}
             </span>
           </div>
         )}
 
-        {/* Draft complete banner */}
-        {complete && (
-          <div className="animate-bounce-in text-center game-card p-3 border-jawwib-gold/50">
-            <p className="text-jawwib-gold font-black text-lg">✅ اكتمل الـ Draft!</p>
+        {/* Both done banner */}
+        {bothDone && (
+          <div className="game-card p-3 text-center border-jawwib-gold/50 animate-bounce-in">
+            <p className="text-jawwib-gold font-black">✅ اكتمل الاختيار — جاهزون للمنافسة!</p>
           </div>
         )}
 
-        {/* Category grid */}
-        <div
-          className="grid grid-cols-2 sm:grid-cols-4 gap-2 animate-fade-in"
-          style={{ animationDelay: '100ms' }}
-        >
+        {/* Category grid — illustrated tiles */}
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {availableCategories.map((cat, i) => {
-            const pickedBy = pickMap.get(cat.id);
-            const isPicked = pickedIds.has(cat.id);
-            const isAlphaPick = pickedBy === 'alpha';
+            const pickedBy  = pickMap.get(cat.id);
+            const isPicked  = pickedIds.has(cat.id);
+            const isAlpha   = pickedBy === 'alpha';
             const isClickable = canPick && !isPicked;
-
             const catFromLib = categories.find((c) => c.id === cat.id);
-            const catColor = catFromLib?.color ?? cat.color;
+            const catColor   = catFromLib?.color ?? cat.color;
+            const catImg     = CATEGORY_CONTEXT_IMAGES[cat.id as CategoryId];
 
             return (
               <button
@@ -208,87 +204,91 @@ export function CategoryDraftScreen({
                 onClick={() => isClickable && onPick(cat.id)}
                 disabled={!isClickable}
                 className={[
-                  'relative p-3 rounded-xl border-2 flex flex-col items-center gap-1.5 text-center',
-                  'transition-all duration-200 animate-fade-in',
+                  'category-tile relative flex flex-col items-center justify-end text-center animate-fade-in',
+                  'min-h-[92px] border-2',
                   isPicked
-                    ? isAlphaPick
-                      ? 'border-blue-500/45 bg-blue-500/8 opacity-65 cursor-default'
-                      : 'border-red-500/45 bg-red-500/8 opacity-65 cursor-default'
+                    ? isAlpha
+                      ? 'border-jawwib-blue/50 opacity-65'
+                      : 'border-jawwib-red/50 opacity-65'
                     : isClickable
-                      ? 'border-jawwib-border bg-jawwib-card cursor-pointer hover:border-jawwib-gold hover:bg-jawwib-gold/5 hover:shadow-[0_0_14px_rgba(212,160,23,0.3)] hover:scale-105'
-                      : 'border-jawwib-border bg-jawwib-surface opacity-35 cursor-not-allowed',
+                      ? 'border-jawwib-border'
+                      : 'border-jawwib-border opacity-30',
                 ].join(' ')}
-                style={{ animationDelay: `${i * 30}ms` }}
+                style={{ animationDelay: `${i * 25}ms` }}
               >
-                <span className="text-2xl">{cat.icon}</span>
-                <span className="text-xs font-bold text-jawwib-text leading-tight">
-                  {cat.name}
+                {/* Illustrated background */}
+                {catImg ? (
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${catImg.url})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: catImg.position ?? 'center',
+                    }}
+                  />
+                ) : (
+                  <div className="absolute inset-0" style={{ background: catColor }} />
+                )}
+                {/* Per-category color gradient overlay */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(165deg, ${catColor}55 0%, rgba(13,27,42,0.55) 55%, rgba(13,27,42,0.92) 100%)`,
+                  }}
+                />
+                {/* Idle shimmer sweep — only on pickable tiles */}
+                {isClickable && <div className="category-tile-shimmer" />}
+
+                {/* Icon */}
+                <span className="relative z-10 text-2xl mb-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
+                  {cat.icon}
                 </span>
 
-                {/* Picked-by badge */}
+                {/* Name pill */}
+                <span className="relative z-10 w-full px-1.5 pb-1.5">
+                  <span className="block text-[10.5px] font-black leading-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.85)]">
+                    {cat.name}
+                  </span>
+                </span>
+
                 {isPicked && (
                   <span
-                    className={`absolute top-1 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
-                      isAlphaPick
-                        ? 'bg-blue-500/25 text-blue-400'
-                        : 'bg-red-500/25 text-red-400'
+                    className={`absolute top-1.5 left-1.5 z-10 text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                      isAlpha ? 'bg-jawwib-blue/85 text-white' : 'bg-jawwib-red/85 text-white'
                     }`}
                   >
-                    {isAlphaPick ? '🛡️' : '⚔️'}
+                    {isAlpha ? '🌊' : '🐪'}
                   </span>
                 )}
 
-                {/* Category color stripe */}
                 <div
-                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-b-xl opacity-50"
-                  style={{ backgroundColor: catColor }}
+                  className="absolute bottom-0 left-0 right-0 h-1 z-10"
+                  style={{ background: catColor }}
                 />
               </button>
             );
           })}
         </div>
 
-        {/* Drafted lists */}
-        <div className="flex gap-3 animate-slide-up" style={{ animationDelay: '140ms' }}>
-          <DraftedList
-            teamId="alpha"
-            categoryIds={alphaCategories}
-            allCategories={availableCategories}
-          />
-          <DraftedList
-            teamId="beta"
-            categoryIds={betaCategories}
-            allCategories={availableCategories}
-          />
-        </div>
-
-        {/* Action buttons */}
-        <div
-          className="flex flex-col gap-2 animate-slide-up pb-4"
-          style={{ animationDelay: '180ms' }}
-        >
-          {complete && isHost && (
-            <button
-              onClick={onStartGame}
-              className="btn-gold w-full text-lg py-4 animate-bounce-in"
-            >
+        {/* Actions */}
+        <div className="flex flex-col gap-2 pb-4">
+          {canStart && (
+            <button onClick={onStartGame} className="btn-gold w-full text-lg py-4 animate-bounce-in">
               ابدأ اللعبة! 🚀
             </button>
           )}
-
-          {!complete && isHost && (
+          {!bothDone && isHost && (
             <button
               onClick={onSkipDraft}
-              className="w-full py-3 rounded-xl text-sm font-bold border-2 border-jawwib-border text-jawwib-text-dim hover:border-jawwib-gold hover:text-jawwib-gold transition-all"
+              className="w-full py-2.5 rounded-xl text-sm font-bold border-2 border-jawwib-border text-jawwib-text-dim hover:border-jawwib-gold hover:text-jawwib-gold transition-all"
             >
-              🎲 تخطي الـ Draft — اختيار عشوائي
+              🎲 اختيار عشوائي
             </button>
           )}
-
-          {!isHost && !complete && (
-            <div className="text-center text-jawwib-text-dim text-sm py-2">
-              {isMyTurn ? null : '⏳ بانتظار الفريق الآخر...'}
-            </div>
+          {!isHost && !bothDone && (
+            <p className="text-center text-jawwib-text-dim text-sm py-2">
+              ⏳ {isMyTurn ? 'دورك — اختر فئة!' : 'بانتظار الفريق الآخر...'}
+            </p>
           )}
         </div>
       </div>

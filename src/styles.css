@@ -1,176 +1,123 @@
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 @import "tailwindcss" source("../");
 
 @theme {
-  --color-jawwib-bg: #06060F;
-  --color-jawwib-surface: #0E0E1A;
-  --color-jawwib-card: #151525;
-  --color-jawwib-border: #2A2A3E;
-  --color-jawwib-gold: #D4A017;
-  --color-jawwib-gold-light: #F5D060;
-  --color-jawwib-gold-dark: #A07B10;
-  --color-jawwib-text: #F0F0F5;
-  --color-jawwib-text-dim: #8888A0;
-  --color-jawwib-green: #22C55E;
-  --color-jawwib-red: #EF4444;
-  --color-jawwib-blue: #3B82F6;
-  --color-jawwib-purple: #8B5CF6;
+  /* ── Jawwib Flagship — warm desert earth palette ────────────────── */
+  --color-jawwib-bg:         #16100B;   /* ink — deep warm black */
+  --color-jawwib-bg-deep:    #110B07;   /* ink-2 — deepest gradient */
+  --color-jawwib-surface:    #1C150E;   /* surface */
+  --color-jawwib-card:       #241A12;   /* card / raised surface */
+  --color-jawwib-card-raised:#2E2317;   /* raised tiles, gradient tops */
+  --color-jawwib-border:     rgba(233,162,60,0.14);  /* warm border */
+  --color-jawwib-gold:       #E9A23C;   /* primary accent */
+  --color-jawwib-gold-light: #F4C063;   /* gold highlight */
+  --color-jawwib-gold-dark:  #C17D11;
+  --color-jawwib-text:       #F2E7D3;   /* sand — primary text */
+  --color-jawwib-text-dim:   #CDBFA5;   /* sand-dim — secondary */
+  --color-jawwib-text-muted: #B7A488;   /* muted — tertiary */
+  --color-jawwib-green:      #5FA98C;   /* oasis — correct, Team B */
+  --color-jawwib-red:        #C85A34;   /* terra — wrong, image type */
+  --color-jawwib-blue:       #4E94A8;   /* oasis-water — draw mode */
+  --color-jawwib-purple:     #8B5CF6;   /* accent purple */
+  --color-jawwib-terra:      #C85A34;   /* terra orange */
+  --color-jawwib-clay:       #8E3B22;   /* deep accent */
+  --color-jawwib-oasis:      #5FA98C;   /* oasis green */
+  --color-jawwib-camel:      #B08968;   /* audio mode */
+  --color-jawwib-amber:      #D0A24A;   /* clue mode */
 }
 
 body {
   @apply m-0 bg-jawwib-bg text-jawwib-text;
-  font-family: 'Tajawal', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   direction: rtl;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+/* ── Display face — Reem Kufi for headlines, questions, logo ─────────── */
+.font-display {
+  font-family: 'Reem Kufi', 'IBM Plex Sans Arabic', sans-serif;
+  font-weight: 700;
+}
+
+/* ── Mono face — IBM Plex Mono for scores, timers, codes ─────────────── */
+.font-mono {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 500;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-family: 'IBM Plex Mono', source-code-pro, Menlo, Monaco, Consolas, monospace;
 }
 
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #06060F; }
-::-webkit-scrollbar-thumb { background: #2A2A3E; border-radius: 3px; }
+::-webkit-scrollbar-track { background: #16100B; }
+::-webkit-scrollbar-thumb { background: rgba(233,162,60,0.22); border-radius: 3px; }
+
+/* ── Keyframes ─────────────────────────────────────────────────────── */
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+
 @keyframes pulse-gold {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 160, 23, 0.4); }
-  50% { box-shadow: 0 0 20px 5px rgba(212, 160, 23, 0.2); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(176, 125, 26, 0.35); }
+  50%       { box-shadow: 0 0 22px 6px rgba(176, 125, 26, 0.18); }
 }
+
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+  0%, 100% { transform: translateX(0) scale(0.97); }
+  25%       { transform: translateX(-6px) scale(0.97); }
+  75%       { transform: translateX(6px) scale(0.97); }
 }
+
 @keyframes bounce-in {
-  0% { transform: scale(0.3); opacity: 0; }
-  50% { transform: scale(1.05); }
-  70% { transform: scale(0.95); }
+  0%   { transform: scale(0.3); opacity: 0; }
+  50%  { transform: scale(1.08); }
+  70%  { transform: scale(0.95); }
   100% { transform: scale(1); opacity: 1; }
 }
 
-.animate-fade-in { animation: fadeIn 0.4s ease-out; }
-.animate-slide-up { animation: slideUp 0.5s ease-out; }
-.animate-pulse-gold { animation: pulse-gold 2s infinite; }
-.animate-shake { animation: shake 0.5s ease-out; }
-.animate-bounce-in { animation: bounce-in 0.5s ease-out; }
-
-.text-gold-gradient {
-  background: linear-gradient(135deg, #D4A017, #F5D060, #D4A017);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.game-card {
-  background: #151525;
-  border: 1px solid #2A2A3E;
-  border-radius: 1rem;
-  transition: all 0.3s;
-}
-.game-card:hover {
-  border-color: #D4A017;
-  box-shadow: 0 0 20px rgba(212, 160, 23, 0.15);
-}
-
-.board-cell {
-  position: relative;
-  overflow: hidden;
-  border-radius: 0.75rem;
-  border: 1px solid #2A2A3E;
-  background: #151525;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.board-cell:hover:not(.answered) {
-  border-color: #D4A017;
-  transform: scale(1.05);
-  box-shadow: 0 0 15px rgba(212, 160, 23, 0.2);
-}
-.board-cell.answered {
-  opacity: 0.35;
-  cursor: default;
-}
-
-.btn-gold {
-  background: linear-gradient(135deg, #D4A017, #F5D060);
-  color: #06060F;
-  font-weight: 700;
-  border-radius: 0.75rem;
-  padding: 0.75rem 2rem;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: 'Tajawal', sans-serif;
-}
-.btn-gold:hover {
-  box-shadow: 0 0 25px rgba(212, 160, 23, 0.4);
-  transform: translateY(-2px);
-}
-.btn-gold:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-[dir="rtl"] input,
-[dir="rtl"] textarea {
-  text-align: right;
-}
-
-/* ── BUILD_08: Game feel animations ───────────────────────────── */
-
 @keyframes score-fly {
   0%   { transform: translateY(0)   scale(1);   opacity: 1; }
-  40%  { transform: translateY(-30px) scale(1.3); opacity: 1; }
-  100% { transform: translateY(-90px) scale(0.9); opacity: 0; }
-}
-
-@keyframes neon-ping {
-  0%   { transform: scale(1);    opacity: 0.9; }
-  60%  { transform: scale(1.6);  opacity: 0.3; }
-  100% { transform: scale(2);    opacity: 0; }
+  40%  { transform: translateY(-32px) scale(1.35); opacity: 1; }
+  100% { transform: translateY(-90px) scale(0.9);  opacity: 0; }
 }
 
 @keyframes team-pulse-blue {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-  50%       { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.25); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(95, 169, 140, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(95, 169, 140, 0.22); }
 }
 
 @keyframes team-pulse-red {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-  50%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.25); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(184, 33, 24, 0); }
+  50%       { box-shadow: 0 0 0 6px rgba(184, 33, 24, 0.22); }
 }
 
 @keyframes correct-flash {
   0%   { background: transparent; }
-  30%  { background: rgba(34, 197, 94, 0.2); }
+  30%  { background: rgba(95, 169, 140, 0.18); }
   100% { background: transparent; }
 }
 
 @keyframes wrong-flash {
   0%   { background: transparent; }
-  30%  { background: rgba(239, 68, 68, 0.2); }
+  30%  { background: rgba(200, 90, 52, 0.18); }
   100% { background: transparent; }
 }
 
-@keyframes momentum-bar {
-  from { width: 0%; }
-  to   { width: var(--momentum-target); }
-}
-
 @keyframes sabotage-appear {
-  0%   { transform: scale(0.5) rotate(-10deg); opacity: 0; }
-  60%  { transform: scale(1.1) rotate(3deg);  opacity: 1; }
-  100% { transform: scale(1)   rotate(0deg);  opacity: 1; }
+  0%   { transform: scale(0.5) rotate(-12deg); opacity: 0; }
+  60%  { transform: scale(1.1) rotate(3deg);   opacity: 1; }
+  100% { transform: scale(1)   rotate(0deg);   opacity: 1; }
 }
 
 @keyframes slide-in-up {
@@ -178,63 +125,429 @@ code {
   to   { transform: translateY(0);    opacity: 1; }
 }
 
-@keyframes ripple {
-  to { transform: scale(3); opacity: 0; }
+@keyframes tick-pulse {
+  0%   { transform: scale(1);    color: inherit; }
+  40%  { transform: scale(1.25); color: #B82118; }
+  100% { transform: scale(1);    color: #B82118; }
 }
+
+@keyframes countdown-pop {
+  0%   { transform: scale(2.5); opacity: 0; }
+  40%  { transform: scale(0.95); opacity: 1; }
+  80%  { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+@keyframes countdown-out {
+  0%   { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(0.5); opacity: 0; }
+}
+
+@keyframes rivalry-flash {
+  0%,100% { opacity:1; }
+  50%      { opacity:0.5; }
+}
+
+@keyframes score-reveal {
+  0%   { transform: scale(0.8) translateY(10px); opacity: 0; }
+  60%  { transform: scale(1.1) translateY(-4px); opacity: 1; }
+  100% { transform: scale(1)   translateY(0);    opacity: 1; }
+}
+
+@keyframes confetti-fall {
+  0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+  100% { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes sadu-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes evidence-reveal {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   TEAM TURN THEME SYSTEM
+   Apply data-active-team="alpha" or data-active-team="beta" on the
+   .game-wrapper div.  The entire background canvas shifts color plus a
+   rich layered gradient overlay creates a distinctive team identity.
+   ══════════════════════════════════════════════════════════════════════ */
+
+@keyframes turn-banner-pop {
+  0%   { opacity: 0; transform: translateY(-16px) scale(0.9); }
+  60%  { opacity: 1; transform: translateY(4px) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* البحر — Gulf sea breathing */
+@keyframes ocean-breathe {
+  0%, 100% { opacity: 0.82; filter: brightness(1); }
+  40%       { opacity: 1.00; filter: brightness(1.04); }
+}
+
+/* البر — desert heat shimmer */
+@keyframes desert-breathe {
+  0%, 100% { opacity: 0.78; filter: brightness(1); }
+  45%       { opacity: 1.00; filter: brightness(1.05); }
+}
+
+@keyframes timer-glow-blue {
+  0%, 100% { filter: drop-shadow(0 0 0px rgba(59,130,246,0)); }
+  50%       { filter: drop-shadow(0 0 12px rgba(59,130,246,0.55)); }
+}
+@keyframes timer-glow-red {
+  0%, 100% { filter: drop-shadow(0 0 0px rgba(239,68,68,0)); }
+  50%       { filter: drop-shadow(0 0 12px rgba(239,68,68,0.55)); }
+}
+@keyframes suspense-vignette {
+  0%, 100% { opacity: 0.12; }
+  50%       { opacity: 0.22; }
+}
+
+/* ── Base wrapper ────────────────────────────────────────────────────── */
+.game-wrapper {
+  position: relative;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  transition: background-color 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Gradient overlay layer — fixed so it covers the whole viewport */
+.game-wrapper::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  transition: background 0.9s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+}
+
+/* Content always above the overlay */
+.game-wrapper > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   البحر  (Alpha / Blue)  —  Kuwait Gulf Ocean
+   Background shifts to a clear sea-blue tint; overlay pours in deep
+   cobalt and aqua from every edge like light refracting through water.
+   ────────────────────────────────────────────────────────────────────── */
+.game-wrapper[data-active-team="alpha"] {
+  background-color: #1A1208; /* Warm gold dark */
+}
+
+.game-wrapper[data-active-team="alpha"]::before {
+  opacity: 1;
+  background:
+    radial-gradient(ellipse 140% 75% at 50% -15%,  rgba(233,162,60,0.45)  0%, transparent 58%),
+    radial-gradient(ellipse 75% 65% at -10% 55%,   rgba(193,125,17,0.32)  0%, transparent 55%),
+    radial-gradient(ellipse 75% 65% at 110% 55%,   rgba(233,162,60,0.28)  0%, transparent 55%),
+    radial-gradient(ellipse 110% 55% at 50% 120%,  rgba(244,192,99,0.22) 0%, transparent 52%),
+    radial-gradient(ellipse 60% 50% at 50% 45%,    rgba(233,162,60,0.10) 0%, transparent 70%);
+  animation: ocean-breathe 5s ease-in-out infinite;
+}
+
+/* ──────────────────────────────────────────────────────────────────────
+   البر   (Beta / Red)   —  Arabian Desert
+   Background shifts to warm terracotta; overlay floods in deep crimson
+   and amber from above and below like a desert sunset.
+   ────────────────────────────────────────────────────────────────────── */
+.game-wrapper[data-active-team="beta"] {
+  background-color: #0E1A15; /* Oasis dark */
+}
+
+.game-wrapper[data-active-team="beta"]::before {
+  opacity: 1;
+  background:
+    radial-gradient(ellipse 140% 75% at 50% -15%,  rgba(95,169,140,0.42)  0%, transparent 58%),
+    radial-gradient(ellipse 75% 65% at 110% 55%,   rgba(76,142,116,0.35)  0%, transparent 55%),
+    radial-gradient(ellipse 75% 65% at -10% 55%,   rgba(95,169,140,0.30)  0%, transparent 55%),
+    radial-gradient(ellipse 110% 55% at 50% 120%,  rgba(127,195,168,0.25) 0%, transparent 52%),
+    radial-gradient(ellipse 60% 50% at 50% 45%,    rgba(95,169,140,0.12)  0%, transparent 70%);
+  animation: desert-breathe 4.5s ease-in-out infinite;
+}
+
+/* ── Vignette for question phase — extra drama ───────────────────────── */
+.game-wrapper.phase-question::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.18) 100%);
+  animation: suspense-vignette 3s ease-in-out infinite;
+}
+
+/* ── Turn banner animation ───────────────────────────────────────────── */
+.turn-banner-enter { animation: turn-banner-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* ── Team-colored timer glow ─────────────────────────────────────────── */
+.timer-team-alpha { animation: timer-glow-blue 2s ease-in-out infinite; }
+.timer-team-beta  { animation: timer-glow-red  2s ease-in-out infinite; }
+
+/* ── Active team panel highlight ─────────────────────────────────────── */
+.team-panel-active-alpha {
+  background: linear-gradient(135deg, rgba(233,162,60,0.18) 0%, rgba(244,192,99,0.08) 100%) !important;
+  border-color: rgba(233,162,60,0.55) !important;
+  box-shadow: 0 0 24px rgba(233,162,60,0.25), inset 0 0 12px rgba(233,162,60,0.10);
+}
+.team-panel-active-beta {
+  background: linear-gradient(135deg, rgba(95,169,140,0.18) 0%, rgba(127,195,168,0.08) 100%) !important;
+  border-color: rgba(95,169,140,0.55) !important;
+  box-shadow: 0 0 24px rgba(95,169,140,0.25), inset 0 0 12px rgba(95,169,140,0.10);
+}
+
+/* ── Board cell hover: team-tinted ───────────────────────────────────── */
+.game-wrapper[data-active-team="alpha"] .board-cell:hover:not(.answered) {
+  --cell-hover-color: #E9A23C;
+  --cell-glow-color: rgba(233,162,60,0.35);
+}
+.game-wrapper[data-active-team="beta"] .board-cell:hover:not(.answered) {
+  --cell-hover-color: #5FA98C;
+  --cell-glow-color: rgba(95,169,140,0.35);
+}
+
+/* ── Answer option hover: team-tinted ───────────────────────────────── */
+.game-wrapper[data-active-team="alpha"] .answer-option:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 1.5px #E9A23C !important;
+  background: rgba(233,162,60,0.06) !important;
+}
+.game-wrapper[data-active-team="beta"] .answer-option:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 1.5px #5FA98C !important;
+  background: rgba(95,169,140,0.06) !important;
+}
+
+/* ── Volume slider styling ───────────────────────────────────────────── */
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.15);
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #E9A23C;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(233,162,60,0.5);
+}
+.volume-slider::-moz-range-thumb {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: none;
+  background: #E9A23C;
+  cursor: pointer;
+}
+
+/* ── Utility classes ───────────────────────────────────────────────── */
+
+.animate-fade-in        { animation: fadeIn       0.4s ease-out; }
+.animate-slide-up       { animation: slideUp      0.5s ease-out; }
+.animate-pulse-gold     { animation: pulse-gold   2s infinite; }
+.animate-shake          { animation: shake        0.5s ease-out; }
+.animate-bounce-in      { animation: bounce-in    0.5s ease-out; }
+.animate-team-pulse-blue { animation: team-pulse-blue 1.5s ease-in-out infinite; }
+.animate-team-pulse-red  { animation: team-pulse-red  1.5s ease-in-out infinite; }
+.animate-correct-flash  { animation: correct-flash 0.6s ease-out; }
+.animate-wrong-flash    { animation: wrong-flash   0.4s ease-out; }
+.animate-sabotage       { animation: sabotage-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.animate-slide-in-up    { animation: slide-in-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.animate-tick-pulse     { animation: tick-pulse  0.5s ease-out; }
+.animate-countdown-pop  { animation: countdown-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.animate-score-reveal   { animation: score-reveal 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.animate-rivalry-flash  { animation: rivalry-flash 1.2s ease-in-out infinite; }
+.animate-evidence-reveal { animation: evidence-reveal 0.45s ease-out 0.35s both; }
+.animate-turn-banner    { animation: turn-banner-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1); }
 
 .score-popup {
   animation: score-fly 1.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
-.animate-team-pulse-blue { animation: team-pulse-blue 1.5s ease-in-out infinite; }
-.animate-team-pulse-red  { animation: team-pulse-red  1.5s ease-in-out infinite; }
-.animate-correct-flash   { animation: correct-flash 0.6s ease-out; }
-.animate-wrong-flash     { animation: wrong-flash   0.4s ease-out; }
-.animate-sabotage        { animation: sabotage-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.animate-slide-in-up     { animation: slide-in-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+/* ── Gold gradient text ──────────────────────────────────────────── */
+.text-gold-gradient {
+  background: linear-gradient(150deg, #F6C765, #E08E2E);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
-/* Neon team glows */
+/* ── Sadu pattern accent header ──────────────────────────────────── */
+.sadu-accent {
+  background: repeating-linear-gradient(
+    90deg,
+    #E9A23C 0px, #E9A23C 4px,
+    #B7A488 4px, #B7A488 8px,
+    #5FA98C 8px, #5FA98C 12px,
+    #B7A488 12px, #B7A488 16px,
+    #C85A34 16px, #C85A34 20px,
+    #B7A488 20px, #B7A488 24px
+  );
+  height: 3px;
+  border-radius: 2px;
+  opacity: 0.7;
+}
+
+/* ── Card ────────────────────────────────────────────────────────── */
+.game-card {
+  background: #241A12;
+  border: none;
+  border-radius: 1rem;
+  box-shadow: inset 0 0 0 1px rgba(233,162,60,0.14), 0 4px 24px rgba(0,0,0,0.45), 0 1px 4px rgba(0,0,0,0.25);
+  transition: all 0.25s;
+}
+.game-card:hover {
+  box-shadow: inset 0 0 0 1px rgba(233,162,60,0.35), 0 6px 30px rgba(0,0,0,0.50), 0 0 26px -4px rgba(233,162,60,0.18);
+}
+
+/* ── Board cell ──────────────────────────────────────────────────── */
+.board-cell {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  border: none;
+  background: linear-gradient(165deg, #2A2014, #1C150E);
+  box-shadow: inset 0 0 0 1px rgba(233,162,60,0.14);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.board-cell:hover:not(.answered) {
+  box-shadow: inset 0 0 0 1.5px var(--cell-hover-color, #E9A23C), 0 0 26px -4px var(--cell-glow-color, rgba(233,162,60,0.5));
+  transform: scale(1.02);
+}
+.board-cell:active:not(.answered):not(:disabled) {
+  transform: scale(0.93);
+  transition-duration: 0.08s;
+  box-shadow: inset 0 0 0 1.5px var(--cell-hover-color, #E9A23C), 0 0 30px -4px var(--cell-glow-color, rgba(233,162,60,0.6));
+}
+.board-cell.answered {
+  opacity: 0.35;
+  cursor: default;
+  background: #1C150E;
+  box-shadow: inset 0 0 0 1px rgba(233,162,60,0.06);
+}
+.board-cell-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 9999px;
+  background: rgba(16,185,129,0.16);
+  border: 1px solid rgba(16,185,129,0.35);
+  color: #34D399;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+/* ── Gold button ─────────────────────────────────────────────────── */
+.btn-gold {
+  background: linear-gradient(150deg, #F6C765, #E08E2E);
+  color: #16100B;
+  font-weight: 700;
+  border-radius: 14px;
+  padding: 0.75rem 2rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  letter-spacing: 0.02em;
+  box-shadow: 0 12px 28px -12px rgba(233,162,60,0.6);
+}
+.btn-gold:hover {
+  box-shadow: 0 14px 30px -10px rgba(233,162,60,0.7);
+  transform: translateY(-2px);
+}
+.btn-gold:active { transform: scale(0.97); }
+.btn-gold:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  background: #2A2014;
+  color: rgba(242,231,211,0.35);
+}
+
+/* ── Illustrated category draft tile ─────────────────────────────── */
+.category-tile {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.1rem;
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s, border-color 0.2s, opacity 0.2s;
+  transform: scale(1);
+}
+.category-tile:not(:disabled):hover {
+  transform: scale(1.045) translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.40);
+}
+.category-tile:not(:disabled):active {
+  transform: scale(0.95);
+  transition-duration: 0.08s;
+}
+.category-tile:disabled {
+  cursor: default;
+}
+@keyframes tile-shimmer-sweep {
+  0%   { transform: translateX(-120%) skewX(-18deg); }
+  100% { transform: translateX(220%) skewX(-18deg); }
+}
+.category-tile-shimmer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.category-tile-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+  animation: tile-shimmer-sweep 3.4s ease-in-out infinite;
+}
+
+/* ── Team glows ──────────────────────────────────────────────────── */
 .team-glow-blue {
-  box-shadow: 0 0 20px rgba(59,130,246,0.3), inset 0 0 20px rgba(59,130,246,0.05);
+  box-shadow: 0 0 18px rgba(233,162,60,0.25), inset 0 0 18px rgba(233,162,60,0.05);
 }
 .team-glow-red {
-  box-shadow: 0 0 20px rgba(239,68,68,0.3), inset 0 0 20px rgba(239,68,68,0.05);
+  box-shadow: 0 0 18px rgba(95,169,140,0.25), inset 0 0 18px rgba(95,169,140,0.05);
 }
 
-/* Board cell hover with team color */
-.board-cell:hover:not(.answered) {
-  border-color: var(--cell-hover-color, #D4A017);
-  transform: scale(1.06);
-  box-shadow: 0 0 15px var(--cell-glow-color, rgba(212,160,23,0.25));
-}
-
-/* Premium answer option */
+/* ── Answer option ────────────────────────────────────────────────── */
 .answer-option {
   position: relative;
   overflow: hidden;
   transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
 .answer-option::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, rgba(212,160,23,0.15), transparent);
+  background: radial-gradient(circle at center, rgba(233,162,60,0.10), transparent);
   opacity: 0;
-  transition: opacity 0.3s;
+  transition: opacity 0.25s;
 }
-
 .answer-option:hover:not(:disabled)::before { opacity: 1; }
+.answer-option:active:not(:disabled) { transform: scale(0.96); }
 
-.answer-option:active:not(:disabled) {
-  transform: scale(0.96);
-}
-
-/* Streak fire effect on score */
+/* ── Streak fire ─────────────────────────────────────────────────── */
 .streak-score {
   position: relative;
 }
-
 .streak-score::after {
   content: '🔥';
   position: absolute;
@@ -244,13 +557,377 @@ code {
   animation: bounce-in 0.4s ease-out;
 }
 
-/* Phase transition wrapper */
-.phase-enter {
-  animation: fadeIn 0.3s ease-out;
+/* ── Phase enter ─────────────────────────────────────────────────── */
+.phase-enter { animation: fadeIn 0.3s ease-out; }
+
+/* ── Input fields ────────────────────────────────────────────────── */
+[dir="rtl"] input,
+[dir="rtl"] textarea { text-align: right; }
+
+input, textarea {
+  background: #1C150E;
+  border: none;
+  box-shadow: inset 0 0 0 1px rgba(233,162,60,0.14);
+  color: #F2E7D3;
+  border-radius: 14px;
+  padding: 0.65rem 1rem;
+}
+input::placeholder, textarea::placeholder {
+  color: rgba(183,164,136,0.5);
+}
+input:focus, textarea:focus {
+  box-shadow: inset 0 0 0 1.5px #E9A23C, 0 0 26px -4px rgba(233,162,60,0.3);
+  outline: none;
 }
 
-/* Mobile touch feedback */
+/* ── Mobile touch feedback ───────────────────────────────────────── */
 @media (hover: none) {
   .btn-gold:active { transform: scale(0.96); opacity: 0.9; }
   .board-cell:active:not(.answered) { transform: scale(0.97); opacity: 0.85; }
+}
+
+/* ── Confetti particle ───────────────────────────────────────────── */
+.confetti-piece {
+  position: fixed;
+  top: -20px;
+  border-radius: 3px;
+  animation: confetti-fall linear forwards;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* ── Diwaniya texture bg ─────────────────────────────────────────── */
+.bg-diwaniya {
+  background-color: #16100B;
+  background-image:
+    radial-gradient(ellipse at 15% 40%, rgba(233,162,60,0.06) 0%, transparent 45%),
+    radial-gradient(ellipse at 85% 15%, rgba(95,169,140,0.05) 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 90%, rgba(200,90,52,0.04) 0%, transparent 50%);
+}
+
+/* ── Desert dune silhouette ──────────────────────────────────────────── */
+.dune-silhouette {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background:
+    radial-gradient(ellipse 130% 80px at 18% 100%, rgba(201,168,122,0.28) 0%, transparent 68%),
+    radial-gradient(ellipse 100% 60px at 65% 100%, rgba(176,125,26,0.18) 0%, transparent 65%),
+    radial-gradient(ellipse  80% 50px at 44% 100%, rgba(212,169,74,0.14) 0%, transparent 60%),
+    radial-gradient(ellipse  60% 40px at 85% 100%, rgba(138,96,16,0.10) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+/* ── Pearl shimmer accent ────────────────────────────────────────────── */
+@keyframes pearl-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212,169,74,0); }
+  50%       { box-shadow: 0 0 20px 5px rgba(212,169,74,0.22); }
+}
+.pearl-shimmer { animation: pearl-glow 3.5s ease-in-out infinite; }
+
+/* ── Sea wave accent ─────────────────────────────────────────────────── */
+@keyframes sea-drift {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+.sea-wave-accent {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #E9A23C 0%, #B08968 35%, #5FA98C 65%, #E9A23C 100%);
+  background-size: 200% 100%;
+  animation: sea-drift 5s ease-in-out infinite;
+  opacity: 0.60;
+}
+
+/* ── Cultural motif strip ────────────────────────────────────────────── */
+.cultural-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  opacity: 0.28;
+  font-size: 0.9rem;
+  letter-spacing: 0.35rem;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Hall of Shame — wrong answer dramatic shake ─────────────────────── */
+@keyframes shame-shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  12%, 36%, 60%, 84% { transform: translateX(-8px) rotate(-1deg); }
+  24%, 48%, 72%, 96% { transform: translateX(8px) rotate(1deg); }
+}
+.animate-shame-shake { animation: shame-shake 0.6s ease-in-out; }
+
+/* ── Golden streak state ─────────────────────────────────────────────── */
+@keyframes golden-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212,169,74,0.0); }
+  50%       { box-shadow: 0 0 28px 5px rgba(212,169,74,0.42); }
+}
+.golden-streak-state {
+  animation: golden-pulse 1.4s ease-in-out infinite;
+  border-color: #D4A94A !important;
+}
+
+/* ── Final question cinematic entrance ───────────────────────────────── */
+@keyframes final-flare {
+  0%   { opacity: 0; transform: scale(0.7) translateY(-10px); }
+  60%  { opacity: 1; transform: scale(1.08) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-final-flare { animation: final-flare 0.52s cubic-bezier(0.34,1.56,0.64,1); }
+
+/* ── Crowd prediction pulse ───────────────────────────────────────────── */
+@keyframes crowd-hype {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50%       { transform: scale(1.04); opacity: 1; }
+}
+.animate-crowd-hype { animation: crowd-hype 2.2s ease-in-out infinite; }
+
+/* ── Streak fire shimmer ─────────────────────────────────────────────── */
+@keyframes streak-fire {
+  0%, 100% { filter: brightness(1); }
+  50%       { filter: brightness(1.3) saturate(1.4); }
+}
+.streak-fire { animation: streak-fire 0.75s ease-in-out infinite; }
+
+/* ── Last Stand pulse ────────────────────────────────────────────────── */
+@keyframes last-stand-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(184,33,24,0.0); }
+  50%       { box-shadow: 0 0 16px 4px rgba(184,33,24,0.4); }
+}
+.last-stand-btn { animation: last-stand-glow 1.6s ease-in-out infinite; }
+
+/* ── Mobile diwaniya tap target ──────────────────────────────────────── */
+.tap-target {
+  min-height: 52px;
+  min-width: 52px;
+  touch-action: manipulation;
+}
+
+/* ── Ramadan mode hook — set VITE_SEASONAL_THEME=ramadan to activate ─── */
+.ramadan-mode { /* seasonal palette applied via JS class on <body> */ }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY & READABILITY UPGRADES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Answer option — larger tap area, stronger contrast ──────────────── */
+.answer-option {
+  min-height: 58px;
+  font-size: 15.5px;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  transition: transform 0.15s, border-color 0.15s, background 0.15s;
+}
+.answer-option:hover:not(:disabled) {
+  transform: scale(1.015);
+  box-shadow: inset 0 0 0 1.5px #E9A23C !important;
+  background: rgba(233,162,60,0.08) !important;
+}
+.answer-option:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* ── Question text: large, readable, centered ────────────────────────── */
+.question-text {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-size: clamp(17px, 4vw, 22px);
+  font-weight: 800;
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  color: #F2E7D3;
+}
+
+/* ── Score numbers — Cairo for crisp Arabic numerals ─────────────────── */
+.score-display {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+/* ── Category label / tier badge ─────────────────────────────────────── */
+.category-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Host / referee message — readable at arm's length ───────────────── */
+.host-message-text {
+  font-size: clamp(13.5px, 3vw, 15px);
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* ── Timer text — large enough to see from across the room ───────────── */
+.timer-display {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-size: clamp(22px, 5vw, 30px);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Correct / wrong answer messages ─────────────────────────────────── */
+.result-heading {
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  font-size: clamp(20px, 5vw, 26px);
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+/* ── Timer bar — high-contrast warning states ─────────────────────────── */
+.timer-critical {
+  background: linear-gradient(90deg, #B91C1C, #EF4444) !important;
+  animation: timer-pulse 0.5s ease-in-out infinite;
+}
+@keyframes timer-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.75; }
+}
+
+/* ── High-contrast mode ───────────────────────────────────────────────── */
+@media (prefers-contrast: more) {
+  body {
+    --color-jawwib-border: rgba(255,255,255,0.25);
+    --color-jawwib-text-dim: rgba(255,255,255,0.65);
+  }
+  .game-card   { border-width: 2px; border-color: rgba(255,255,255,0.25); }
+  .answer-option { border-width: 2.5px !important; }
+  .question-text { font-size: clamp(19px, 4.5vw, 24px); }
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  /* Keep team wrapper background transitions slightly longer to not feel broken */
+  .game-wrapper::before { transition-duration: 0.1ms !important; }
+}
+
+/* ── Color-blind friendly focus rings ─────────────────────────────────── */
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #E9A23C;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── Large-screen readable typography ────────────────────────────────── */
+@media (min-width: 640px) {
+  .answer-option { font-size: 16px; min-height: 60px; }
+}
+@media (min-width: 768px) {
+  .answer-option { font-size: 17px; min-height: 62px; }
+}
+@media (min-width: 1024px) {
+  .answer-option { font-size: 18px; min-height: 66px; }
+  body { font-size: 17px; }
+}
+
+/* ── Media card zoom cursor ────────────────────────────────────────────── */
+.cursor-zoom-in  { cursor: zoom-in; }
+.cursor-zoom-out { cursor: zoom-out; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   TV MODE — host taps 📺 to scale everything up for room viewing.
+   Applied via data-tv="true" on <html> so it covers all phases.
+   ══════════════════════════════════════════════════════════════════════ */
+.game-wrapper[data-tv="true"] body { font-size: 19px; }
+
+.game-wrapper[data-tv="true"] .question-text {
+  font-size: clamp(24px, 5vw, 34px);
+  line-height: 1.45;
+}
+
+.game-wrapper[data-tv="true"] .answer-option {
+  font-size: 20px;
+  min-height: 72px;
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+}
+
+.game-wrapper[data-tv="true"] .score-display {
+  font-size: clamp(30px, 7vw, 48px);
+}
+
+.game-wrapper[data-tv="true"] .timer-display {
+  font-size: clamp(22px, 5vw, 36px);
+}
+
+.game-wrapper[data-tv="true"] .game-card {
+  padding: 1.4rem;
+  border-radius: 1.1rem;
+}
+
+.game-wrapper[data-tv="true"] .board-cell {
+  min-height: 56px;
+  font-size: 15px;
+}
+
+.game-wrapper[data-tv="true"] .category-label {
+  font-size: 13px;
+  padding: 0.3rem 0.7rem;
+}
+
+.game-wrapper[data-tv="true"] .host-bubble {
+  font-size: 15px;
+  padding: 0.8rem 1rem;
+}
+
+/* Widen the fixed category column in TV mode */
+.game-wrapper[data-tv="true"] .board-category-col {
+  width: 130px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   QUESTION TYPE STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Question type accent worlds ──────────────────────────────────────── */
+.question-type-text {
+  box-shadow: inset 0 0 0 1.5px rgba(233,162,60,0.35);
+  border-radius: 1rem;
+}
+.question-type-image {
+  box-shadow: inset 0 0 0 1.5px rgba(200,90,52,0.35);
+  border-radius: 1rem;
+}
+.question-type-audio {
+  box-shadow: inset 0 0 0 1.5px rgba(176,137,104,0.35);
+  border-radius: 1rem;
+}
+.question-type-charades {
+  box-shadow: inset 0 0 0 1.5px rgba(95,169,140,0.35);
+  border-radius: 1rem;
+}
+.question-type-draw {
+  box-shadow: inset 0 0 0 1.5px rgba(78,148,168,0.35);
+  border-radius: 1rem;
+}
+.question-type-clue {
+  box-shadow: inset 0 0 0 1.5px rgba(208,162,74,0.35);
+  border-radius: 1rem;
+}
+
+/* ── Teaser text ──────────────────────────────────────────────────────── */
+.teaser-text {
+  font-size: 13px;
+  font-style: italic;
+  color: #CDBFA5;
+  text-align: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(233,162,60,0.07);
+  box-shadow: inset 0 0 0 1px rgba(233,162,60,0.16);
+  line-height: 1.5;
 }

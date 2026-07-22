@@ -1,10 +1,8 @@
-# AGENTS.md
-
-This document provides an overview of the project structure for developers and AI agents working on this codebase.
+# AGENTS.md — Jawib (جاوب)
 
 ## Project Overview
 
-An interactive resume/portfolio application with an AI-powered assistant. Built with TanStack Start and deployed on Netlify.
+Jawib is a Kuwait-themed Arabic multiplayer trivia game show app. Players compete in teams (البحر vs البر) or free-for-all, picking categories and answering questions across point tiers (100–600). Built as a mobile-first dark-mode web app with real-time multiplayer.
 
 ### Tech Stack
 
@@ -13,116 +11,167 @@ An interactive resume/portfolio application with an AI-powered assistant. Built 
 | Framework | TanStack Start |
 | Frontend | React 19, TanStack Router v1 |
 | Build | Vite 7 |
-| Styling | Tailwind CSS 4 |
-| UI Components | Radix UI + custom components |
-| Content | Content Collections (type-safe markdown) |
-| AI | TanStack AI with multi-provider support |
+| Styling | Tailwind CSS 4 (custom dark theme) |
+| State | Zustand |
+| Multiplayer | PartyKit WebSockets |
 | Language | TypeScript 5.7 (strict mode) |
-| Deployment | Netlify |
+| Deployment | Netlify (auto-deploy from GitHub) |
+
+## Agent Configuration
+
+Three specialized agents are configured in `.claude/jawib/`:
+
+| Agent | Path | Purpose |
+|-------|------|---------|
+| **Code** | `.claude/jawib/code/AGENT.md` | Implementation — writes TypeScript/React, manages state, ships features |
+| **Cowork** | `.claude/jawib/cowork/AGENT.md` | Coordination — bridges design ↔ code, maintains token consistency |
+| **Design** | `.claude/jawib/design/AGENT.md` | Visual design — UI/UX specs, color system, component patterns, animations |
 
 ## Directory Structure
 
 ```
-├── public
-│   ├── favicon.ico
-│   ├── tanstack-circle-logo.png
-│   └── tanstack-word-logo-white.svg  # TanStack wordmark logo (white) used in header/nav.
-├── src
-│   ├── components
-│   │   ├── Calculator.tsx  # iOS-style calculator: digits, operations, evaluate, clear, percent.
-│   │   ├── Header.tsx  # Header component.
-│   │   └── HeaderNav.tsx  # Navigation sidebar template: mobile menu, Home link, add-on routes; EJS-driven for dynamic route generation.
-│   ├── routes
-│   │   ├── __root.tsx  # Root layout: HTML shell, styles.
-│   │   └── index.tsx  # Home route: renders Calculator component.
-│   ├── router.tsx  # TanStack Router setup: creates router from generated routeTree with scroll restoration.
-│   └── styles.css  # Global styles: Tailwind import plus base body/code font styling.
-├── .gitignore  # Template for .gitignore: node_modules, dist, .env, .netlify, .tanstack, etc.
-├── AGENTS.md  # This document provides an overview of the project structure for developers and AI agents working on this codebase.
-├── netlify.toml  # Netlify deployment config: build command (vite build), publish directory (dist/client), and dev server settings (port 8888, target 3000).
-├── package.json  # Project manifest with TanStack Start, React 19, Vite 7, Tailwind CSS 4, and Netlify plugin dependencies; defines dev and build scripts.
-├── pnpm-lock.yaml
-├── tsconfig.json  # TypeScript config: ES2022 target, strict mode, @/* path alias for src/*, bundler module resolution.
-└── vite.config.ts  # Vite config template: TanStack Start, React, Tailwind, Netlify plugin, and optional add-on integrations; processed by EJS.
+src/
+├── components/              # Screen-level components
+│   ├── GameApp.tsx           # Main controller — all screen routing & state
+│   ├── EntryScreen.tsx       # Onboarding — name, avatar, gender
+│   ├── HomeScreen.tsx        # Landing — mode select, create/join game
+│   ├── Lobby.tsx             # Room code, player list, waiting
+│   ├── TeamSetupScreen.tsx   # Team naming, game length
+│   ├── GameBoard.tsx         # Category grid with point tiles
+│   ├── QuestionCard.tsx      # Question display, answers, timer
+│   ├── ResultOverlay.tsx     # Correct/wrong feedback overlay
+│   ├── GameOverScreen.tsx    # Final scores, winner celebration
+│   ├── GameLoadingScreen.tsx # Pre-game countdown
+│   ├── ConfirmModal.tsx      # Reusable confirmation dialog
+│   ├── FeedbackModal.tsx     # Post-game rating
+│   ├── HowToPlayModal.tsx    # Tutorial
+│   ├── PaymentModal.tsx      # Payment gate
+│   ├── ShareCard.tsx         # Invite sharing
+│   ├── HostBubble.tsx        # Host message display
+│   ├── ErrorBoundary.tsx     # Error catch
+│   ├── game/                 # In-game sub-components
+│   │   ├── TeamScoreboard.tsx
+│   │   ├── TimerBar.tsx
+│   │   ├── ScorePopup.tsx
+│   │   ├── EffectToast.tsx
+│   │   ├── EvidenceCard.tsx
+│   │   ├── MediaRenderer.tsx
+│   │   ├── MysteryBoxOverlay.tsx
+│   │   ├── SabotageControls.tsx
+│   │   └── TeamWeaponInventory.tsx
+│   ├── screens/
+│   │   └── CategoryDraftScreen.tsx
+│   └── cards/
+│       ├── InviteCard.tsx
+│       └── ResultCard.tsx
+├── hooks/                   # Custom React hooks
+│   ├── useMultiplayer.ts     # PartyKit WebSocket connection
+│   ├── useTimer.ts           # Question/steal timers
+│   ├── useCategoryDraft.ts   # Draft pick logic
+│   ├── useQuestionFlow.ts    # Question → answer → result flow
+│   ├── useTeam.ts            # Team assignment
+│   ├── useSabotage.ts        # Sabotage/weapon mechanics
+│   ├── useRoom.ts            # Room management
+│   ├── useHostMessage.ts     # Dynamic host commentary
+│   ├── useRoundProgress.ts   # Round tracking
+│   └── useAdaptiveDifficulty.ts
+├── lib/                     # Utilities & data
+│   ├── types.ts              # Shared TypeScript types
+│   ├── categories.ts         # Category definitions
+│   ├── categoryMedia.ts      # Category tile images
+│   ├── questions.ts          # Question bank
+│   ├── questionsExpanded*.ts # Extended question data (p1–p6)
+│   ├── csvLoader.ts          # CSV question import
+│   ├── audio.ts              # Sound effects
+│   ├── haptics.ts            # Vibration feedback
+│   ├── host.ts               # Host AI messages
+│   ├── hostEngine.ts         # Host message generation
+│   ├── teams.ts              # Team utilities
+│   ├── sabotages.ts          # Sabotage definitions
+│   ├── appConfig.ts          # Platform config
+│   └── iap.ts                # In-app purchases
+├── store/                   # Zustand state stores
+│   ├── gameStore.ts          # Game phase, players, scores
+│   ├── roomStore.ts          # Room mode, teams, sync
+│   ├── accountStore.ts       # Player identity
+│   ├── sabotageStore.ts      # Sabotage state
+│   ├── uiStore.ts            # UI modals/toasts
+│   └── index.ts              # Store exports
+├── routes/                  # TanStack Router (file-based)
+│   ├── __root.tsx
+│   └── index.tsx
+└── styles.css               # Design system — tokens, animations, patterns
 ```
 
-## Key Concepts
+## Game Flow
 
-### File-Based Routing (TanStack Router)
+```
+Entry → Home → Lobby → [TeamSetup → CategoryDraft] → Loading → Board ⇄ Question/Steal → Result → GameOver
+```
 
-Routes are defined by files in `src/routes/`:
-
-- `__root.tsx` - Root layout wrapping all pages
-- `index.tsx` - Route for `/`
-- `api.*.ts` - Server API endpoints (e.g., `api.resume-chat.ts` → `/api/resume-chat`)
-
-### Component Architecture
-
-**UI Primitives** (`src/components/ui/`):
-- Radix UI-based, Tailwind-styled
-- Card, Badge, Checkbox, Separator, HoverCard
-
-**Feature Components** (`src/components/`):
-- Header, HeaderNav, ResumeAssistant
-
-## Configuration Files
-
-| File | Purpose |
-|------|---------|
-| `vite.config.ts` | Vite plugins: TanStack Start, Netlify, Tailwind, Content Collections |
-| `tsconfig.json` | TypeScript config with `@/*` path alias for `src/*` |
-| `netlify.toml` | Build command, output directory, dev server settings |
-| `content-collections.ts` | Zod schemas for jobs and education frontmatter |
-| `styles.css` | Tailwind imports + CSS custom properties (oklch colors) |
+### Phases
+- `lobby` — room setup (subviews: `lobby`, `setup`, `teams`, `draft`)
+- `board` — selecting questions from the grid
+- `question` — answering a question with timer
+- `steal` — opponent team can steal on wrong answer
+- `result` — correct/wrong feedback (auto-advances)
+- `finished` — final scores, winner
 
 ## Development Commands
 
 ```bash
-npm run dev      # Start dev server
+npm run dev      # Dev server (port 3000)
 npm run build    # Production build
-npm run preview  # Preview production build
+npx tsc --noEmit # Type check
 ```
 
 ## Conventions
 
-### Naming
-- Components: PascalCase
-- Utilities/hooks: camelCase
-- Routes: kebab-case files
+- **Components:** PascalCase
+- **Hooks/utils:** camelCase
+- **Routes:** kebab-case
+- **All UI text:** Arabic
+- **Direction:** RTL
+- **Imports:** `@/` alias for `src/`
+- **Styling:** Tailwind + custom `.game-card`, `.btn-gold`, `.sadu-accent` classes
+- **State:** Zustand stores, React hooks for local state
+- **Types:** Strict mode, `type` keyword for type-only imports
 
-### Styling
-- Tailwind CSS utility classes
-- `cn()` helper for conditional class merging
-- CSS variables for theme tokens in `styles.css`
+## Content & Localization Standards
 
-### TypeScript
-- Strict mode enabled
-- Import paths use `@/` alias
-- Zod for runtime validation
-- Type-only imports with `type` keyword
+### Language
 
-### State Management
-- React hooks for local state
-- Zustand if you need it for global state
-### Calculator Component
+Jawib is an Arabic-first platform for GCC users. Arabic is the primary language; English is secondary.
 
-iOS-style calculator built with React `useReducer` for state management.
+- Write in Modern Standard Arabic that reads naturally and fluently for Gulf users.
+- Never produce literal translations from English — write as a native speaker would.
+- Keep wording clear, conversational, and engaging while remaining grammatically correct.
+- Difficulty must come from the knowledge being tested, not from complicated wording.
+- All UI text, questions, and host messages default to Arabic unless another language is explicitly requested.
 
-**State pattern:** `display`, `previousValue`, `operation`, `overwrite`
+### Question Quality
 
-**Actions:** ADD_DIGIT, CHOOSE_OPERATION, EVALUATE, CLEAR, DELETE_DIGIT, PERCENT, TOGGLE_SIGN
+Every question must feel professionally written by an experienced trivia editor — not generated by AI.
 
-No special dependencies beyond base TanStack Start. Pure React + Tailwind CSS.
+Before finalising any question, verify all four points:
 
-## Application Name
+1. Does this sound like it was written by a native Arabic speaker?
+2. Are all answer choices equally natural and believable?
+3. Could a player identify the correct answer from the wording alone? If yes, regenerate the answers.
+4. Is the question engaging, fair, and enjoyable?
 
-This starter uses "Application Name" as a placeholder throughout the UI and metadata. Replace it with the user's desired application name in the following locations:
+### Answer Choice Balance
 
-### UI Components
-- `src/components/Header.tsx` — app name displayed in the header
-- `src/components/HeaderNav.tsx` — app name in the mobile navigation header
+The quality of distractors (wrong answers) is as important as the correct answer.
 
-### SEO Metadata
-- `src/routes/__root.tsx` — the `title` field in the `head()` configuration
+- All options must be similar in length (±20% unless factual accuracy requires otherwise).
+- All options must use the same style, grammar, capitalisation, and level of specificity.
+- Do not make the correct answer uniquely descriptive, detailed, or formal compared to distractors.
+- Do not make the correct answer the only option containing dates, numbers, locations, scientific names, or extra context — if any option needs that context, every option must follow the same pattern.
+- Distractors must be plausible and belong to the same category as the correct answer.
+- No joke answers, obviously impossible options, or choices that can be eliminated at a glance.
+- Final validation: "Could an average player identify the correct answer without knowing the topic?" If yes, rebalance.
 
-Search for all occurrences of "Application Name" in the `src/` directory and replace with the user's application name.
+### Content Scope
+
+Prioritise GCC-relevant content — Kuwaiti and Gulf culture, history, geography, landmarks, personalities, sports, traditions, and current general knowledge — while also covering international topics.

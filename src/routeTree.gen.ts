@@ -9,12 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as QRevealRouteImport } from './routes/q.reveal'
 import { Route as JoinCodeRouteImport } from './routes/join.$code'
 
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QRevealRoute = QRevealRouteImport.update({
+  id: '/q/reveal',
+  path: '/q/reveal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JoinCodeRoute = JoinCodeRouteImport.update({
@@ -25,37 +43,70 @@ const JoinCodeRoute = JoinCodeRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/privacy': typeof PrivacyRoute
   '/join/$code': typeof JoinCodeRoute
+  '/q/reveal': typeof QRevealRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/privacy': typeof PrivacyRoute
   '/join/$code': typeof JoinCodeRoute
+  '/q/reveal': typeof QRevealRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/privacy': typeof PrivacyRoute
   '/join/$code': typeof JoinCodeRoute
+  '/q/reveal': typeof QRevealRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/join/$code'
+  fullPaths: '/' | '/admin' | '/privacy' | '/join/$code' | '/q/reveal'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/join/$code'
-  id: '__root__' | '/' | '/join/$code'
+  to: '/' | '/admin' | '/privacy' | '/join/$code' | '/q/reveal'
+  id: '__root__' | '/' | '/admin' | '/privacy' | '/join/$code' | '/q/reveal'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  PrivacyRoute: typeof PrivacyRoute
   JoinCodeRoute: typeof JoinCodeRoute
+  QRevealRoute: typeof QRevealRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/q/reveal': {
+      id: '/q/reveal'
+      path: '/q/reveal'
+      fullPath: '/q/reveal'
+      preLoaderRoute: typeof QRevealRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/join/$code': {
@@ -70,7 +121,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  PrivacyRoute: PrivacyRoute,
   JoinCodeRoute: JoinCodeRoute,
+  QRevealRoute: QRevealRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

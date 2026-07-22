@@ -15,6 +15,30 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
+
+  build: {
+    // Never emit source maps in production
+    sourcemap: false,
+
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
+        passes: 2,
+        dead_code: true,
+      },
+      mangle: {
+        // Safe: rename local variables only — do NOT mangle properties.
+        // Property mangling with regex: /^_/ would rename _-prefixed internal
+        // fields used by TanStack Router/Start and break the runtime.
+        toplevel: false,
+      },
+      format: {
+        comments: false,
+      },
+    },
+  },
 })
 
 export default config

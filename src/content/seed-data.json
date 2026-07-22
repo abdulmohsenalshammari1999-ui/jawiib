@@ -1,0 +1,140 @@
+{
+  "countries": [
+    { "id": "jp", "nameAr": "اليابان", "capitalAr": "طوكيو", "flagUrl": "https://upload.wikimedia.org/wikipedia/en/9/9e/Flag_of_Japan.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/2/27/Japan_location_map_with_side_map.svg", "region": "east_asia", "tier": 1 },
+    { "id": "fr", "nameAr": "فرنسا", "capitalAr": "باريس", "flagUrl": "https://upload.wikimedia.org/wikipedia/en/c/c3/Flag_of_France.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/1/12/France_location_map-Regions-2016.svg", "region": "europe", "tier": 1 },
+    { "id": "it", "nameAr": "إيطاليا", "capitalAr": "روما", "flagUrl": "https://upload.wikimedia.org/wikipedia/en/0/03/Flag_of_Italy.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Italy_location_map.svg", "region": "europe", "tier": 1 },
+    { "id": "de", "nameAr": "ألمانيا", "capitalAr": "برلين", "flagUrl": "https://upload.wikimedia.org/wikipedia/en/b/ba/Flag_of_Germany.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1e/Germany_location_map.svg", "region": "europe", "tier": 1 },
+    { "id": "br", "nameAr": "البرازيل", "capitalAr": "برازيليا", "flagUrl": "https://upload.wikimedia.org/wikipedia/en/0/05/Flag_of_Brazil.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Brazil_location_map.svg", "region": "south_america", "tier": 1 },
+    { "id": "ca", "nameAr": "كندا", "capitalAr": "أوتاوا", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Flag_of_Canada.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d9/Canada_location_map.svg", "region": "north_america", "tier": 1 },
+    { "id": "sa", "nameAr": "السعودية", "capitalAr": "الرياض", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/0/0d/Flag_of_Saudi_Arabia.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a3/Saudi_Arabia_location_map.svg", "region": "gulf", "tier": 1 },
+    { "id": "ae", "nameAr": "الإمارات", "capitalAr": "أبوظبي", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Flag_of_the_United_Arab_Emirates.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/5/5a/United_Arab_Emirates_location_map.svg", "region": "gulf", "tier": 1 },
+    { "id": "kw", "nameAr": "الكويت", "capitalAr": "مدينة الكويت", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/a/aa/Flag_of_Kuwait.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2e/Kuwait_location_map.svg", "region": "gulf", "tier": 1 },
+    { "id": "qa", "nameAr": "قطر", "capitalAr": "الدوحة", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/6/65/Flag_of_Qatar.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/5/54/Qatar_location_map.svg", "region": "gulf", "tier": 1 },
+    { "id": "bh", "nameAr": "البحرين", "capitalAr": "المنامة", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/2/29/Flag_of_Bahrain.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1d/Bahrain_location_map.svg", "region": "gulf", "tier": 2 },
+    { "id": "om", "nameAr": "عُمان", "capitalAr": "مسقط", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Flag_of_Oman.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Oman_location_map.svg", "region": "gulf", "tier": 2 },
+    { "id": "eg", "nameAr": "مصر", "capitalAr": "القاهرة", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Flag_of_Egypt.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Egypt_location_map.svg", "region": "north_africa", "tier": 1 },
+    { "id": "ma", "nameAr": "المغرب", "capitalAr": "الرباط", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/2/2c/Flag_of_Morocco.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a1/Morocco_location_map.svg", "region": "north_africa", "tier": 2 },
+    { "id": "jo", "nameAr": "الأردن", "capitalAr": "عمّان", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c0/Flag_of_Jordan.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Jordan_location_map.svg", "region": "levant", "tier": 2 },
+    { "id": "lb", "nameAr": "لبنان", "capitalAr": "بيروت", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/5/59/Flag_of_Lebanon.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Lebanon_location_map.svg", "region": "levant", "tier": 2 },
+    { "id": "tr", "nameAr": "تركيا", "capitalAr": "أنقرة", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Flag_of_Turkey.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/d/db/Turkey_location_map.svg", "region": "eurasia", "tier": 1 },
+    { "id": "jp2", "nameAr": "الصين", "capitalAr": "بكين", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fa/Flag_of_the_People%27s_Republic_of_China.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/4/49/China_location_map.svg", "region": "east_asia", "tier": 1 },
+    { "id": "kr", "nameAr": "كوريا الجنوبية", "capitalAr": "سيول", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/0/09/Flag_of_South_Korea.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cf/South_Korea_location_map.svg", "region": "east_asia", "tier": 2 },
+    { "id": "in", "nameAr": "الهند", "capitalAr": "نيودلهي", "flagUrl": "https://upload.wikimedia.org/wikipedia/en/4/41/Flag_of_India.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/1/17/India_location_map.svg", "region": "south_asia", "tier": 1 },
+    { "id": "au", "nameAr": "أستراليا", "capitalAr": "كانبرا", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/8/88/Flag_of_Australia_%28converted%29.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/1/11/Australia_location_map.svg", "region": "oceania", "tier": 1 },
+    { "id": "es", "nameAr": "إسبانيا", "capitalAr": "مدريد", "flagUrl": "https://upload.wikimedia.org/wikipedia/en/9/9a/Flag_of_Spain.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/4/48/Spain_location_map.svg", "region": "europe", "tier": 1 },
+    { "id": "gb", "nameAr": "المملكة المتحدة", "capitalAr": "لندن", "flagUrl": "https://upload.wikimedia.org/wikipedia/en/a/ae/Flag_of_the_United_Kingdom.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/9/98/United_Kingdom_location_map.svg", "region": "europe", "tier": 1 },
+    { "id": "us", "nameAr": "الولايات المتحدة", "capitalAr": "واشنطن", "flagUrl": "https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/3/3b/USA_location_map.svg", "region": "north_america", "tier": 1 },
+    { "id": "mx", "nameAr": "المكسيك", "capitalAr": "مكسيكو سيتي", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/f/fc/Flag_of_Mexico.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/a/a1/Mexico_location_map.svg", "region": "north_america", "tier": 2 },
+    { "id": "ar", "nameAr": "الأرجنتين", "capitalAr": "بوينس آيرس", "flagUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1a/Flag_of_Argentina.svg", "mapUrl": "https://upload.wikimedia.org/wikipedia/commons/c/c0/Argentina_location_map.svg", "region": "south_america", "tier": 2 }
+  ],
+
+  "landmarks": [
+    { "id": "pyramids", "nameAr": "أهرامات الجيزة", "countryAr": "مصر", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e3/Kheops-Pyramid.jpg", "tier": 1 },
+    { "id": "eiffel", "nameAr": "برج إيفل", "countryAr": "فرنسا", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/85/Tour_Eiffel_Wikimedia_Commons.jpg", "tier": 1 },
+    { "id": "colosseum", "nameAr": "الكولوسيوم", "countryAr": "إيطاليا", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/de/Colosseo_2020.jpg", "tier": 1 },
+    { "id": "tajmahal", "nameAr": "تاج محل", "countryAr": "الهند", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1d/Taj_Mahal_%28Edited%29.jpeg", "tier": 1 },
+    { "id": "burjkhalifa", "nameAr": "برج خليفة", "countryAr": "الإمارات", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/93/Burj_Khalifa.jpg", "tier": 1 },
+    { "id": "greatwall", "nameAr": "سور الصين العظيم", "countryAr": "الصين", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/23/The_Great_Wall_of_China.jpg", "tier": 2 },
+    { "id": "kaaba", "nameAr": "الكعبة المشرّفة", "countryAr": "السعودية", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Masjid_al-Haram%2C_Mecca%2C_Saudi_Arabia.jpg", "tier": 1 },
+    { "id": "statueliberty", "nameAr": "تمثال الحرية", "countryAr": "الولايات المتحدة", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Statue_of_Liberty_7.jpg", "tier": 1 },
+    { "id": "operahouse", "nameAr": "دار أوبرا سيدني", "countryAr": "أستراليا", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Sydney_Opera_House_Sails_edit02.jpg", "tier": 2 },
+    { "id": "machupicchu", "nameAr": "ماتشو بيتشو", "countryAr": "البيرو", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Machu_Picchu%2C_Peru.jpg", "tier": 2 }
+  ],
+
+  "audio": [
+    { "id": "anthem_ksa", "titleAr": "النشيد الوطني السعودي", "kind": "anthem", "clipUrl": "/audio/anthems/ksa.mp3", "tier": 1 },
+    { "id": "anthem_kw", "titleAr": "النشيد الوطني الكويتي", "kind": "anthem", "clipUrl": "/audio/anthems/kw.mp3", "tier": 1 },
+    { "id": "anthem_eg", "titleAr": "النشيد الوطني المصري", "kind": "anthem", "clipUrl": "/audio/anthems/eg.mp3", "tier": 2 },
+    { "id": "anthem_ae", "titleAr": "النشيد الوطني الإماراتي", "kind": "anthem", "clipUrl": "/audio/anthems/ae.mp3", "tier": 2 },
+    { "id": "sound_rain", "titleAr": "صوت المطر", "kind": "sound", "clipUrl": "/audio/sounds/rain.mp3", "tier": 1 },
+    { "id": "sound_ocean", "titleAr": "صوت أمواج البحر", "kind": "sound", "clipUrl": "/audio/sounds/ocean.mp3", "tier": 1 },
+    { "id": "sound_cat", "titleAr": "صوت قطة", "kind": "sound", "clipUrl": "/audio/sounds/cat.mp3", "tier": 1 },
+    { "id": "sound_camel", "titleAr": "صوت جمل", "kind": "sound", "clipUrl": "/audio/sounds/camel.mp3", "tier": 2 },
+    { "id": "sound_oud", "titleAr": "صوت آلة العود", "kind": "sound", "clipUrl": "/audio/sounds/oud.mp3", "tier": 2 },
+    { "id": "sound_train", "titleAr": "صوت قطار", "kind": "sound", "clipUrl": "/audio/sounds/train.mp3", "tier": 1 }
+  ],
+
+  "charadesWords": [
+    { "id": "c1", "wordAr": "كرة القدم", "tier": 1, "emoji": "⚽" },
+    { "id": "c2", "wordAr": "أسد", "tier": 1, "emoji": "🦁" },
+    { "id": "c3", "wordAr": "طبخ", "tier": 1, "emoji": "🍳" },
+    { "id": "c4", "wordAr": "سباحة", "tier": 1, "emoji": "🏊" },
+    { "id": "c5", "wordAr": "معلّم", "tier": 2, "emoji": "🧑‍🏫" },
+    { "id": "c6", "wordAr": "طائرة", "tier": 1, "emoji": "✈️" },
+    { "id": "c7", "wordAr": "نجّار", "tier": 2, "emoji": "🔨" },
+    { "id": "c8", "wordAr": "صياد سمك", "tier": 2, "emoji": "🎣" },
+    { "id": "c9", "wordAr": "مباراة شطرنج", "tier": 3, "emoji": "♟️" },
+    { "id": "c10", "wordAr": "رائد فضاء", "tier": 2, "emoji": "🧑‍🚀" },
+    { "id": "c11", "wordAr": "نمر", "tier": 1, "emoji": "🐅" },
+    { "id": "c12", "wordAr": "كرة الطائرة", "tier": 1, "emoji": "🏐" },
+    { "id": "c13", "wordAr": "دهّان", "tier": 3, "emoji": "🎨" },
+    { "id": "c14", "wordAr": "غوّاص", "tier": 2, "emoji": "🤿" },
+    { "id": "c15", "wordAr": "خطيب", "tier": 3, "emoji": "🎤" }
+  ],
+
+  "drawWords": [
+    { "id": "d1", "wordAr": "بيت", "tier": 1, "emoji": "🏠" },
+    { "id": "d2", "wordAr": "جَمَل", "tier": 1, "emoji": "🐪" },
+    { "id": "d3", "wordAr": "شمس", "tier": 1, "emoji": "☀️" },
+    { "id": "d4", "wordAr": "سيارة", "tier": 1, "emoji": "🚗" },
+    { "id": "d5", "wordAr": "نخلة", "tier": 1, "emoji": "🌴" },
+    { "id": "d6", "wordAr": "مسجد", "tier": 2, "emoji": "🕌" },
+    { "id": "d7", "wordAr": "قهوة عربية", "tier": 2, "emoji": "☕" },
+    { "id": "d8", "wordAr": "خيمة", "tier": 2, "emoji": "⛺" },
+    { "id": "d9", "wordAr": "فانوس", "tier": 2, "emoji": "🏮" },
+    { "id": "d10", "wordAr": "برج خليفة", "tier": 3, "emoji": "🏙️" },
+    { "id": "d11", "wordAr": "صقر", "tier": 2, "emoji": "🦅" },
+    { "id": "d12", "wordAr": "سفينة", "tier": 1, "emoji": "🚢" },
+    { "id": "d13", "wordAr": "ساعة", "tier": 1, "emoji": "⏰" },
+    { "id": "d14", "wordAr": "مطر", "tier": 2, "emoji": "🌧️" },
+    { "id": "d15", "wordAr": "قلعة", "tier": 3, "emoji": "🏰" }
+  ],
+
+  "riddles": [
+    { "id": "r1", "promptAr": "له أوراقٌ وليس بشجرة، وله ظَهرٌ وليس بحيوان… فما هو؟", "answerAr": "الكتاب", "distractorsAr": ["الباب", "الجدار", "الصندوق"], "tier": 1 },
+    { "id": "r2", "promptAr": "يمشي بلا رجلين، ويبكي بلا عينين… فما هو؟", "answerAr": "السحاب", "distractorsAr": ["الريح", "النهر", "القمر"], "tier": 2 },
+    { "id": "r3", "promptAr": "شيءٌ كلّما أخذت منه كبُر… فما هو؟", "answerAr": "الحفرة", "distractorsAr": ["الدَّين", "الجبل", "الكيس"], "tier": 2 },
+    { "id": "r4", "promptAr": "بيتٌ صغير بلا أبواب ولا نوافذ، تسكنه دجاجة… فما هو؟", "answerAr": "البيضة", "distractorsAr": ["العُشّ", "القفص", "الوكر"], "tier": 1 },
+    { "id": "r5", "promptAr": "له أسنانٌ ولا يعضّ… فما هو؟", "answerAr": "المشط", "distractorsAr": ["المنشار", "المفتاح", "السكين"], "tier": 1 },
+    { "id": "r6", "promptAr": "كلّما زاد نقص… فما هو؟", "answerAr": "العمر", "distractorsAr": ["المال", "الوقت", "الماء"], "tier": 3 },
+    { "id": "r7", "promptAr": "شيءٌ إذا سمّيته انكسر… فما هو؟", "answerAr": "الصمت", "distractorsAr": ["الزجاج", "الوعد", "السرّ"], "tier": 3 },
+    { "id": "r8", "promptAr": "يُرى في الليل ولا يُرى في النهار… فما هو؟", "answerAr": "النجم", "distractorsAr": ["القمر", "الفانوس", "الظلّ"], "tier": 1 }
+  ],
+
+  "proverbs": [
+    { "id": "p1", "sentenceAr": "في التأنّي السلامة، وفي العجلة ___", "answerAr": "النَّدامة", "distractorsAr": ["الرَّاحة", "السَّعادة", "الحِكمة"], "tier": 1 },
+    { "id": "p2", "sentenceAr": "الصديق وقت ___", "answerAr": "الضيق", "distractorsAr": ["الفرح", "السفر", "العمل"], "tier": 1 },
+    { "id": "p3", "sentenceAr": "من جدّ ___", "answerAr": "وجد", "distractorsAr": ["ندم", "تعب", "فاز"], "tier": 1 },
+    { "id": "p4", "sentenceAr": "درهم وقاية خيرٌ من قنطار ___", "answerAr": "علاج", "distractorsAr": ["ذهب", "دواء", "طعام"], "tier": 2 },
+    { "id": "p5", "sentenceAr": "رُبَّ ضارّةٍ ___", "answerAr": "نافعة", "distractorsAr": ["ضائعة", "قاسية", "بعيدة"], "tier": 2 },
+    { "id": "p6", "sentenceAr": "لا يلدغ المؤمن من جُحرٍ ___", "answerAr": "مرّتين", "distractorsAr": ["ثلاثاً", "أبداً", "واحدة"], "tier": 2 },
+    { "id": "p7", "sentenceAr": "العقل السليم في الجسم ___", "answerAr": "السليم", "distractorsAr": ["القوي", "النشيط", "الكبير"], "tier": 1 },
+    { "id": "p8", "sentenceAr": "خير الكلام ما ___", "answerAr": "قلّ ودلّ", "distractorsAr": ["طال وفصّل", "كثُر وتكرّر", "قيل وسُمع"], "tier": 3 }
+  ],
+
+  "figures": [
+    { "id": "f1", "nameAr": "ابن سينا", "cluesAr": ["عالِمٌ وفيلسوف عاش في القرن الحادي عشر.", "يُلقّب بـ«الشيخ الرئيس» في الطب.", "كتابه «القانون في الطب» دُرّس في أوروبا قروناً."], "tier": 2 },
+    { "id": "f2", "nameAr": "صلاح الدين الأيوبي", "cluesAr": ["قائدٌ عسكري مسلم من القرن الثاني عشر.", "أسّس الدولة الأيوبية.", "استعاد بيت المقدس من الصليبيين."], "tier": 1 },
+    { "id": "f3", "nameAr": "ابن بطوطة", "cluesAr": ["رحّالة وُلد في طنجة.", "طاف معظم أنحاء العالم الإسلامي في القرن الرابع عشر.", "دوّن رحلاته في كتاب اسمه «تحفة النظّار»."], "tier": 2 },
+    { "id": "f4", "nameAr": "الخوارزمي", "cluesAr": ["عالِم رياضيات وفلك من القرن التاسع.", "يُنسب إليه مصطلح «الخوارزمية».", "له كتابٌ أسّس علم الجبر."], "tier": 2 },
+    { "id": "f5", "nameAr": "أم كلثوم", "cluesAr": ["مطربة مصرية وُلدت أوائل القرن العشرين.", "لُقّبت بـ«كوكب الشرق».", "غنّت «إنت عمري» و«أغادر أم أنتظر»."], "tier": 1 },
+    { "id": "f6", "nameAr": "نجيب محفوظ", "cluesAr": ["روائي مصري من القرن العشرين.", "أول عربي يفوز بجائزة نوبل للآداب.", "اشتهر بثلاثيته القاهرية."], "tier": 2 }
+  ],
+
+  "categoryImages": {
+    "history": "assets/cat-history.png",
+    "geo": "assets/cat-geo.png",
+    "science": "assets/cat-sci.png",
+    "sports": "assets/cat-sport.png",
+    "arts": "assets/cat-arts.png",
+    "lit": "assets/cat-lit.png",
+    "food": "assets/cat-food.png",
+    "tech": "assets/cat-tech.png"
+  },
+
+  "_meta": {
+    "note": "Public-domain / free-to-use sourcing: flags of sovereign states and national location maps on Wikimedia Commons are PD or CC-licensed for reuse; landmark photos linked are Commons-hosted and reuse-permitted (verify individual file license tags at build time, most are CC-BY-SA or PD). Anthem and generic sound clips are placeholders — swap /audio/... paths for licensed or self-recorded audio before shipping. Cache all remote URLs into /public/img/q/ at build time per factory.notes.ts.",
+    "rowCount": { "countries": 25, "landmarks": 10, "audio": 10, "charadesWords": 15, "drawWords": 15, "riddles": 8, "proverbs": 8, "figures": 6 },
+    "expectedQuestionYield": "~200+ per factory.notes.ts generator rules (countries alone yield 4 question-types x 25 rows = 100)"
+  }
+}

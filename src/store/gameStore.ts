@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import { subscribeWithSelector, persist } from 'zustand/middleware';
 import { v4 as uuid } from 'uuid';
 import type {
   GameState,
@@ -8,8 +8,11 @@ import type {
   CategoryId,
   GameBoardCell,
   SabotageType,
+  TeamId,
+  WeaponType,
 } from '@/lib/types';
-import { getQuestionById } from '@/lib/questions';
+import { getQuestionById, registerCustomQuestions } from '@/lib/questions';
+import type { Question } from '@/lib/types';
 import { useSabotageStore } from './sabotageStore';
 import {
   getWelcomeMessage,
@@ -21,15 +24,35 @@ import {
   getBombExplosionMessage,
   getDoubleWinMessage,
   getDoubleLossMessage,
+  getMysteryBoxMessage,
+  getWeaponEarnedMessage,
+  getWeaponUsedTimerBomb,
+  getWeaponUsedImmunity,
+  getWeaponUsedForcedCategory,
+  getWeaponUsedAskFriend,
+  getImmunityProtectedMessage,
+  getLastStandMessage,
+  getStreakHypeMessage,
+  getWeaponUsedExtraTime,
+  getStealPhaseMessage,
+  getStealSuccessMessage,
+  getStealFailMessage,
 } from '@/lib/host';
+import { getCategoryById } from '@/lib/categories';
 import { ATTACK_TYPES } from '@/lib/sabotages';
 import { engine }           from '@/engine/questionEngine';
 import { validateAnswer }   from '@/engine/answerValidator';
 import { globalPool }       from '@/engine/questionPool';
 
-const TRIAL_QUESTION_LIMIT  = 9;
+export const TRIAL_QUESTION_LIMIT  = 9;
 const TRIAL_CATEGORY_COUNT  = 2;
-const DEFAULT_TIMER         = 15;
+const DEFAULT_TIMER         = 30;
+const STEAL_TIMER           = 30;
+
+// Timer seconds by question point value — all 30s, bomb halves to 15s
+const TIMER_BY_POINTS: Record<number, number> = {
+  100: 30, 200: 30, 300: 30, 400: 30, 500: 30, 600: 30,
+};
 
 const AVATARS = ['🦁', '🦊', '🐺', '🦅', '🐉', '🦈', '🐅', '🦂'];
 
@@ -41,18 +64,38 @@ function generateRoomCode(): string {
 }
 
 function buildBoard(selectedCategories: CategoryId[]): GameBoardCell[][] {
-  // Use pool-based builder to guarantee no duplicate questions across the board
   globalPool.reset();
   return selectedCategories.map((cat) => {
     const row: GameBoardCell[] = [];
     for (const tier of [1, 2, 3] as const) {
-      const questions = globalPool.drawN(cat, tier, 2);
-      for (const q of questions) {
-        row.push({ questionId: q.id, category: cat, tier, points: q.points, answered: false });
-      }
+      const q = globalPool.draw(cat, tier);
+      if (q) row.push({ questionId: q.id, category: cat, tier, points: q.points as 100|200|300, answered: false });
     }
+    // Hard column: draw from merged tier 4/5/6 pool, always award 600 pts
+    const hardQ = globalPool.drawFromBuckets(cat, [4, 5, 6]);
+    if (hardQ) row.push({ questionId: hardQ.id, category: cat, tier: 4, points: 600, answered: false });
     return row;
-  });
+  }).filter((row) => row.length > 0); // drop categories with no available questions
+}
+
+function buildCustomBoard(customQuestions: Question[]): { board: GameBoardCell[][]; cats: CategoryId[] } {
+  registerCustomQuestions(customQuestions);
+  // Sort by points then group into rows of 4 for the grid
+  const sorted = [...customQuestions].sort((a, b) => a.points - b.points);
+  const rows: GameBoardCell[][] = [];
+  for (let i = 0; i < sorted.length; i += 4) {
+    const chunk = sorted.slice(i, i + 4);
+    rows.push(chunk.map((q) => ({
+      questionId: q.id,
+      category: q.category,
+      tier: q.tier,
+      points: q.points as 100|200|300|400|500|600,
+      answered: false,
+    })));
+  }
+  // Unique categories present in the custom game (for engine init)
+  const cats = [...new Set(customQuestions.map((q) => q.category))] as CategoryId[];
+  return { board: rows, cats };
 }
 
 function getTrialCategories(): CategoryId[] {
@@ -69,21 +112,28 @@ function initSabotages(playerIds: string[]): Record<string, SabotageType[]> {
   );
 }
 
+// Module-level timer refs so concurrent tick loops can be cancelled
+let _questionTimerRef: ReturnType<typeof setTimeout> | null = null;
+let _stealTimerRef: ReturnType<typeof setTimeout> | null = null;
+
 export interface GameSlice extends GameState {
   // Derived
   answeredCount: number;
   // Actions
-  createRoom: (name: string, isTrial: boolean, cats?: CategoryId[]) => { roomId: string; playerId: string };
-  addPlayer: (name: string) => string;
+  createRoom: (name: string, isTrial: boolean, cats?: CategoryId[], customQuestions?: Question[]) => { roomId: string; playerId: string };
+  addPlayer: (name: string, explicitId?: string) => string;
   startGame: () => void;
   selectQuestion: (questionId: string) => void;
   answerQuestion: (playerId: string, answerIndex: number) => void;
   useSabotage: (playerId: string, type: SabotageType, targetId: string) => void;
   returnToBoard: () => void;
+  triggerStealPhase: () => void;
   resetGame: () => void;
   setHostMessage: (msg: string) => void;
   tickTimer: () => void;
   updateCategories: (cats: CategoryId[]) => void;
+  updateDraftPhase: (picks: Array<{ teamId: 'alpha' | 'beta'; categoryId: string }>, currentTeam: 'alpha' | 'beta', isComplete: boolean) => void;
+  setLocalPlayerId: (id: string) => void;
   rematch: () => void;
 }
 
@@ -92,29 +142,46 @@ export interface GameStoreState {
   localPlayerId: string | null;
   answeredCount: number;
   // Actions
-  createRoom: (name: string, isTrial: boolean, cats?: CategoryId[]) => { roomId: string; playerId: string };
-  addPlayer: (name: string) => string;
+  createRoom: (name: string, isTrial: boolean, cats?: CategoryId[], customQuestions?: Question[]) => { roomId: string; playerId: string };
+  addPlayer: (name: string, explicitId?: string) => string;
   startGame: () => void;
   selectQuestion: (questionId: string) => void;
   answerQuestion: (playerId: string, answerIndex: number) => void;
   useSabotage: (playerId: string, type: SabotageType, targetId: string) => void;
   returnToBoard: () => void;
+  triggerStealPhase: () => void;
   resetGame: () => void;
   setHostMessage: (msg: string) => void;
   updateCategories: (cats: CategoryId[]) => void;
+  updateDraftPhase: (picks: Array<{ teamId: 'alpha' | 'beta'; categoryId: string }>, currentTeam: 'alpha' | 'beta', isComplete: boolean) => void;
+  setLocalPlayerId: (id: string) => void;
   rematch: () => void;
+  // Weapon system
+  setTeamMembership: (alpha: string[], beta: string[], alphaName?: string, alphaEmoji?: string, betaName?: string, betaEmoji?: string) => void;
+  dismissPendingWeapon: () => void;
+  useWeapon: (teamId: TeamId, weapon: WeaponType, opts?: { targetTeamId?: TeamId; categoryId?: CategoryId }) => void;
+  activateLastStand: (teamId: TeamId) => void;
+  initStealTimer: (opponentTeamId: TeamId, teamName: string) => void;
+  activateWeaponFromBox: (teamId: TeamId, weapon: WeaponType, opts?: { targetTeamId?: TeamId; categoryId?: CategoryId }) => void;
+  skipSteal: () => void;
+  resumeTimers: () => void;
 }
 
 export const useGameStore = create<GameStoreState>()(
-  subscribeWithSelector((set, get) => ({
+  subscribeWithSelector(
+  persist(
+  (set, get) => ({
     game: null,
     localPlayerId: null,
     answeredCount: 0,
 
-    createRoom: (name, isTrial, cats) => {
+    createRoom: (name, isTrial, cats, customQuestions) => {
       const playerId = uuid();
       const roomId = uuid();
-      const categories = isTrial ? getTrialCategories() : (cats ?? getTrialCategories());
+      const isCustom = !!customQuestions?.length;
+      const categories = isCustom
+        ? [...new Set(customQuestions.map((q) => q.category))] as CategoryId[]
+        : isTrial ? getTrialCategories() : (cats ?? getTrialCategories());
       const player: Player = {
         id: playerId,
         name: name.trim() || 'لاعب',
@@ -135,7 +202,9 @@ export const useGameStore = create<GameStoreState>()(
         isTrial,
         createdAt: Date.now(),
       };
-      const board = buildBoard(categories);
+      const board = isCustom
+        ? buildCustomBoard(customQuestions!).board
+        : buildBoard(categories);
 
       // Bootstrap the engine for adaptive difficulty + round management
       engine.newGame(
@@ -159,15 +228,30 @@ export const useGameStore = create<GameStoreState>()(
         selectedSabotage: null,
         sabotageTarget: null,
         lastAnswer: null,
+        teamMembership: null,
+        activeTeamId: null,
+        teamStreaks: {},
+        teamWeapons: {},
+        pendingWeapon: null,
+        activeBomb: null,
+        activeImmunity: {},
+        forcedCategory: null,
+        lastStandActive: null,
+        lastStandUsed: {},
+        stealOpponentTeamId: null,
+        teamScores: {},
+        teamDisplay: null,
       };
       set({ game, localPlayerId: playerId, answeredCount: 0 });
       return { roomId, playerId };
     },
 
-    addPlayer: (name) => {
-      const playerId = uuid();
+    addPlayer: (name, explicitId) => {
+      const playerId = explicitId ?? uuid();
       const { game } = get();
       if (!game) return playerId;
+      // Skip if player already in room (idempotent re-join)
+      if (game.room.players.some((p) => p.id === playerId)) return playerId;
       const player: Player = {
         id: playerId,
         name: name.trim() || 'لاعب',
@@ -178,17 +262,27 @@ export const useGameStore = create<GameStoreState>()(
       };
       const allTypes: SabotageType[] = ['steal', 'block', 'halve', 'bomb', 'freeze', 'scramble', 'double', 'mystery'];
       const updatedSabotages = { ...game.sabotages, [playerId]: allTypes };
-      // Register new player in sabotage engine
-      useSabotageStore.getState().earnSabotage(playerId, 'steal'); // will no-op if already inited
-      set({
+      useSabotageStore.getState().earnSabotage(playerId, 'steal');
+      // When explicitId is provided we're adding a REMOTE player on the host side —
+      // don't overwrite the host's own localPlayerId.
+      const stateUpdate: Partial<GameStoreState> = {
         game: {
           ...game,
           room: { ...game.room, players: [...game.room.players, player] },
           sabotages: updatedSabotages,
         },
-        localPlayerId: playerId,
-      });
+      };
+      if (!explicitId) stateUpdate.localPlayerId = playerId;
+      set(stateUpdate);
       return playerId;
+    },
+
+    setLocalPlayerId: (id) => { set({ localPlayerId: id }); },
+
+    updateDraftPhase: (picks, currentTeam, isComplete) => {
+      const { game } = get();
+      if (!game) return;
+      set({ game: { ...game, draftPhase: { picks, currentTeam, isComplete } } });
     },
 
     startGame: () => {
@@ -202,16 +296,26 @@ export const useGameStore = create<GameStoreState>()(
     selectQuestion: (questionId) => {
       const { game } = get();
       if (!game || game.phase !== 'board') return;
-      const question = getQuestionById(questionId);
-      if (!question) return;
+      const rawQ = getQuestionById(questionId);
+      if (!rawQ) return;
+      // Use the board cell's display points (hard column overrides 400/500 → 600)
+      const cell = game.board.flat().find((c) => c.questionId === questionId);
+      const question = cell && cell.points !== rawQ.points
+        ? { ...rawQ, points: cell.points }
+        : rawQ;
 
-      const localPlayerId = get().localPlayerId;
       const sabStore = useSabotageStore.getState();
 
       // Check freeze effect for the active player
       const frozenDuration = game.activePlayer ? sabStore.getFreezeFor(game.activePlayer) : null;
-      const diff = localPlayerId ? engine.difficulty(localPlayerId) : null;
-      const timeLimit = frozenDuration ?? diff?.timeLimit ?? DEFAULT_TIMER;
+      let timeLimit = frozenDuration ?? TIMER_BY_POINTS[question.points] ?? DEFAULT_TIMER;
+
+      // Apply timer bomb: halve the time for the targeted team
+      let activeBomb = game.activeBomb;
+      if (activeBomb && activeBomb === game.activeTeamId) {
+        timeLimit = Math.max(5, Math.ceil(timeLimit / 2));
+        activeBomb = null;
+      }
 
       // Bind scramble to this specific question if one is pending
       if (game.activePlayer) {
@@ -228,40 +332,118 @@ export const useGameStore = create<GameStoreState>()(
           phase: 'question',
           currentQuestion: question,
           timer: timeLimit,
+          activeBomb,
         },
       });
 
-      // Tick timer — stop if phase changes
+      // Tick timer — cancel any previous loop then start fresh
+      if (_questionTimerRef !== null) { clearTimeout(_questionTimerRef); _questionTimerRef = null; }
       const tick = () => {
         const current = get().game;
         if (!current || current.phase !== 'question') return;
         if (current.timer <= 0) {
-          set({
-            game: {
-              ...current,
-              phase: 'result',
-              timer: 0,
-              hostMessage: getLoserRoast(),
-              lastAnswer: {
-                playerId: current.activePlayer ?? '',
-                correct: false,
-                points: 0,
-                timeBonus: 0,
-                streakMultiplier: 1,
-              },
-            },
-          });
+          // Delegate to answerQuestion so steal logic fires and board cell is marked answered.
+          // Any answerIndex works — timeRemaining=0 forces timedOut=true in validateAnswer.
+          const fallbackPlayer = current.activePlayer ?? current.room.players[0]?.id ?? '';
+          get().answerQuestion(fallbackPlayer, 0);
           return;
         }
         set({ game: { ...current, timer: current.timer - 1 } });
-        setTimeout(tick, 1000);
+        _questionTimerRef = setTimeout(tick, 1000);
       };
-      setTimeout(tick, 1000);
+      _questionTimerRef = setTimeout(tick, 1000);
     },
 
     answerQuestion: (playerId, answerIndex) => {
       const { game } = get();
-      if (!game || game.phase !== 'question' || !game.currentQuestion) return;
+      if (!game || !game.currentQuestion) return;
+
+      // ── Steal phase answer ────────────────────────────────────────────────────
+      if (game.phase === 'steal') {
+        if (_stealTimerRef !== null) { clearTimeout(_stealTimerRef); _stealTimerRef = null; }
+        const question  = game.currentQuestion;
+        const stealTeamId = game.stealOpponentTeamId;
+        if (!stealTeamId) return;
+
+        // In single-device mode the host physically answers for the steal team.
+        // Attribute points to the first player of the steal team regardless of
+        // who called this action.
+        const stealPlayerIds = game.teamMembership?.[stealTeamId] ?? [];
+        const targetPlayerId = stealPlayerIds.includes(playerId)
+          ? playerId
+          : (stealPlayerIds[0] ?? playerId);
+
+        const targetPlayer = game.room.players.find((p) => p.id === targetPlayerId);
+        if (!targetPlayer) return;
+
+        const correct      = answerIndex === question.correctIndex;
+        const pointsEarned = correct ? question.points : 0;
+
+        const updatedPlayers = game.room.players.map((p) =>
+          p.id === targetPlayerId && correct
+            ? { ...p, score: p.score + pointsEarned, streak: p.streak + 1 }
+            : p.id === targetPlayerId
+            ? { ...p, streak: 0 }
+            : p
+        );
+
+        const updatedBoard = game.board.map((row) =>
+          row.map((cell) =>
+            cell.questionId === question.id
+              ? { ...cell, answered: true, answeredBy: correct ? targetPlayerId : undefined }
+              : cell
+          )
+        );
+
+        // answeredQuestions was already updated when steal was triggered — don't add again
+        const answeredQuestions = game.room.answeredQuestions;
+        const answeredCount     = updatedBoard.reduce((a, r) => a + r.filter((c) => c.answered).length, 0);
+        const allAnswered       = game.room.isTrial
+          ? answeredQuestions.length >= TRIAL_QUESTION_LIMIT
+          : answeredCount >= game.board.reduce((a, r) => a + r.length, 0);
+
+        const nextIdx          = (game.room.players.findIndex((p) => p.id === targetPlayerId) + 1) % game.room.players.length;
+        const nextActivePlayer = game.room.players[nextIdx].id;
+        const nextTeamId: TeamId | null = game.activeTeamId === 'alpha' ? 'beta'
+          : game.activeTeamId === 'beta' ? 'alpha' : null;
+
+        const stealTeamScores: Partial<Record<TeamId, number>> = stealTeamId
+          ? { ...(game.teamScores ?? {}), [stealTeamId]: (game.teamScores?.[stealTeamId] ?? 0) + pointsEarned }
+          : (game.teamScores ?? {});
+
+        set({
+          game: {
+            ...game,
+            board: updatedBoard,
+            phase: allAnswered ? 'finished' : 'result',
+            room: {
+              ...game.room,
+              players: updatedPlayers,
+              answeredQuestions,
+              status: allAnswered ? 'finished' : 'playing',
+            },
+            activePlayer: nextActivePlayer,
+            activeTeamId: nextTeamId ?? game.activeTeamId,
+            teamScores: stealTeamScores,
+            hostMessage: allAnswered
+              ? getGameOverMessage([...updatedPlayers].sort((a, b) => b.score - a.score)[0].id === targetPlayerId)
+              : correct ? getStealSuccessMessage(targetPlayer.name) : getStealFailMessage(),
+            lastAnswer: {
+              playerId: targetPlayerId,
+              teamId: stealTeamId,
+              correct,
+              points: pointsEarned,
+              timeBonus: 0,
+              streakMultiplier: 1,
+            },
+            stealOpponentTeamId: null,
+          },
+          answeredCount,
+        });
+        return;
+      }
+
+      if (game.phase !== 'question') return;
 
       const question = game.currentQuestion;
       const player   = game.room.players.find((p) => p.id === playerId);
@@ -269,8 +451,22 @@ export const useGameStore = create<GameStoreState>()(
 
       const sabStore = useSabotageStore.getState();
 
+      // Determine team membership early (needed for lastStand check)
+      // Use activeTeamId as source of truth — beta.playerIds is empty in single-device mode
+      const membership = game.teamMembership;
+      const answeringTeamId: TeamId | null = game.activeTeamId ?? (
+        membership
+          ? membership.alpha.includes(playerId) ? 'alpha'
+          : membership.beta.includes(playerId)  ? 'beta'
+          : null
+          : null
+      );
+
       // Apply double multiplier if active
       const doubleMultiplier = sabStore.getDoubleMultiplierFor(playerId) ?? 1;
+
+      // Last Stand: 3x multiplier for the challenging team
+      const lastStandMultiplier = (game.lastStandActive && game.lastStandActive === answeringTeamId) ? 3 : 1;
 
       // Validate answer
       const result = validateAnswer({
@@ -279,7 +475,7 @@ export const useGameStore = create<GameStoreState>()(
         timeRemaining:   game.timer,
         timerDuration:   DEFAULT_TIMER,
         playerStreak:    player.streak,
-        pointMultiplier: doubleMultiplier,
+        pointMultiplier: doubleMultiplier * lastStandMultiplier,
       });
 
       // Resolve pending effects (bomb, double penalty)
@@ -334,10 +530,115 @@ export const useGameStore = create<GameStoreState>()(
 
       sabStore.advanceTurn();
 
-      const hostMessage = doubleWinMsg ?? doublelossMsg ?? bombMsg
+      // ── Team weapon system ──────────────────────────────────────────────────
+
+      let teamStreaks   = { ...game.teamStreaks };
+      let teamWeapons  = { ...game.teamWeapons };
+      let pendingWeapon = game.pendingWeapon;
+      let activeImmunity = { ...game.activeImmunity };
+      let immunityMsg: string | null = null;
+
+      if (answeringTeamId) {
+        const currentStreak = teamStreaks[answeringTeamId] ?? 0;
+        if (result.correct) {
+          const newTeamStreak = currentStreak + 1;
+          teamStreaks[answeringTeamId] = newTeamStreak;
+          // Trigger mystery box every 3 consecutive correct answers
+          if (newTeamStreak >= 3 && !pendingWeapon) {
+            teamStreaks[answeringTeamId] = 0;
+            const weapons: WeaponType[] = ['timer_bomb', 'immunity', 'forced_category', 'ask_friend', 'extra_time'];
+            const weapon = weapons[Math.floor(Math.random() * weapons.length)];
+            pendingWeapon = { teamId: answeringTeamId, weapon };
+          }
+        } else {
+          // Immunity check: if wrong and immunity active, pass without penalty
+          if (activeImmunity[answeringTeamId]) {
+            activeImmunity[answeringTeamId] = false;
+            immunityMsg = getImmunityProtectedMessage();
+          }
+          teamStreaks[answeringTeamId] = 0;
+        }
+      }
+
+      // If immunity triggered, revert individual player score too (bomb/penalty must not apply)
+      if (immunityMsg) {
+        updatedPlayers = updatedPlayers.map((p) =>
+          p.id === playerId ? { ...p, score: player.score, streak: result.newStreak } : p
+        );
+      }
+
+      // Toggle which team picks next
+      const nextTeamId: TeamId | null = game.activeTeamId === 'alpha' ? 'beta'
+        : game.activeTeamId === 'beta' ? 'alpha'
+        : null;
+
+      // If immunity was active and wrong answer, override team and individual points to 0
+      let adjustedFinalPoints = finalPoints;
+      if (immunityMsg) {
+        adjustedFinalPoints = 0;
+      }
+
+      const updatedTeamScores: Partial<Record<TeamId, number>> = answeringTeamId
+        ? {
+            ...(game.teamScores ?? {}),
+            [answeringTeamId]: Math.max(0, (game.teamScores?.[answeringTeamId] ?? 0) + adjustedFinalPoints),
+          }
+        : (game.teamScores ?? {});
+
+      const lastStandUsed = { ...game.lastStandUsed };
+      if (game.lastStandActive === answeringTeamId) lastStandUsed[answeringTeamId!] = true;
+
+      const hostMessage = immunityMsg ?? doubleWinMsg ?? doublelossMsg ?? bombMsg
+        ?? (pendingWeapon && !game.pendingWeapon ? getMysteryBoxMessage() : null)
         ?? (result.correct
-          ? result.newStreak >= 3 ? getStreakMessage() : getWinnerRoast()
+          ? result.newStreak >= 4 ? getStreakHypeMessage(result.newStreak)
+          : result.newStreak >= 3 ? getStreakMessage()
+          : getWinnerRoast()
           : getLoserRoast());
+
+      // ── Steal phase: wrong answer with no immunity in teams mode ─────────────
+      const opponentTeamId: TeamId | null = answeringTeamId === 'alpha' ? 'beta'
+        : answeringTeamId === 'beta' ? 'alpha' : null;
+      const shouldSteal = !result.correct && !immunityMsg && answeringTeamId && opponentTeamId && !allAnswered;
+
+      if (shouldSteal && opponentTeamId) {
+        // Determine steal timer (bomb applies to opponent's steal too)
+        let stealTime = STEAL_TIMER;
+        if (game.activeBomb === opponentTeamId) stealTime = Math.max(5, Math.ceil(stealTime / 2));
+
+        // Show brief "Incorrect" result first — hide correct answer until steal resolves
+        set({
+          game: {
+            ...game,
+            board: updatedBoard,
+            phase: 'result',
+            room: { ...game.room, players: updatedPlayers, answeredQuestions },
+            timer: stealTime,
+            hostMessage: getLoserRoast(),
+            lastAnswer: {
+              playerId,
+              teamId: answeringTeamId,
+              correct: false,
+              points: 0,
+              timeBonus: 0,
+              streakMultiplier: 1,
+              pendingSteal: true,
+            },
+            teamScores: game.teamScores ?? {},
+            teamStreaks,
+            teamWeapons,
+            pendingWeapon,
+            activeImmunity,
+            forcedCategory: game.forcedCategory?.targetTeamId === answeringTeamId ? null : game.forcedCategory,
+            lastStandActive: null,
+            lastStandUsed,
+            stealOpponentTeamId: opponentTeamId,
+          },
+          answeredCount,
+        });
+        // Steal timer starts when host clicks Continue (triggerStealPhase)
+        return;
+      }
 
       set({
         game: {
@@ -351,6 +652,7 @@ export const useGameStore = create<GameStoreState>()(
             status: allAnswered ? 'finished' : 'playing',
           },
           activePlayer: nextActivePlayer,
+          activeTeamId: nextTeamId ?? game.activeTeamId,
           hostMessage: allAnswered
             ? getGameOverMessage(
                 [...updatedPlayers].sort((a, b) => b.score - a.score)[0].id === playerId
@@ -358,11 +660,21 @@ export const useGameStore = create<GameStoreState>()(
             : hostMessage,
           lastAnswer: {
             playerId,
+            teamId: answeringTeamId,
             correct:          result.correct,
-            points:           finalPoints,
+            points:           adjustedFinalPoints,
             timeBonus:        result.timeBonus,
             streakMultiplier: result.streakMultiplier * doubleMultiplier,
           },
+          teamScores: updatedTeamScores,
+          teamStreaks,
+          teamWeapons,
+          pendingWeapon,
+          activeImmunity,
+          forcedCategory: game.forcedCategory?.targetTeamId === answeringTeamId ? null : game.forcedCategory,
+          lastStandActive: null,
+          lastStandUsed,
+          stealOpponentTeamId: null,
         },
         answeredCount,
       });
@@ -428,7 +740,25 @@ export const useGameStore = create<GameStoreState>()(
       set({ game: { ...game, phase: 'board', currentQuestion: null, lastAnswer: null } });
     },
 
+    triggerStealPhase: () => {
+      const { game } = get();
+      if (!game?.stealOpponentTeamId) return;
+      const opponentTeamId = game.stealOpponentTeamId;
+      const opponentName = 'الفريق المنافس';
+      set({
+        game: {
+          ...game,
+          phase: 'steal',
+          hostMessage: getStealPhaseMessage(opponentName),
+          lastAnswer: game.lastAnswer ? { ...game.lastAnswer, pendingSteal: false } : null,
+        },
+      });
+      get().initStealTimer(opponentTeamId, opponentName);
+    },
+
     resetGame: () => {
+      if (_questionTimerRef !== null) { clearTimeout(_questionTimerRef); _questionTimerRef = null; }
+      if (_stealTimerRef    !== null) { clearTimeout(_stealTimerRef);    _stealTimerRef    = null; }
       useSabotageStore.getState().resetSabotagees();
       set({ game: null, localPlayerId: null, answeredCount: 0 });
     },
@@ -462,19 +792,22 @@ export const useGameStore = create<GameStoreState>()(
     },
 
     rematch: () => {
+      if (_questionTimerRef !== null) { clearTimeout(_questionTimerRef); _questionTimerRef = null; }
+      if (_stealTimerRef    !== null) { clearTimeout(_stealTimerRef);    _stealTimerRef    = null; }
       const { game } = get();
       if (!game) return;
       const players = game.room.players.map((p) => ({ ...p, score: 0, streak: 0 }));
       const cats = game.room.categories;
       const playerIds = players.map((p) => p.id);
+      const rematchMode: 'ffa' | 'teams' = game.teamMembership ? 'teams' : 'ffa';
       globalPool.reset();
       const board = buildBoard(cats);
       engine.newGame(
         playerIds.map((id) => ({ id, teamId: null, streak: 0, coldStreak: 0, score: 0 })),
-        'ffa',
+        rematchMode,
         cats,
       );
-      useSabotageStore.getState().initGame('ffa', playerIds);
+      useSabotageStore.getState().initGame(rematchMode, playerIds);
       set({
         game: {
           ...game,
@@ -494,9 +827,297 @@ export const useGameStore = create<GameStoreState>()(
           selectedSabotage: null,
           sabotageTarget: null,
           lastAnswer: null,
+          teamScores: game.teamMembership ? { alpha: 0, beta: 0 } : {},
+          teamStreaks: {},
+          teamWeapons: game.teamMembership ? { alpha: [], beta: [] } : {},
+          pendingWeapon: null,
+          activeBomb: null,
+          activeImmunity: {},
+          forcedCategory: null,
+          lastStandActive: null,
+          lastStandUsed: {},
+          activeTeamId: game.teamMembership ? 'alpha' : null,
+          stealOpponentTeamId: null,
         },
         answeredCount: 0,
       });
     },
-  }))
+
+    setTeamMembership: (alpha, beta, alphaName?, alphaEmoji?, betaName?, betaEmoji?) => {
+      const { game } = get();
+      if (!game) return;
+      set({
+        game: {
+          ...game,
+          teamMembership: { alpha, beta },
+          teamDisplay: {
+            alpha: { name: alphaName ?? 'البحر', emoji: alphaEmoji ?? '🌊' },
+            beta:  { name: betaName  ?? 'البر',  emoji: betaEmoji  ?? '🐪' },
+          },
+          activeTeamId: 'alpha',
+          teamScores: { alpha: 0, beta: 0 },
+          teamStreaks: { alpha: 0, beta: 0 },
+          teamWeapons: { alpha: [], beta: [] },
+          pendingWeapon: null,
+          activeBomb: null,
+          activeImmunity: { alpha: false, beta: false },
+          forcedCategory: null,
+        },
+      });
+    },
+
+    dismissPendingWeapon: () => {
+      const { game } = get();
+      if (!game || !game.pendingWeapon) return;
+      const { teamId, weapon } = game.pendingWeapon;
+      const teamWeapons = { ...game.teamWeapons };
+      teamWeapons[teamId] = [...(teamWeapons[teamId] ?? []), weapon];
+      set({
+        game: {
+          ...game,
+          pendingWeapon: null,
+          teamWeapons,
+          hostMessage: getWeaponEarnedMessage(weapon),
+        },
+      });
+    },
+
+    useWeapon: (teamId, weapon, opts) => {
+      const { game } = get();
+      if (!game) return;
+
+      // Remove first instance of weapon from inventory
+      const teamWeapons = { ...game.teamWeapons };
+      const inv = [...(teamWeapons[teamId] ?? [])];
+      const idx = inv.indexOf(weapon);
+      if (idx === -1) return;
+      inv.splice(idx, 1);
+      teamWeapons[teamId] = inv;
+
+      switch (weapon) {
+        case 'timer_bomb': {
+          const targetTeam = opts?.targetTeamId ?? (teamId === 'alpha' ? 'beta' : 'alpha');
+          set({
+            game: {
+              ...game,
+              teamWeapons,
+              activeBomb: targetTeam,
+              hostMessage: getWeaponUsedTimerBomb(),
+            },
+          });
+          break;
+        }
+        case 'immunity': {
+          const activeImmunity = { ...game.activeImmunity, [teamId]: true };
+          set({
+            game: {
+              ...game,
+              teamWeapons,
+              activeImmunity,
+              hostMessage: getWeaponUsedImmunity(),
+            },
+          });
+          break;
+        }
+        case 'forced_category': {
+          const targetTeam  = opts?.targetTeamId ?? (teamId === 'alpha' ? 'beta' : 'alpha');
+          const categoryId  = opts?.categoryId;
+          const catName     = categoryId ? getCategoryById(categoryId)?.name ?? categoryId : '';
+          set({
+            game: {
+              ...game,
+              teamWeapons,
+              forcedCategory: categoryId ? { targetTeamId: targetTeam, categoryId } : null,
+              hostMessage: getWeaponUsedForcedCategory(catName),
+            },
+          });
+          break;
+        }
+        case 'ask_friend': {
+          const extraTimer = (game.phase === 'question' || game.phase === 'steal') ? 25 : 0;
+          set({
+            game: {
+              ...game,
+              teamWeapons,
+              timer: game.timer + extraTimer,
+              hostMessage: getWeaponUsedAskFriend(),
+            },
+          });
+          break;
+        }
+        case 'extra_time': {
+          const extraTimer = (game.phase === 'question' || game.phase === 'steal') ? 15 : 0;
+          set({
+            game: {
+              ...game,
+              teamWeapons,
+              timer: game.timer + extraTimer,
+              hostMessage: getWeaponUsedExtraTime(),
+            },
+          });
+          break;
+        }
+      }
+    },
+
+    activateWeaponFromBox: (teamId, weapon, opts) => {
+      const { game } = get();
+      if (!game || !game.pendingWeapon) return;
+      // Clear pending weapon (don't add to inventory — it's being used now)
+      set({ game: { ...game, pendingWeapon: null } });
+      // Now use it
+      const teamWeapons = { ...game.teamWeapons };
+      // Temporarily add then immediately consume via useWeapon
+      teamWeapons[teamId] = [...(teamWeapons[teamId] ?? []), weapon];
+      set({ game: { ...game, pendingWeapon: null, teamWeapons } });
+      get().useWeapon(teamId, weapon, opts);
+    },
+
+    skipSteal: () => {
+      const { game } = get();
+      if (!game || game.phase !== 'steal') return;
+
+      const updatedBoard = game.board.map((row) =>
+        row.map((cell) =>
+          cell.questionId === game.currentQuestion?.id
+            ? { ...cell, answered: true }
+            : cell
+        )
+      );
+      // answeredQuestions was already updated at steal trigger — don't add again
+      const answeredQuestions = game.room.answeredQuestions;
+      const answeredCount = updatedBoard.reduce((a, r) => a + r.filter((c) => c.answered).length, 0);
+      const allAnswered   = game.room.isTrial
+        ? answeredQuestions.length >= TRIAL_QUESTION_LIMIT
+        : answeredCount >= game.board.reduce((a, r) => a + r.length, 0);
+
+      const playerIds  = game.room.players.map((p) => p.id);
+      const nextIdx    = (game.room.players.findIndex((p) => p.id === game.activePlayer) + 1) % playerIds.length;
+      const nextPlayer = playerIds[nextIdx];
+      const nextTeamId: TeamId | null = game.activeTeamId === 'alpha' ? 'beta'
+        : game.activeTeamId === 'beta' ? 'alpha' : null;
+
+      set({
+        game: {
+          ...game,
+          board: updatedBoard,
+          phase: allAnswered ? 'finished' : 'result',
+          room: { ...game.room, answeredQuestions, status: allAnswered ? 'finished' : 'playing' },
+          activePlayer: nextPlayer,
+          activeTeamId: nextTeamId ?? game.activeTeamId,
+          timer: 0,
+          hostMessage: getStealFailMessage(),
+          lastAnswer: {
+            playerId: game.activePlayer ?? '',
+            correct: false,
+            points: 0,
+            timeBonus: 0,
+            streakMultiplier: 1,
+          },
+          stealOpponentTeamId: null,
+        },
+        answeredCount,
+      });
+    },
+
+    initStealTimer: (_opponentTeamId, _teamName) => {
+      if (_stealTimerRef !== null) { clearTimeout(_stealTimerRef); _stealTimerRef = null; }
+      const tick = () => {
+        const current = get().game;
+        if (!current || current.phase !== 'steal') return;
+        if (current.timer <= 0) {
+          // Steal time expired — question passes with no points
+          const updatedBoard = current.board.map((row) =>
+            row.map((cell) =>
+              cell.questionId === current.currentQuestion?.id
+                ? { ...cell, answered: true }
+                : cell
+            )
+          );
+          // answeredQuestions was already updated at steal trigger — don't add again
+          const answeredQuestions = current.room.answeredQuestions;
+          const answeredCount = updatedBoard.reduce((a, r) => a + r.filter((c) => c.answered).length, 0);
+          const allAnswered = current.room.isTrial
+            ? answeredQuestions.length >= TRIAL_QUESTION_LIMIT
+            : answeredCount >= current.board.reduce((a, r) => a + r.length, 0);
+
+          const playerIds = current.room.players.map((p) => p.id);
+          const nextIdx   = (current.room.players.findIndex((p) => p.id === current.activePlayer) + 1) % playerIds.length;
+          const nextPlayer = playerIds[nextIdx];
+          const nextTeamId: TeamId | null = current.activeTeamId === 'alpha' ? 'beta'
+            : current.activeTeamId === 'beta' ? 'alpha' : null;
+
+          set({
+            game: {
+              ...current,
+              board: updatedBoard,
+              phase: allAnswered ? 'finished' : 'result',
+              room: { ...current.room, answeredQuestions, status: allAnswered ? 'finished' : 'playing' },
+              activePlayer: nextPlayer,
+              activeTeamId: nextTeamId ?? current.activeTeamId,
+              timer: 0,
+              hostMessage: getStealFailMessage(),
+              lastAnswer: {
+                playerId: current.activePlayer ?? '',
+                correct: false,
+                points: 0,
+                timeBonus: 0,
+                streakMultiplier: 1,
+              },
+              stealOpponentTeamId: null,
+            },
+            answeredCount,
+          });
+          return;
+        }
+        set({ game: { ...current, timer: current.timer - 1 } });
+        _stealTimerRef = setTimeout(tick, 1000);
+      };
+      _stealTimerRef = setTimeout(tick, 1000);
+    },
+
+    activateLastStand: (teamId) => {
+      const { game } = get();
+      if (!game) return;
+      if (game.lastStandUsed[teamId]) return;
+      set({
+        game: {
+          ...game,
+          lastStandActive: teamId,
+          lastStandUsed: { ...game.lastStandUsed, [teamId]: true },
+          hostMessage: getLastStandMessage(),
+        },
+      });
+    },
+
+    resumeTimers: () => {
+      const { game } = get();
+      if (!game) return;
+      if (game.phase === 'question' && game.timer > 0) {
+        if (_questionTimerRef !== null) { clearTimeout(_questionTimerRef); _questionTimerRef = null; }
+        const tick = () => {
+          const current = get().game;
+          if (!current || current.phase !== 'question') return;
+          if (current.timer <= 0) { get().answerQuestion(current.activePlayer ?? '', 0); return; }
+          set({ game: { ...current, timer: current.timer - 1 } });
+          _questionTimerRef = setTimeout(tick, 1000);
+        };
+        _questionTimerRef = setTimeout(tick, 1000);
+      }
+      if (game.phase === 'steal' && game.timer > 0 && game.stealOpponentTeamId) {
+        get().initStealTimer(game.stealOpponentTeamId, '');
+      }
+    },
+  }),
+  {
+    name: 'jawib-v2',
+    version: 2,
+    migrate: () => ({ game: null, localPlayerId: null, answeredCount: 0 }),
+    partialize: (state) => ({
+      game: state.game,
+      localPlayerId: state.localPlayerId,
+      answeredCount: state.answeredCount,
+    }),
+  }
+  ))
 );

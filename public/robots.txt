@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /join/
+Disallow: /.netlify/
+Disallow: /api/
+
+Sitemap: https://jawib.app/sitemap.xml
+
+# © 2025 Jawib. All rights reserved.
+# Unauthorized reproduction, distribution, or use of this game's
+# content, questions, or code is prohibited.

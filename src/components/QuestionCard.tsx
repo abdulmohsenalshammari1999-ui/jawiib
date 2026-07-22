@@ -180,7 +180,7 @@ export function QuestionCard({
 
   // Always shuffle options so the correct answer has no positional/length tell.
   // Re-shuffle only when the question changes; scrambledOptions (sabotage) override the base order.
-  const { displayOptions, displayCorrectIndex } = useMemo(() => {
+  const { displayOptions, displayOptionImages, displayCorrectIndex } = useMemo(() => {
     const base = scrambledOptions ?? question.options;
     const indices = base.map((_, i) => i);
     for (let i = indices.length - 1; i > 0; i--) {
@@ -190,8 +190,10 @@ export function QuestionCard({
     const shuffled = indices.map((i) => base[i]);
     const correctText = question.options[question.correctIndex];
     const displayCorrect = shuffled.indexOf(correctText);
+    const imgs = question.optionImages;
     return {
       displayOptions: shuffled,
+      displayOptionImages: imgs ? indices.map((i) => imgs[i] ?? null) : null,
       displayCorrectIndex: displayCorrect >= 0 ? displayCorrect : question.correctIndex,
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -228,7 +230,7 @@ export function QuestionCard({
   };
 
   const optionStyle = (idx: number): string => {
-    const base = 'p-4 rounded-xl border-2 text-right transition-all leading-snug flex items-center select-none answer-option';
+    const base = 'p-4 rounded-xl border-2 text-right transition-all leading-snug flex items-center select-none answer-option min-h-[60px]';
     if (selected === null) {
       return isActuallyDisabled
         ? `${base} opacity-40 cursor-not-allowed`
@@ -324,17 +326,7 @@ export function QuestionCard({
           <div className="text-center text-sm text-jawwib-text-muted italic mb-3">{question.teaser}</div>
         )}
 
-        {/* Media */}
-        {question.mediaUrl && (qType === 'image' || qType === 'guess' || qType === 'map') && (
-          <div className="mb-4"><ImageMedia src={question.mediaUrl} alt={question.mediaAlt ?? question.text} /></div>
-        )}
-        {question.mediaUrl && qType === 'scene' && (
-          <div className="mb-4">
-            {/\.(mp4|webm|mov|ogg)(\?|$)/i.test(question.mediaUrl)
-              ? <VideoMedia src={question.mediaUrl} caption={question.mediaAlt} />
-              : <ImageMedia src={question.mediaUrl} alt={question.mediaAlt ?? question.text} progressive timer={timer} maxTimer={maxTimer} />}
-          </div>
-        )}
+        {/* Media — audio/video/scene keep their specialized renderers; everything else with a mediaUrl shows ImageMedia */}
         {question.mediaUrl && (qType === 'audio' || qType === 'identify') && (
           <div className="mb-4">
             <AudioMedia
@@ -347,6 +339,16 @@ export function QuestionCard({
         )}
         {question.mediaUrl && qType === 'video' && (
           <div className="mb-4"><VideoMedia src={question.mediaUrl} caption={question.mediaAlt} /></div>
+        )}
+        {question.mediaUrl && qType === 'scene' && (
+          <div className="mb-4">
+            {/\.(mp4|webm|mov|ogg)(\?|$)/i.test(question.mediaUrl)
+              ? <VideoMedia src={question.mediaUrl} caption={question.mediaAlt} />
+              : <ImageMedia src={question.mediaUrl} alt={question.mediaAlt ?? question.text} progressive timer={timer} maxTimer={maxTimer} />}
+          </div>
+        )}
+        {question.mediaUrl && qType !== 'audio' && qType !== 'identify' && qType !== 'video' && qType !== 'scene' && (
+          <div className="mb-4"><ImageMedia src={question.mediaUrl} alt={question.mediaAlt ?? question.text} /></div>
         )}
 
         {/* Question text */}
@@ -383,30 +385,57 @@ export function QuestionCard({
 
         {/* Standard options */}
         {qType !== 'ordering' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {displayOptions.map((option, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleAnswer(idx)}
-                disabled={selected !== null || isActuallyDisabled}
-                aria-label={`الخيار ${OPTION_LABELS[idx]}: ${option}`}
-                className={optionStyle(idx)}
-              >
-                <span
-                  className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black ml-3 shrink-0"
-                  style={{ background: 'rgba(245,166,35,0.15)', color: '#FFD166', border: '1.5px solid rgba(245,166,35,0.30)' }}
+          <div className={`grid gap-3 ${displayOptionImages ? 'grid-cols-2' : 'grid-cols-1 sm:grid-cols-2'}`}>
+            {displayOptions.map((option, idx) => {
+              const imgUrl = displayOptionImages?.[idx] ?? null;
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleAnswer(idx)}
+                  disabled={selected !== null || isActuallyDisabled}
+                  aria-label={`الخيار ${OPTION_LABELS[idx]}: ${option}`}
+                  className={imgUrl ? optionStyle(idx).replace('flex items-center', 'flex flex-col') : optionStyle(idx)}
                 >
-                  {OPTION_LABELS[idx]}
-                </span>
-                <span className="font-bold text-sm sm:text-base text-jawwib-text flex-1 leading-snug">{option}</span>
-                {revealed && idx === displayCorrectIndex && (
-                  <span className="mr-2 text-jawwib-oasis text-base shrink-0 font-black">✓</span>
-                )}
-                {revealed && selected === idx && idx !== displayCorrectIndex && (
-                  <span className="mr-2 text-jawwib-terra text-base shrink-0 font-black">✗</span>
-                )}
-              </button>
-            ))}
+                  {imgUrl ? (
+                    <>
+                      <div className="flex items-center justify-between w-full mb-2">
+                        <span
+                          className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black shrink-0"
+                          style={{ background: 'rgba(245,166,35,0.15)', color: '#FFD166', border: '1.5px solid rgba(245,166,35,0.30)' }}
+                        >
+                          {OPTION_LABELS[idx]}
+                        </span>
+                        {revealed && idx === displayCorrectIndex && <span className="text-jawwib-oasis text-base font-black">✓</span>}
+                        {revealed && selected === idx && idx !== displayCorrectIndex && <span className="text-jawwib-terra text-base font-black">✗</span>}
+                      </div>
+                      <img
+                        src={imgUrl}
+                        alt={option}
+                        className="w-full rounded-lg object-cover mb-2"
+                        style={{ height: '80px' }}
+                      />
+                      <span className="font-bold text-xs text-jawwib-text text-center w-full leading-snug">{option}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-black ml-3 shrink-0"
+                        style={{ background: 'rgba(245,166,35,0.15)', color: '#FFD166', border: '1.5px solid rgba(245,166,35,0.30)' }}
+                      >
+                        {OPTION_LABELS[idx]}
+                      </span>
+                      <span className="font-bold text-sm sm:text-base text-jawwib-text flex-1 leading-snug">{option}</span>
+                      {revealed && idx === displayCorrectIndex && (
+                        <span className="mr-2 text-jawwib-oasis text-base shrink-0 font-black">✓</span>
+                      )}
+                      {revealed && selected === idx && idx !== displayCorrectIndex && (
+                        <span className="mr-2 text-jawwib-terra text-base shrink-0 font-black">✗</span>
+                      )}
+                    </>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
 

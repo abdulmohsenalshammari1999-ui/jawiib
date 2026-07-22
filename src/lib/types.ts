@@ -92,6 +92,7 @@ export interface Question {
   points: 100 | 200 | 300 | 400 | 500 | 600;
   text: string;
   options: string[];
+  optionImages?: string[];     // parallel image URLs for each option (same index as options)
   correctIndex: number;
   /** Ordering questions only: correct sequence as option indices e.g. [2,0,3,1] */
   correctOrder?: number[];

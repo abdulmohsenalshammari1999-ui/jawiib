@@ -233,19 +233,21 @@ function fromLandmarks(landmarks: SeedLandmark[]): Question[] {
 
 function fromAudio(audioRows: SeedAudio[]): Question[] {
   const qs: Question[] = [];
+  // Skip rows whose clipUrl is a local path — those files don't exist yet
+  const validRows = audioRows.filter((a) => a.clipUrl.startsWith('http'));
 
-  for (const clip of audioRows) {
+  for (const clip of validRows) {
     const tier = gameTier(clip.tier);
     const promptMap: Record<SeedAudio['kind'], string> = {
       song:   'ما اسم هذه الأغنية؟',
       sound:  'صوت ماذا هذا؟',
       anthem: 'نشيد أيّ دولة هذا؟',
     };
-    const sameKind = audioRows.filter((a) => a.kind === clip.kind && a.id !== clip.id);
+    const sameKind = validRows.filter((a) => a.kind === clip.kind && a.id !== clip.id);
     const distractors = shuffle(sameKind).slice(0, 3).map((a) => a.titleAr);
     // Pad with other-kind titles if not enough same-kind
     if (distractors.length < 3) {
-      const others = audioRows
+      const others = validRows
         .filter((a) => a.id !== clip.id && !distractors.includes(a.titleAr))
         .map((a) => a.titleAr);
       distractors.push(...shuffle(others).slice(0, 3 - distractors.length));

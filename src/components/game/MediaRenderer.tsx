@@ -14,11 +14,27 @@ interface ImageMediaProps {
 
 export function ImageMedia({ src, alt = '', caption, progressive, timer, maxTimer }: ImageMediaProps) {
   const [zoomed, setZoomed] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   // Progressive reveal: blur starts at 18px when timer = maxTimer, reaches 0 when timer ≤ 20% remaining
   const blurPx = progressive && timer != null && maxTimer
     ? Math.max(0, Math.round(18 * (timer / maxTimer) * 1.25))
     : 0;
+
+  if (failed) {
+    return (
+      <div
+        className="w-full rounded-2xl border border-jawwib-border flex flex-col items-center justify-center gap-2"
+        style={{ height: '180px', background: 'linear-gradient(135deg,#1C1208 0%,#2A1A0A 100%)' }}
+      >
+        <span className="text-5xl opacity-40">🖼️</span>
+        {alt && (
+          <p className="text-xs font-bold text-white/35 text-center px-4 leading-snug max-w-[220px]">{alt}</p>
+        )}
+        <p className="text-[10px] text-white/20 font-medium">الصورة غير متاحة</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -33,6 +49,7 @@ export function ImageMedia({ src, alt = '', caption, progressive, timer, maxTime
           className="w-full h-full object-cover"
           style={{ maxHeight: '240px', filter: blurPx > 0 ? `blur(${blurPx}px)` : 'none', transition: 'filter 1s linear' }}
           loading="lazy"
+          onError={() => setFailed(true)}
         />
         {blurPx > 0 && (
           <div className="absolute inset-0 flex items-center justify-center">

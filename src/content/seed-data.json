@@ -29,16 +29,16 @@
   ],
 
   "landmarks": [
-    { "id": "pyramids", "nameAr": "أهرامات الجيزة", "countryAr": "مصر", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/e3/Kheops-Pyramid.jpg", "tier": 1 },
-    { "id": "eiffel", "nameAr": "برج إيفل", "countryAr": "فرنسا", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/85/Tour_Eiffel_Wikimedia_Commons.jpg", "tier": 1 },
-    { "id": "colosseum", "nameAr": "الكولوسيوم", "countryAr": "إيطاليا", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/de/Colosseo_2020.jpg", "tier": 1 },
-    { "id": "tajmahal", "nameAr": "تاج محل", "countryAr": "الهند", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/1d/Taj_Mahal_%28Edited%29.jpeg", "tier": 1 },
-    { "id": "burjkhalifa", "nameAr": "برج خليفة", "countryAr": "الإمارات", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/9/93/Burj_Khalifa.jpg", "tier": 1 },
-    { "id": "greatwall", "nameAr": "سور الصين العظيم", "countryAr": "الصين", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/2/23/The_Great_Wall_of_China.jpg", "tier": 2 },
-    { "id": "kaaba", "nameAr": "الكعبة المشرّفة", "countryAr": "السعودية", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Masjid_al-Haram%2C_Mecca%2C_Saudi_Arabia.jpg", "tier": 1 },
-    { "id": "statueliberty", "nameAr": "تمثال الحرية", "countryAr": "الولايات المتحدة", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Statue_of_Liberty_7.jpg", "tier": 1 },
-    { "id": "operahouse", "nameAr": "دار أوبرا سيدني", "countryAr": "أستراليا", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Sydney_Opera_House_Sails_edit02.jpg", "tier": 2 },
-    { "id": "machupicchu", "nameAr": "ماتشو بيتشو", "countryAr": "البيرو", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/e/eb/Machu_Picchu%2C_Peru.jpg", "tier": 2 }
+    { "id": "pyramids",      "nameAr": "أهرامات الجيزة",     "countryAr": "مصر",               "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Kheops-Pyramid.jpg/640px-Kheops-Pyramid.jpg", "tier": 1 },
+    { "id": "eiffel",        "nameAr": "برج إيفل",            "countryAr": "فرنسا",             "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg/640px-Tour_Eiffel_Wikimedia_Commons.jpg", "tier": 1 },
+    { "id": "colosseum",     "nameAr": "الكولوسيوم",           "countryAr": "إيطاليا",           "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Colosseo_2020.jpg/640px-Colosseo_2020.jpg", "tier": 1 },
+    { "id": "tajmahal",      "nameAr": "تاج محل",              "countryAr": "الهند",             "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/Taj_Mahal%2C_Agra%2C_India_edit3.jpg/640px-Taj_Mahal%2C_Agra%2C_India_edit3.jpg", "tier": 1 },
+    { "id": "burjkhalifa",   "nameAr": "برج خليفة",           "countryAr": "الإمارات",          "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Burj_Khalifa.jpg/640px-Burj_Khalifa.jpg", "tier": 1 },
+    { "id": "greatwall",     "nameAr": "سور الصين العظيم",   "countryAr": "الصين",             "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/The_Great_Wall_of_China_at_Jinshanling-edit.jpg/640px-The_Great_Wall_of_China_at_Jinshanling-edit.jpg", "tier": 2 },
+    { "id": "kaaba",         "nameAr": "الكعبة المشرّفة",     "countryAr": "السعودية",          "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Masjid_al-Haram%2C_Mecca%2C_Saudi_Arabia.jpg/640px-Masjid_al-Haram%2C_Mecca%2C_Saudi_Arabia.jpg", "tier": 1 },
+    { "id": "statueliberty", "nameAr": "تمثال الحرية",        "countryAr": "الولايات المتحدة", "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Statue_of_Liberty_7.jpg/640px-Statue_of_Liberty_7.jpg", "tier": 1 },
+    { "id": "operahouse",    "nameAr": "دار أوبرا سيدني",    "countryAr": "أستراليا",          "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Sydney_Opera_House_-_Dec_2008.jpg/640px-Sydney_Opera_House_-_Dec_2008.jpg", "tier": 2 },
+    { "id": "machupicchu",   "nameAr": "ماتشو بيتشو",         "countryAr": "البيرو",            "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Machu_Picchu%2C_Peru.jpg/640px-Machu_Picchu%2C_Peru.jpg", "tier": 2 }
   ],
 
   "audio": [

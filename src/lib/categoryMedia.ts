@@ -5,13 +5,32 @@ import type { CategoryId } from './types';
  * for each category — Quran questions show a Quran page, geography shows
  * a map, Kuwait history shows Kuwait Towers, etc.
  *
- * All images are from Wikimedia Commons (CC-licensed or public domain).
- * Use the 640px thumbnail variant for fast load.
+ * External images: Wikimedia Commons 640px thumbnails (CC-licensed / PD).
+ * Missing-category fallback: inline SVG with the category emoji — zero
+ * external requests, loads instantly, never shows a broken-image placeholder.
  */
 export interface CategoryMedia {
   url: string;
   alt: string;
   position?: string; // CSS object-position, default 'center'
+}
+
+// Generates a dark-themed SVG data URI centered on a single emoji.
+// Used for categories that don't yet have a Wikimedia photo.
+function svgEmoji(emoji: string): string {
+  const svg = [
+    '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160">',
+    '<defs>',
+    '<linearGradient id="g" x1="0" y1="0" x2="1" y2="1">',
+    '<stop offset="0%" stop-color="#2C1F10"/>',
+    '<stop offset="100%" stop-color="#1A1208"/>',
+    '</linearGradient>',
+    '</defs>',
+    '<rect width="320" height="160" fill="url(#g)"/>',
+    `<text x="160" y="88" font-size="72" text-anchor="middle" dominant-baseline="middle">${emoji}</text>`,
+    '</svg>',
+  ].join('');
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
 export const CATEGORY_CONTEXT_IMAGES: Partial<Record<CategoryId, CategoryMedia>> = {
@@ -229,4 +248,27 @@ export const CATEGORY_CONTEXT_IMAGES: Partial<Record<CategoryId, CategoryMedia>>
     url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Kuwait_Towers.jpg/640px-Kuwait_Towers.jpg',
     alt: 'الأعمال والتجارة',
   },
+
+  // ── Social & Family ────────────────────────────────────────────────────────
+  social: { url: svgEmoji('🤝'), alt: 'التفاعل الاجتماعي' },
+  family: { url: svgEmoji('👨‍👩‍👧‍👦'), alt: 'العائلة والأسرة' },
+  jokes:  { url: svgEmoji('😄'), alt: 'نكت وطرائف' },
+
+  // ── Finance & Entrepreneurship ────────────────────────────────────────────
+  finance:          { url: svgEmoji('💰'), alt: 'المال والتمويل' },
+  entrepreneurship: { url: svgEmoji('🚀'), alt: 'ريادة الأعمال' },
+
+  // ── Technology specialisations ─────────────────────────────────────────────
+  ai_tech:       { url: svgEmoji('🤖'), alt: 'الذكاء الاصطناعي' },
+  cybersecurity: { url: svgEmoji('🔒'), alt: 'الأمن السيبراني' },
+  programming:   { url: svgEmoji('💻'), alt: 'البرمجة والتطوير' },
+
+  // ── Entertainment ──────────────────────────────────────────────────────────
+  tv_shows_intl:    { url: svgEmoji('📺'), alt: 'المسلسلات العالمية' },
+  video_games:      { url: svgEmoji('🎮'), alt: 'ألعاب الفيديو' },
+  celebrities_intl: { url: svgEmoji('⭐'), alt: 'مشاهير العالم' },
+
+  // ── Challenge modes ────────────────────────────────────────────────────────
+  math_logic: { url: svgEmoji('🔢'), alt: 'الرياضيات والمنطق' },
+  riddles_ar:  { url: svgEmoji('🧩'), alt: 'الألغاز والأحاجي' },
 };

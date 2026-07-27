@@ -7,3 +7,5 @@ dist/
 *.local
 .claude/settings*.json
 .claude/credits*
+__pycache__/
+*.pyc

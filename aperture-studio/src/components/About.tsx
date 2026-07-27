@@ -42,7 +42,7 @@ export function About() {
             like a craft — not content.
           </h2>
           <p className="reveal max-w-md font-sans text-[0.95rem] leading-relaxed text-ink-soft">
-            Aperture was founded by Naomi Cole in 2014 on a simple premise:
+            Halide was founded by Naomi Cole in 2014 on a simple premise:
             the best photographs disappear into the moment they hold. No
             forced direction, no over-processed colour — just patient
             observation and a very good eye for light.

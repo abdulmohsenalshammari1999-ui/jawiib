@@ -56,11 +56,11 @@ export function Hero() {
       >
         <span className="eyebrow text-paper/70">Est. Editorial Photography Studio</span>
         <h1 className="font-display max-w-3xl text-[13vw] leading-[0.92] tracking-tight text-paper md:text-[6.4rem]">
-          Aperture
+          Halide
         </h1>
         <p className="max-w-md font-sans text-[0.95rem] leading-relaxed text-paper/80">
-          Weddings, portraits, and commercial work — framed with restraint,
-          shaped by light, held for a lifetime.
+          Every photograph begins invisible — light held in silver, waiting.
+          Weddings, portraits, and commercial work, developed with patience.
         </p>
       </div>
 

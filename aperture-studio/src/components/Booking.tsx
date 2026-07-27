@@ -27,7 +27,7 @@ export function Booking() {
             every enquiry within two business days.
           </p>
           <div className="mt-6 flex flex-col gap-2 font-sans text-sm text-paper/70">
-            <span>hello@aperture-studio.example</span>
+            <span>hello@halide-studio.example</span>
             <span>+44 20 7946 0958</span>
             <span>Amalfi · London</span>
           </div>

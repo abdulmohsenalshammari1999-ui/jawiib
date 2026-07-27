@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { drawPlate, type Tone } from '../lib/texture'
 import { rippleStage } from '../lib/rippleStage'
+import { reticle } from '../lib/reticle'
 
 interface PlateProps {
   tone: Tone
@@ -33,10 +34,13 @@ export function Plate({ tone, seed, className = '', interactive = false, caption
   return (
     <div
       ref={wrapRef}
-      className={`relative overflow-hidden ${className}`}
+      className={`relative overflow-hidden ${interactive ? 'cursor-none' : ''} ${className}`}
       onPointerEnter={
         interactive
-          ? () => wrapRef.current && rippleStage.activate(wrapRef.current, tone, seed)
+          ? (e) => {
+              if (wrapRef.current) rippleStage.activate(wrapRef.current, tone, seed)
+              reticle.show(e.clientX, e.clientY)
+            }
           : undefined
       }
       onPointerMove={
@@ -47,10 +51,18 @@ export function Plate({ tone, seed, className = '', interactive = false, caption
                 (e.clientX - rect.left) / rect.width,
                 (e.clientY - rect.top) / rect.height,
               )
+              reticle.move(e.clientX, e.clientY)
             }
           : undefined
       }
-      onPointerLeave={interactive ? () => rippleStage.deactivate() : undefined}
+      onPointerLeave={
+        interactive
+          ? () => {
+              rippleStage.deactivate()
+              reticle.hide()
+            }
+          : undefined
+      }
     >
       <canvas ref={canvasRef} className="block h-full w-full" />
       {caption ? (

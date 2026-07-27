@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { IrisMark } from './IrisMark'
 
 const LINKS = [
   { href: '#work', label: 'Work' },
@@ -27,8 +28,9 @@ export function Nav() {
       }`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-10">
-        <a href="#top" className="font-display text-lg tracking-[0.08em] text-ink">
-          APERTURE
+        <a href="#top" className="flex items-center gap-2.5 font-display text-lg tracking-[0.08em] text-ink">
+          <IrisMark className="h-5 w-5 text-accent" />
+          HALIDE
         </a>
 
         <nav className="hidden items-center gap-9 md:flex">

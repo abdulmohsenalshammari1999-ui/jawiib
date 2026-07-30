@@ -23,6 +23,7 @@ interface UseMultiplayerOptions {
 
 interface UseMultiplayerResult {
   role: MultiplayerRole;
+  isHost: boolean;
   isOnline: boolean;
   onlinePlayers: number;
   sendAnswer: (answerIndex: number) => void;
@@ -122,6 +123,16 @@ export function useMultiplayer(
         if (roleRef.current !== 'host') break;
         const categoryId = msg['categoryId'] as string | undefined;
         if (categoryId) optionsRef.current.onGuestDraftPick?.(categoryId);
+        break;
+      }
+      case 'TIMER_TICK': {
+        if (roleRef.current !== 'guest') break;
+        const timer = msg['timer'] as number | undefined;
+        if (timer != null) {
+          useGameStore.setState((s) => ({
+            game: s.game ? { ...s.game, timer } : s.game,
+          }));
+        }
         break;
       }
       case 'PLAYER_COUNT':
@@ -242,14 +253,37 @@ export function useMultiplayer(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomCode]);
 
-  // ── Host: broadcast every Zustand state change ───────────────────────────
+  // ── Host: broadcast state changes — full sync on meaningful changes, lightweight tick on timer ──
   useEffect(() => {
     if (role !== 'host' || !ONLINE_CAPABLE) return;
+    let lastHash = '';
+    let lastTimer = -1;
+    function stateHash(g: import('@/lib/types').GameState): string {
+      return [
+        g.phase,
+        g.currentQuestion?.id ?? '',
+        g.activePlayer ?? '',
+        g.activeTeamId ?? '',
+        g.stealOpponentTeamId ?? '',
+        g.room.answeredQuestions.length,
+        g.lastAnswer?.playerId ?? '',
+        String(g.lastAnswer?.correct ?? ''),
+        g.draftPhase ? `${g.draftPhase.picks.length}|${g.draftPhase.currentTeam}` : '',
+      ].join('|');
+    }
     const unsub = useGameStore.subscribe(
       (s) => s.game,
       (game) => {
         if (!game || !sendRef.current) return;
-        sendRef.current({ type: 'HOST_SYNC', game, playerId: localPlayerId });
+        const hash = stateHash(game);
+        if (hash !== lastHash) {
+          lastHash = hash;
+          lastTimer = game.timer;
+          sendRef.current({ type: 'HOST_SYNC', game, playerId: localPlayerId });
+        } else if (game.timer !== lastTimer) {
+          lastTimer = game.timer;
+          sendRef.current({ type: 'TIMER_TICK', timer: game.timer });
+        }
       },
     );
     return unsub;
@@ -276,6 +310,7 @@ export function useMultiplayer(
   if (!ONLINE_CAPABLE) {
     return {
       role: 'offline',
+      isHost: false,
       isOnline: false,
       onlinePlayers: 1,
       sendAnswer: () => {},
@@ -285,5 +320,5 @@ export function useMultiplayer(
     };
   }
 
-  return { role, isOnline, onlinePlayers, sendAnswer, sendSelectQuestion, sendDraftPick, sendReaction };
+  return { role, isHost: role === 'host', isOnline, onlinePlayers, sendAnswer, sendSelectQuestion, sendDraftPick, sendReaction };
 }

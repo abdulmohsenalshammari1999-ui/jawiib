@@ -161,7 +161,7 @@ export function GameApp() {
   // Multiplayer role: host if this device created the room, guest if joining via link
   const effectiveRoomCode = game?.room.code ?? guestJoinCode ?? undefined;
   const isHost = !guestJoinCode && (!game || game.room.players[0]?.id === localPlayerId);
-  const mpRole = !effectiveRoomCode
+  const mpRole = (forceOffline || !effectiveRoomCode)
     ? 'offline' as const
     : isHost ? 'host' as const : 'guest' as const;
 
@@ -227,8 +227,10 @@ export function GameApp() {
   const [showVolume, setShowVolume]     = useState(false);
   // Board pick timer — 45s countdown during board phase in teams mode
   const [boardPickTimer, setBoardPickTimer] = useState<number | null>(null);
-  // Steal handoff — host must tap "pass device" before steal answers are enabled
+  // Steal handoff — host must tap "pass device" before steal answers are enabled (offline only)
   const [stealHandoffDone, setStealHandoffDone] = useState(false);
+  // Force offline mode even when a network backend is configured
+  const [forceOffline, setForceOffline] = useState(false);
 
   const prevLastAnswer    = useRef(game?.lastAnswer);
   const prevPhase         = useRef(game?.phase);
@@ -566,9 +568,13 @@ export function GameApp() {
     (qid: string) => {
       audio.playTick();
       void hapticSelection();
-      selectQuestion(qid);
+      if (mp.role === 'guest' && mp.isOnline) {
+        mp.sendSelectQuestion(qid);
+      } else {
+        selectQuestion(qid);
+      }
     },
-    [selectQuestion]
+    [selectQuestion, mp.role, mp.isOnline, mp.sendSelectQuestion],
   );
 
   // ── Derived ───────────────────────────────────────────────────────────────────
@@ -884,6 +890,8 @@ export function GameApp() {
         onQuickPlay={handleQuickPlay}
         onCustomGame={handleCustomGame}
         onMysteryGame={() => setMysteryActive(true)}
+        onOfflinePlay={() => setForceOffline(true)}
+        isOnline={mp.isOnline}
         accountName={account?.name}
         accountAvatar={account?.avatar}
       />
@@ -1203,7 +1211,20 @@ export function GameApp() {
       ? game.room.answeredQuestions.length >= 8
       : answeredCount >= totalCells - 1);
 
-    const canAnswer = isSteal ? (localPlayerId != null) : qflow.canAnswer;
+    const canAnswer = (() => {
+      if (isSteal) {
+        // Online: restrict steal to the opposing team's device using synced teamMembership
+        if (mp.isOnline && stealTeam) {
+          return !!(game.teamMembership?.[stealTeam]?.includes(localPlayerId ?? ''));
+        }
+        return localPlayerId != null; // offline: anyone (pass-the-phone)
+      }
+      // Online: use gameStore's teamMembership which is always up-to-date via HOST_SYNC
+      if (mp.isOnline && game.teamMembership && game.activeTeamId) {
+        return !!(game.teamMembership[game.activeTeamId]?.includes(localPlayerId ?? ''));
+      }
+      return qflow.canAnswer;
+    })();
 
     const stealTeamName = stealTeam === 'alpha' ? (teamData?.alpha.name ?? 'الفريق الأزرق') : (teamData?.beta.name ?? 'الفريق الأحمر');
     const stealEmoji    = stealTeam === 'alpha' ? (teamData?.alpha.emoji ?? '🔵') : (teamData?.beta.emoji ?? '🔴');
@@ -1275,8 +1296,8 @@ export function GameApp() {
             </div>
           )}
 
-          {/* Steal handoff gate — show "pass device" screen until host taps through */}
-          {isSteal && !stealHandoffDone && (
+          {/* Steal handoff gate — only needed in offline (pass-the-phone) mode */}
+          {isSteal && !stealHandoffDone && !mp.isOnline && (
             <div
               className="rounded-2xl border-2 p-6 text-center animate-fade-in"
               style={{
@@ -1301,7 +1322,20 @@ export function GameApp() {
             </div>
           )}
 
-          <div className={`flex-1 flex items-center justify-center ${isSteal && !stealHandoffDone ? 'hidden' : ''}`}>
+          {/* Online steal: non-stealing team sees a waiting message */}
+          {isSteal && mp.isOnline && stealTeam && !canAnswer && (
+            <div
+              className="rounded-2xl border p-4 text-center animate-fade-in"
+              style={{ borderColor: (apTeamColor ?? '#C8880A') + '40', background: (apTeamColor ?? '#C8880A') + '08' }}
+            >
+              <p className="text-3xl mb-2">⏳</p>
+              <p className="font-bold text-sm text-jawwib-text-dim">
+                {stealTeamName} يحاول السرقة...
+              </p>
+            </div>
+          )}
+
+          <div className={`flex-1 flex items-center justify-center ${(isSteal && !stealHandoffDone && !mp.isOnline) ? 'hidden' : ''}`}>
             {game.currentQuestion.type === 'charades' ? (
               <CharadesQRScreen
                 key={`${game.currentQuestion.id}-${game.phase}`}
@@ -1325,12 +1359,20 @@ export function GameApp() {
                 actingTeamColor={apTeamColor ?? undefined}
                 onCorrect={() => {
                   if (!canAnswer || !localPlayerId) return;
-                  answerQuestion(localPlayerId, game.currentQuestion!.correctIndex);
+                  if (mp.role === 'guest' && mp.isOnline) {
+                    mp.sendAnswer(game.currentQuestion!.correctIndex);
+                  } else {
+                    answerQuestion(localPlayerId, game.currentQuestion!.correctIndex);
+                  }
                 }}
                 onWrong={() => {
                   if (!canAnswer || !localPlayerId) return;
                   const wrongIdx = game.currentQuestion!.correctIndex === 0 ? 1 : 0;
-                  answerQuestion(localPlayerId, wrongIdx);
+                  if (mp.role === 'guest' && mp.isOnline) {
+                    mp.sendAnswer(wrongIdx);
+                  } else {
+                    answerQuestion(localPlayerId, wrongIdx);
+                  }
                 }}
                 disabled={!canAnswer}
               />
@@ -1341,8 +1383,12 @@ export function GameApp() {
                 timer={game.timer}
                 maxTimer={30}
                 onAnswer={(idx) => {
-                  if (!canAnswer) return;
-                  if (localPlayerId) answerQuestion(localPlayerId, idx);
+                  if (!canAnswer || !localPlayerId) return;
+                  if (mp.role === 'guest' && mp.isOnline) {
+                    mp.sendAnswer(idx);
+                  } else {
+                    answerQuestion(localPlayerId, idx);
+                  }
                 }}
                 disabled={!canAnswer}
                 hasBomb={hasBomb}

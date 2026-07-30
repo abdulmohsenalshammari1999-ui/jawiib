@@ -10,6 +10,8 @@ interface HomeScreenProps {
   onQuickPlay?: (name: string) => void;
   onCustomGame?: (game: CustomGame, playerName: string) => void;
   onMysteryGame?: () => void;
+  onOfflinePlay?: () => void;
+  isOnline?: boolean;
   accountName?: string;
   accountAvatar?: string;
 }
@@ -17,7 +19,7 @@ interface HomeScreenProps {
 type View = 'main' | 'create' | 'join' | 'quickplay' | 'customgame';
 type GameMode = 'ffa' | 'teams';
 
-export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, onCustomGame, onMysteryGame, accountName, accountAvatar }: HomeScreenProps) {
+export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, onCustomGame, onMysteryGame, onOfflinePlay, isOnline, accountName, accountAvatar }: HomeScreenProps) {
   const [view, setView]               = useState<View>('main');
   const [playerName, setPlayerName]   = useState(accountName ?? '');
   const [roomCode, setRoomCode]       = useState('');
@@ -163,6 +165,28 @@ export function HomeScreen({ onCreateRoom, onJoinRoom, onQuickPlay, onCustomGame
                   <span style={{ fontSize: '13.5px', fontWeight: 900, color: '#fff' }}>ابدأ التحقيق</span>
                 </div>
               </div>
+            </button>
+          )}
+        </div>
+
+        {/* Connection status + offline mode toggle */}
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-1.5">
+            <span
+              className="inline-block w-2 h-2 rounded-full"
+              style={{ background: isOnline ? '#5FA98C' : '#888', boxShadow: isOnline ? '0 0 6px #5FA98C88' : 'none' }}
+            />
+            <span className="text-[10px] font-medium" style={{ color: isOnline ? '#5FA98C' : '#888' }}>
+              {isOnline ? 'متصل' : 'بدون إنترنت'}
+            </span>
+          </div>
+          {onOfflinePlay && (
+            <button
+              onClick={onOfflinePlay}
+              className="text-[11px] font-bold px-3 py-1 rounded-full border transition-all"
+              style={{ borderColor: 'rgba(200,200,200,0.2)', color: '#aaa', background: 'rgba(255,255,255,0.04)' }}
+            >
+              📴 العب بدون إنترنت
             </button>
           )}
         </div>

@@ -183,10 +183,9 @@ export function GameApp() {
     },
     onGuestJoined: (name, id) => {
       addPlayer(name, id);
-      if (mode === 'teams') {
-        // Auto-assign the new guest to the opposing team (beta).
-        // Then immediately sync team membership into game state so the guest device
-        // receives localTeamId via the next HOST_SYNC and can pick in the draft.
+      // Only sync team membership during lobby — calling setTeamMembership
+      // mid-game resets scores/weapons/streaks to zero.
+      if (mode === 'teams' && (!game || game.phase === 'lobby')) {
         assignTeam(id, 'beta');
         const t = useRoomStore.getState().teams;
         setTeamMembership(
@@ -649,6 +648,7 @@ export function GameApp() {
     resetRoom();
     setSubView('lobby');
     setShowLeaveConfirm(false);
+    setForceOffline(false);
   };
 
   const HomeButton = () => (
@@ -950,7 +950,7 @@ export function GameApp() {
         <GameOverScreen
           players={game.room.players}
           hostMessage={game.hostMessage}
-          onPlayAgain={rematch}
+          onPlayAgain={() => { setForceOffline(false); rematch(); }}
           onNewGame={handleLeaveGame}
           teams={winnerTeamData}
           mode={mode}

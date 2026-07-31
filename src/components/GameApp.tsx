@@ -148,6 +148,10 @@ export function GameApp() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Force offline mode even when a network backend is configured — must be
+  // declared before mpRole which reads it at line ~164.
+  const [forceOffline, setForceOffline] = useState(false);
+
   // Connection error detection: immediately flag if server not configured,
   // otherwise start a 15-second timeout so guests never spin forever.
   useEffect(() => {
@@ -189,9 +193,9 @@ export function GameApp() {
           t.alpha.playerIds,
           t.beta.playerIds,
           t.alpha.name,
-          (t.alpha as any).emoji ?? '🌊',
+          t.alpha.emoji,
           t.beta.name,
-          (t.beta as any).emoji ?? '🐪',
+          t.beta.emoji,
         );
       }
     },
@@ -243,8 +247,6 @@ export function GameApp() {
   const [boardPickTimer, setBoardPickTimer] = useState<number | null>(null);
   // Steal handoff — host must tap "pass device" before steal answers are enabled (offline only)
   const [stealHandoffDone, setStealHandoffDone] = useState(false);
-  // Force offline mode even when a network backend is configured
-  const [forceOffline, setForceOffline] = useState(false);
 
   const prevLastAnswer    = useRef(game?.lastAnswer);
   const prevPhase         = useRef(game?.phase);
@@ -1191,9 +1193,9 @@ export function GameApp() {
           mode={mode}
           hostName={game.room.players.find((p) => p.id === localPlayerId)?.name ?? 'المضيف'}
           alphaTeamName={mode === 'teams' ? teams.alpha.name : undefined}
-          alphaTeamEmoji={mode === 'teams' ? (teams.alpha as any).emoji : undefined}
+          alphaTeamEmoji={mode === 'teams' ? teams.alpha.emoji : undefined}
           betaTeamName={mode === 'teams' ? teams.beta.name : undefined}
-          betaTeamEmoji={mode === 'teams' ? (teams.beta as any).emoji : undefined}
+          betaTeamEmoji={mode === 'teams' ? teams.beta.emoji : undefined}
           alphaPlayerIds={mode === 'teams' ? (game.teamMembership?.alpha ?? teams.alpha.playerIds) : undefined}
           betaPlayerIds={mode === 'teams' ? (game.teamMembership?.beta ?? teams.beta.playerIds) : undefined}
           onlinePlayers={mp.onlinePlayers}

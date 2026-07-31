@@ -29,6 +29,8 @@ interface LobbyProps {
   betaTeamEmoji?: string;
   onlinePlayers?: number;
   isOnline?: boolean;
+  alphaPlayerIds?: string[];
+  betaPlayerIds?: string[];
 }
 
 export function Lobby({
@@ -50,6 +52,8 @@ export function Lobby({
   betaTeamEmoji,
   onlinePlayers = 1,
   isOnline = false,
+  alphaPlayerIds = [],
+  betaPlayerIds = [],
 }: LobbyProps) {
   const [copied, setCopied] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
@@ -82,7 +86,9 @@ export function Lobby({
       {/* Room Code */}
       <div className="game-card p-5 text-center">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-jawwib-text-dim text-xs">شارك الكود مع أصدقائك</p>
+          <p className="text-jawwib-text-dim text-xs">
+            {mode === 'teams' ? 'للفريق المنافس — امسح للدخول' : 'شارك الكود مع أصدقائك'}
+          </p>
           {isOnline && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-jawwib-oasis">
               <span className="w-1.5 h-1.5 rounded-full bg-jawwib-oasis animate-pulse" />
@@ -146,6 +152,18 @@ export function Lobby({
             >
               <span className="text-xl">{player.avatar}</span>
               <span className="font-bold text-sm flex-1">{player.name}</span>
+              {mode === 'teams' && alphaPlayerIds.includes(player.id) && (
+                <span className="text-xs px-2 py-0.5 rounded-full font-bold"
+                  style={{ background: 'rgba(95,169,140,0.2)', color: '#5FA98C', border: '1px solid rgba(95,169,140,0.4)' }}>
+                  🌊 {alphaTeamName ?? 'البحر'}
+                </span>
+              )}
+              {mode === 'teams' && betaPlayerIds.includes(player.id) && (
+                <span className="text-xs px-2 py-0.5 rounded-full font-bold"
+                  style={{ background: 'rgba(200,90,52,0.2)', color: '#C85A34', border: '1px solid rgba(200,90,52,0.4)' }}>
+                  🐪 {betaTeamName ?? 'البر'}
+                </span>
+              )}
               {player.isHost && (
                 <span className="text-xs bg-jawwib-gold/20 text-jawwib-gold px-2 py-0.5 rounded-full">
                   مضيف

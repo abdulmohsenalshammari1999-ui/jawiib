@@ -178,8 +178,22 @@ export function GameApp() {
       setShowEntry(false);
     },
     onGuestJoined: (name, id) => {
-      // Host received GUEST_JOIN — addPlayer with explicit ID so host's localPlayerId is NOT overwritten.
       addPlayer(name, id);
+      if (mode === 'teams') {
+        // Auto-assign the new guest to the opposing team (beta).
+        // Then immediately sync team membership into game state so the guest device
+        // receives localTeamId via the next HOST_SYNC and can pick in the draft.
+        assignTeam(id, 'beta');
+        const t = useRoomStore.getState().teams;
+        setTeamMembership(
+          t.alpha.playerIds,
+          t.beta.playerIds,
+          t.alpha.name,
+          (t.alpha as any).emoji ?? '🌊',
+          t.beta.name,
+          (t.beta as any).emoji ?? '🐪',
+        );
+      }
     },
     onGuestAnswer: (playerId, answerIndex) => {
       answerQuestion(playerId, answerIndex);
@@ -584,9 +598,17 @@ export function GameApp() {
   } : null;
 
   const localTeamId = (() => {
-    if (!localPlayerId || !teamData) return null;
-    if (teamData.alpha.playerIds.includes(localPlayerId)) return 'alpha' as const;
-    if (teamData.beta.playerIds.includes(localPlayerId)) return 'beta'  as const;
+    if (!localPlayerId) return null;
+    // Primary: roomStore.teams (populated on host device)
+    if (teamData) {
+      if (teamData.alpha.playerIds.includes(localPlayerId)) return 'alpha' as const;
+      if (teamData.beta.playerIds.includes(localPlayerId)) return 'beta'  as const;
+    }
+    // Fallback: game.teamMembership synced to guest devices via HOST_SYNC
+    if (game?.teamMembership) {
+      if (game.teamMembership.alpha.includes(localPlayerId)) return 'alpha' as const;
+      if (game.teamMembership.beta.includes(localPlayerId)) return 'beta'  as const;
+    }
     return null;
   })();
 
@@ -1172,6 +1194,8 @@ export function GameApp() {
           alphaTeamEmoji={mode === 'teams' ? (teams.alpha as any).emoji : undefined}
           betaTeamName={mode === 'teams' ? teams.beta.name : undefined}
           betaTeamEmoji={mode === 'teams' ? (teams.beta as any).emoji : undefined}
+          alphaPlayerIds={mode === 'teams' ? (game.teamMembership?.alpha ?? teams.alpha.playerIds) : undefined}
+          betaPlayerIds={mode === 'teams' ? (game.teamMembership?.beta ?? teams.beta.playerIds) : undefined}
           onlinePlayers={mp.onlinePlayers}
           isOnline={mp.isOnline}
         />

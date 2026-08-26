@@ -148,6 +148,10 @@ export function GameApp() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Force offline mode even when a network backend is configured — must be
+  // declared before mpRole which reads it at line ~164.
+  const [forceOffline, setForceOffline] = useState(false);
+
   // Connection error detection: immediately flag if server not configured,
   // otherwise start a 15-second timeout so guests never spin forever.
   useEffect(() => {
@@ -178,8 +182,21 @@ export function GameApp() {
       setShowEntry(false);
     },
     onGuestJoined: (name, id) => {
-      // Host received GUEST_JOIN — addPlayer with explicit ID so host's localPlayerId is NOT overwritten.
       addPlayer(name, id);
+      // Only sync team membership during lobby — calling setTeamMembership
+      // mid-game resets scores/weapons/streaks to zero.
+      if (mode === 'teams' && (!game || game.phase === 'lobby')) {
+        assignTeam(id, 'beta');
+        const t = useRoomStore.getState().teams;
+        setTeamMembership(
+          t.alpha.playerIds,
+          t.beta.playerIds,
+          t.alpha.name,
+          t.alpha.emoji,
+          t.beta.name,
+          t.beta.emoji,
+        );
+      }
     },
     onGuestAnswer: (playerId, answerIndex) => {
       answerQuestion(playerId, answerIndex);
@@ -584,9 +601,17 @@ export function GameApp() {
   } : null;
 
   const localTeamId = (() => {
-    if (!localPlayerId || !teamData) return null;
-    if (teamData.alpha.playerIds.includes(localPlayerId)) return 'alpha' as const;
-    if (teamData.beta.playerIds.includes(localPlayerId)) return 'beta'  as const;
+    if (!localPlayerId) return null;
+    // Primary: roomStore.teams (populated on host device)
+    if (teamData) {
+      if (teamData.alpha.playerIds.includes(localPlayerId)) return 'alpha' as const;
+      if (teamData.beta.playerIds.includes(localPlayerId)) return 'beta'  as const;
+    }
+    // Fallback: game.teamMembership synced to guest devices via HOST_SYNC
+    if (game?.teamMembership) {
+      if (game.teamMembership.alpha.includes(localPlayerId)) return 'alpha' as const;
+      if (game.teamMembership.beta.includes(localPlayerId)) return 'beta'  as const;
+    }
     return null;
   })();
 
@@ -625,6 +650,7 @@ export function GameApp() {
     resetRoom();
     setSubView('lobby');
     setShowLeaveConfirm(false);
+    setForceOffline(false);
   };
 
   const HomeButton = () => (
@@ -926,7 +952,7 @@ export function GameApp() {
         <GameOverScreen
           players={game.room.players}
           hostMessage={game.hostMessage}
-          onPlayAgain={rematch}
+          onPlayAgain={() => { setForceOffline(false); rematch(); }}
           onNewGame={handleLeaveGame}
           teams={winnerTeamData}
           mode={mode}
@@ -1169,9 +1195,11 @@ export function GameApp() {
           mode={mode}
           hostName={game.room.players.find((p) => p.id === localPlayerId)?.name ?? 'المضيف'}
           alphaTeamName={mode === 'teams' ? teams.alpha.name : undefined}
-          alphaTeamEmoji={mode === 'teams' ? (teams.alpha as any).emoji : undefined}
+          alphaTeamEmoji={mode === 'teams' ? teams.alpha.emoji : undefined}
           betaTeamName={mode === 'teams' ? teams.beta.name : undefined}
-          betaTeamEmoji={mode === 'teams' ? (teams.beta as any).emoji : undefined}
+          betaTeamEmoji={mode === 'teams' ? teams.beta.emoji : undefined}
+          alphaPlayerIds={mode === 'teams' ? (game.teamMembership?.alpha ?? teams.alpha.playerIds) : undefined}
+          betaPlayerIds={mode === 'teams' ? (game.teamMembership?.beta ?? teams.beta.playerIds) : undefined}
           onlinePlayers={mp.onlinePlayers}
           isOnline={mp.isOnline}
         />
